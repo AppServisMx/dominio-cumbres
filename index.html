@@ -162,6 +162,7 @@
 
 <!-- ====== FIREBASE ====== -->
 <script type="module" src="firebase.js"></script>
+<script src="reportes.js"></script>
 <!-- ====== FIN FIREBASE ====== -->
 
 <link rel="stylesheet" href="style.css">
@@ -1271,6 +1272,270 @@
         <button class="btn btn-green" onclick="go('v-informa','left')">Volver a Dominio Informa</button>
       </div>
     </div>
+<!-- ============================================================
+  VISTAS NUEVAS — Fase 1 — reportes.js
+  Insertar DESPUÉS de la línea:
+    <div class="view go-right" id="v-informa-enviado">...</div>
+  y ANTES de:
+    <div class="view go-right" id="v-eventos">
+  ============================================================ -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+  VISTA 1: Formulario — Nueva solicitud de servicio
+  Acceso:   go('v-solicitud-nueva','right')
+  Volver:   go('v-home','left')  o la vista desde donde vengas
+  ══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-solicitud-nueva">
+  <div style="background:linear-gradient(135deg,#0A4220,#1FC26A);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back" onclick="go('v-home','left')">‹</button>
+      <div>
+        <div class="si13">📋 Nueva solicitud</div>
+        <div class="si21">Proveedores verificados te contactarán</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="si27 scroll">
+
+    <div class="info-box" style="background:#E8F5EE;color:#0A4220;margin-bottom:14px;">
+      🔒 Tu nombre nunca aparece públicamente. Solo los proveedores de tu categoría verán esta solicitud.
+    </div>
+
+    <!-- Categoría -->
+    <div class="form-g">
+      <label class="form-l" for="sol-categoria">Categoría de servicio *</label>
+      <select class="sel" id="sol-categoria">
+        <option value="">— Selecciona una categoría —</option>
+        <option value="plomero">💧 Plomería</option>
+        <option value="electricista">⚡ Electricidad</option>
+        <option value="jardinero">🌿 Jardinería</option>
+        <option value="limpieza">🧹 Limpieza</option>
+        <option value="pintura">🎨 Pintura</option>
+        <option value="ac">❄️ Aire acondicionado</option>
+        <option value="cerrajero">🔒 Cerrajería</option>
+        <option value="mascotas">🐾 Mascotas</option>
+        <option value="tecnologia">🖥️ Tecnología</option>
+        <option value="belleza">💆 Belleza</option>
+        <option value="otro">🔧 Otro</option>
+      </select>
+    </div>
+
+    <!-- Descripción -->
+    <div class="form-g">
+      <label class="form-l" for="sol-descripcion">¿Qué necesitas? *</label>
+      <textarea class="inp" id="sol-descripcion" rows="4"
+        placeholder="Describe el problema o servicio que necesitas. Cuanto más detalle, mejores cotizaciones recibirás."
+        style="resize:none;"></textarea>
+    </div>
+
+    <!-- Zona (opcional) -->
+    <div class="form-g">
+      <label class="form-l" for="sol-zona">Zona o sección (opcional)</label>
+      <input class="inp" id="sol-zona" type="text"
+        placeholder="Ej. Sección 3, Calle principal...">
+    </div>
+
+    <!-- Mensaje de error -->
+    <div id="sol-error" style="display:none;background:#FDECEA;border-radius:10px;
+      padding:8px 12px;font-size:11px;color:#D63A2A;margin-bottom:12px;"></div>
+
+    <!-- Info de límite -->
+    <div style="background:#FFF8E1;border-radius:10px;padding:8px 12px;
+      font-size:11px;color:#9A6800;margin-bottom:14px;line-height:1.5;">
+      👷 Hasta 4 proveedores pueden postularse a tu solicitud.
+      Podrás chatear con cada uno antes de decidir.
+    </div>
+
+    <button class="btn btn-green" id="sol-btn-enviar"
+      onclick="window.publicarReporte()">
+      Publicar solicitud →
+    </button>
+
+    <div style="height:16px;"></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+  VISTA 2: Confirmación — Solicitud enviada
+  Acceso:   go('v-solicitud-enviada','right')  ← desde publicarReporte()
+  ══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-solicitud-enviada">
+  <div class="success-wrap">
+    <div class="success-ic" style="border-color:var(--green);">📋</div>
+    <div class="si36">¡Solicitud publicada!</div>
+    <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.7;margin-bottom:24px;">
+      Tu solicitud ya está visible para proveedores verificados.<br>
+      Cuando alguien se postule te avisaremos.<br><br>
+      <strong class="si04">Máximo 4 proveedores</strong> pueden postularse.<br>
+      Podrás chatear con cada uno antes de contratar.
+    </div>
+    <button class="btn btn-green"
+      onclick="go('v-mis-reportes','right');setTimeout(()=>window.cargarMisReportes&&window.cargarMisReportes(),300);">
+      Ver mis solicitudes →
+    </button>
+    <button class="btn" style="background:var(--white-12);color:#fff;margin-top:8px;"
+      onclick="go('v-home','left')">
+      Volver al inicio
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+  VISTA 3: Mis reportes / solicitudes (vecino)
+  Acceso:   go('v-mis-reportes','right')
+  Carga:    window.cargarMisReportes()
+  ══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-mis-reportes" data-onenter="cargarMisReportes">
+  <div style="background:linear-gradient(135deg,#0A4220,#1FC26A);padding:12px 18px 14px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back" onclick="go('v-home','left')">‹</button>
+      <div class="si03">
+        <div class="si13">📋 Mis solicitudes</div>
+        <div class="si21">Servicios que has publicado</div>
+      </div>
+      <button onclick="go('v-solicitud-nueva','right')"
+        style="background:var(--white-12);border:none;border-radius:12px;
+          padding:7px 12px;font-size:11px;font-weight:700;color:#fff;
+          cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;">
+        + Nueva
+      </button>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding:10px 0;">
+    <div id="mis-reportes-lista">
+      <div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">
+        Cargando... ⏳
+      </div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="nav">
+    <div class="ni" onclick="go('v-home','left')">
+      <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
+    </div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
+      <div class="ni-ic">💬</div><div class="ni-lb">Chats</div>
+    </div>
+    <div class="ni" onclick="go('v-mis-reportes','right');setTimeout(()=>window.cargarMisReportes&&window.cargarMisReportes(),300);">
+      <div class="ni-ic">📋</div><div class="ni-lb" style="color:var(--green);">Solicitudes</div>
+    </div>
+    <div class="ni" onclick="go('v-mipanel','right')">
+      <div class="ni-ic">👤</div><div class="ni-lb">Perfil</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+  VISTA 4: Solicitudes disponibles (proveedor)
+  Acceso:   go('v-reportes-disponibles','right')
+  Carga:    window.cargarReportesDisponibles()
+  ══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-reportes-disponibles" data-onenter="cargarReportesDisponibles">
+  <div style="background:linear-gradient(135deg,#0A4220,#1FC26A);padding:12px 18px 14px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back" onclick="go('v-mipanel','left')">‹</button>
+      <div>
+        <div class="si13">🔧 Solicitudes disponibles</div>
+        <div class="si21">Clientes que necesitan tu servicio</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding:10px 0;">
+    <div id="reportes-disponibles-lista">
+      <div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">
+        Cargando... ⏳
+      </div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="nav">
+    <div class="ni" onclick="go('v-home','left')">
+      <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
+    </div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
+      <div class="ni-ic">💬</div><div class="ni-lb">Chats</div>
+    </div>
+    <div class="ni" onclick="go('v-reportes-disponibles','right');setTimeout(()=>window.cargarReportesDisponibles&&window.cargarReportesDisponibles(),300);">
+      <div class="ni-ic">📋</div><div class="ni-lb" style="color:var(--green);">Solicitudes</div>
+    </div>
+    <div class="ni" onclick="go('v-mipanel','right')">
+      <div class="ni-ic">👤</div><div class="ni-lb">Perfil</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+  VISTA 5: Detalle de un reporte
+  Acceso:   go('v-reporte-detalle','right')  ← desde verDetalleReporte()
+  ══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-reporte-detalle">
+  <div style="background:linear-gradient(135deg,#0A4220,#1FC26A);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <div>
+        <div class="si13">Detalle de solicitud</div>
+        <div class="si21">Información completa</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="si27 scroll">
+
+    <!-- Cabecera: ícono + categoría + fecha -->
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;">
+      <div id="det-rep-ic" style="width:48px;height:48px;border-radius:16px;
+        background:#E8F5EE;display:flex;align-items:center;justify-content:center;
+        font-size:26px;flex-shrink:0;">🔧</div>
+      <div>
+        <div id="det-rep-categoria" style="font-size:16px;font-weight:700;
+          color:var(--text-primary);"></div>
+        <div id="det-rep-fecha" style="font-size:11px;color:var(--text-muted);"></div>
+      </div>
+    </div>
+
+    <!-- Badges: estado + postulantes -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <div id="det-rep-estado"></div>
+      <div id="det-rep-postulantes"></div>
+    </div>
+
+    <!-- Descripción -->
+    <div style="font-size:13px;font-weight:700;color:var(--text-caption);
+      margin-bottom:6px;">Descripción</div>
+    <div id="det-rep-descripcion" style="font-size:13px;color:var(--text-primary);
+      line-height:1.6;background:#F5F6F0;border-radius:12px;padding:12px 14px;
+      margin-bottom:14px;"></div>
+
+    <!-- Zona -->
+    <div id="det-rep-zona" style="font-size:12px;color:var(--text-muted);
+      margin-bottom:14px;"></div>
+
+    <!-- Info de privacidad -->
+    <div class="info-box" style="background:#E8F5EE;color:#0A4220;">
+      🔒 La información de contacto del vecino se comparte solo cuando acepta una cotización.
+    </div>
+
+    <!-- Botón de acción (se rellena por _renderDetalleReporte) -->
+    <div id="det-rep-accion"></div>
+
+    <div style="height:16px;"></div>
+  </div>
+</div>
+
 <div class="view go-right" id="v-eventos">
       <div class="eventos-hdr">
         <div class="sbar dk"><span>9:41</span><span>▲</span></div>
