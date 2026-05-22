@@ -178,12 +178,16 @@ window.cargarMisReportes = async function() {
     const uid = window._fbAuth.currentUser.uid;
     const q   = query(
       collection(window._fbDb, 'reportes'),
-      where('vecinoId', '==', uid),
-      orderBy('fechaCreacion', 'desc')
+      where('vecinoId', '==', uid)
     );
     const snap = await getDocs(q);
 
-    if (snap.empty) {
+    // Ordenar por fechaCreacion desc en cliente (evita índice compuesto en Firestore)
+    const _docs = [];
+    snap.forEach(d => _docs.push({ id: d.id, ...d.data() }));
+    _docs.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
+
+    if (_docs.length === 0) {
       contenedor.innerHTML = `
         <div style="text-align:center;padding:30px 20px;">
           <div style="font-size:36px;margin-bottom:10px;">📋</div>
@@ -196,9 +200,8 @@ window.cargarMisReportes = async function() {
     }
 
     contenedor.innerHTML = '';
-    snap.forEach(docSnap => {
-      const r   = docSnap.data();
-      const id  = docSnap.id;
+    _docs.forEach(r => {
+      const id  = r.id;
       const cat = DC_CATEGORIAS[r.categoria] || DC_CATEGORIAS.otro;
       const card = document.createElement('div');
       card.className = 'prov-card';
@@ -249,7 +252,7 @@ window.cargarReportesDisponibles = async function() {
   }
 
   try {
-    const { getDocs, collection, query, where, orderBy } = await import(
+    const { getDocs, collection, query, where } = await import(
       'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'
     );
 
@@ -264,21 +267,18 @@ window.cargarReportesDisponibles = async function() {
     // Query: reportes publicados o en_cotizacion (puede recibir más postulantes)
     const q = query(
       collection(window._fbDb, 'reportes'),
-      where('estado', 'in', ['publicado', 'en_cotizacion']),
-      orderBy('fechaCreacion', 'desc')
+      where('estado', 'in', ['publicado', 'en_cotizacion'])
     );
     const snap = await getDocs(q);
 
-    // Filtrar: solo los de la misma categoría y que tengan cupo (<4 postulantes)
-    // También excluir los que el proveedor ya se postuló
+    // Filtrar y ordenar en cliente (evita índice compuesto en Firestore)
     const docs = [];
     snap.forEach(docSnap => {
       const r = docSnap.data();
-      // Filtrar por categoría si el proveedor tiene una definida
       if (categoriaProv && r.categoria !== categoriaProv) return;
-      // Incluir aunque estén llenos (se muestra como cerrado para que el proveedor sepa)
       docs.push({ id: docSnap.id, ...r });
     });
+    docs.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
 
     if (docs.length === 0) {
       contenedor.innerHTML = `
