@@ -739,8 +739,17 @@
     if (!nombre)                                          errores.push('Escribe tu nombre completo');
     if (!usuario)                                         errores.push('Escribe un nombre de usuario');
     else if (!/^[a-z0-9_-]+$/.test(usuario))             errores.push('Usuario: solo minúsculas, números, _ y -');
+    // Correo: formato básico
     const _correoErr = vValidarCorreo(correo);
-    if (_correoErr)                                       errores.push(_correoErr.replace(/^[📧⚠️]\s*/,''));
+    if (_correoErr) errores.push(_correoErr.replace(/^[📧⚠️]\s*/,''));
+    // Correo: typo conocido → modal de sugerencia (no bloqueante si usuario elige continuar)
+    if (!_correoErr && !window._omitirTypoCorreo) {
+      const _typo = _detectarTypoCorreo(correo);
+      if (_typo) {
+        window._mostrarSugerenciaCorreo(correo, _typo);
+        return;
+      }
+    }
     if (!_numLimpio)                                      errores.push('Escribe tu número de WhatsApp');
     else if (!/^[0-9]{8,15}$/.test(_numLimpio))          errores.push('WhatsApp: entre 8 y 15 dígitos, solo números');
     if (!pass1 || pass1.length < 6)                      errores.push('Contraseña: mínimo 6 números');
@@ -4259,30 +4268,96 @@ function vUsrInput(el){
 }
 
 // Validar correo — devuelve mensaje de error o ''
+// Mapa de dominios mal escritos → corrección
+const _TYPOS_CORREO = {
+  // Gmail
+  'gmil.com':'gmail.com','gmal.com':'gmail.com','gamil.com':'gmail.com',
+  'gmaill.com':'gmail.com','gmai.com':'gmail.com','gmali.com':'gmail.com',
+  'gml.com':'gmail.com','gimail.com':'gmail.com','gmail.con':'gmail.com',
+  'gmail.cmo':'gmail.com','gmail.co':'gmail.com',
+  // Hotmail
+  'hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','homail.com':'hotmail.com',
+  'hotmail.con':'hotmail.com','hotmail.cmo':'hotmail.com','hotamail.com':'hotmail.com',
+  // Outlook
+  'outlok.com':'outlook.com','outloook.com':'outlook.com','otlook.com':'outlook.com',
+  'outllok.com':'outlook.com','outlook.con':'outlook.com','outook.com':'outlook.com',
+  // Live
+  'live.con':'live.com','live.cmo':'live.com','lve.com':'live.com',
+  // iCloud
+  'icloud.con':'icloud.com','icloud.cmo':'icloud.com','icould.com':'icloud.com',
+  // Yahoo
+  'yahoo.con':'yahoo.com','yahooo.com':'yahoo.com','yhoo.com':'yahoo.com',
+  'yaho.com':'yahoo.com','yahoo.cmo':'yahoo.com'
+};
+
+// Devuelve dominio corregido si hay typo, o null si el dominio es válido/desconocido
+function _detectarTypoCorreo(correo){
+  if(!correo||!correo.includes('@')) return null;
+  const dom=(correo.split('@')[1]||'').toLowerCase();
+  return _TYPOS_CORREO[dom]||null;
+}
+
 function vValidarCorreo(correo){
   if(!correo) return '⚠️ Escribe tu correo electrónico';
-  // Debe tener @, algo antes, punto después, mínimo 2 chars de dominio
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo))
     return '📧 Correo inválido — verifica que tenga @ y dominio (ej. .com)';
-  // Detectar errores tipográficos comunes
-  const dom=correo.split('@')[1]||'';
-  const errores={
-    'gmil.com':'gmail.com','gmal.com':'gmail.com','gamil.com':'gmail.com','gmaill.com':'gmail.com',
-    'hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','homail.com':'hotmail.com',
-    'outlok.com':'outlook.com','outloook.com':'outlook.com','otlook.com':'outlook.com',
-    'yahooo.com':'yahoo.com','yhoo.com':'yahoo.com'
-  };
-  if(errores[dom]) return '📧 ¿Quisiste escribir @'+errores[dom]+'?';
-  return '';
+  return ''; // typos se manejan por separado con modal
 }
+
+// Modal de sugerencia de correo
+window._mostrarSugerenciaCorreo = function(correoOriginal, dominioCorregido){
+  const partes = correoOriginal.split('@');
+  const correoSugerido = partes[0] + '@' + dominioCorregido;
+  const ya = document.getElementById('modal-correo-typo');
+  const html =
+    '<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">⚠️ Revisa tu correo</div>'+
+    '<div style="font-size:13px;color:#555;margin-bottom:6px;">Escribiste:</div>'+
+    '<div style="font-size:13px;font-weight:700;color:#D63A2A;margin-bottom:12px;">'+correoOriginal+'</div>'+
+    '<div style="font-size:13px;color:#555;margin-bottom:6px;">¿Quisiste decir?</div>'+
+    '<div style="font-size:13px;font-weight:700;color:#1FC26A;margin-bottom:20px;">'+correoSugerido+'</div>'+
+    '<button onclick="window._corregirCorreo(\''+correoSugerido+'\')" '+
+    'style="width:100%;background:#1FC26A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:8px;">Corregir</button>'+
+    '<button onclick="window._continuarConCorreo()" '+
+    'style="width:100%;background:#f0f0f0;color:#333;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:10px;">Continuar con mi correo</button>'+
+    '<div style="font-size:11px;color:#aaa;text-align:center;line-height:1.5;">Solo es una sugerencia. Algunos dominios personalizados pueden ser válidos.</div>';
+  if(ya){ya.querySelector('.modal-correo-body').innerHTML=html;ya.style.display='flex';return;}
+  const m=document.createElement('div');
+  m.id='modal-correo-typo';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+  m.innerHTML='<div class="modal-correo-body" style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'+html+'</div>';
+  document.body.appendChild(m);
+};
+
+window._corregirCorreo = function(correoNuevo){
+  const el=document.getElementById('v-correo');
+  if(el){
+    el.value=correoNuevo;
+    vCorreoInput(el);
+  }
+  const m=document.getElementById('modal-correo-typo');
+  if(m)m.style.display='none';
+};
+
+// Continuar con el correo original sin corregir
+window._omitirTypoCorreo = false;
+window._continuarConCorreo = function(){
+  const m=document.getElementById('modal-correo-typo');
+  if(m)m.style.display='none';
+  window._omitirTypoCorreo = true;
+  window.registrarVecino && window.registrarVecino();
+  window._omitirTypoCorreo = false;
+};
 
 // Feedback en tiempo real para correo
 function vCorreoInput(el){
   const s=document.getElementById('v-correo-st');
   if(!s)return;
-  const err=vValidarCorreo(el.value.trim());
-  if(!el.value){s.textContent='';return;}
-  if(err){s.innerHTML='<span style="color:#D63A2A;">'+err+'</span>';}
+  const val=el.value.trim();
+  if(!val){s.textContent='';return;}
+  const err=vValidarCorreo(val);
+  if(err){s.innerHTML='<span style="color:#D63A2A;">'+err+'</span>';return;}
+  const dom=_detectarTypoCorreo(val);
+  if(dom){s.innerHTML='<span style="color:#D63A2A;">📧 ¿Quisiste escribir @'+dom+'?</span>';}
   else{s.innerHTML='<span style="color:#1FC26A;">✅ Correo válido</span>';}
 }
 
