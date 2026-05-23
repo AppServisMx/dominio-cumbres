@@ -2759,7 +2759,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     </div>
 
     <!-- Zona automática del perfil (solo lectura) -->
-    <div id="sol-zona-perfil" style="font-size:11px;color:var(--text-muted);margin-bottom:10px;padding:6px 10px;background:#f5f6f0;border-radius:8px;min-height:22px;"></div>
+    <div id="sol-zona-perfil" style="margin-bottom:14px;padding:10px 14px;background:#0A4220;border-radius:10px;border:.5px solid #1FC26A;min-height:36px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#fff;letter-spacing:.1px;"></div>
 
     <!-- Referencia opcional que escribe el usuario -->
     <div class="form-g">
@@ -2804,7 +2804,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       Podrás chatear con cada uno antes de contratar.
     </div>
     <button class="btn btn-green"
-      onclick="window.irASolicitudes&&window.irASolicitudes()">
+      onclick="go('v-mis-reportes','right');setTimeout(()=>window.cargarMisReportes&&window.cargarMisReportes(),300)">
       Ver mis solicitudes →
     </button>
     <button class="btn" style="background:var(--white-12);color:#fff;margin-top:8px;"
