@@ -521,10 +521,9 @@ window.iniciarFormularioSolicitud = async function() {
     return;
   }
 
-  // Mostrar zona del perfil — SOLO perfil.zona, sin fallback a fraccionamiento
+  // Mostrar perfil.zona exactamente como está en Firestore
   const zonaEl = document.getElementById('sol-zona-perfil');
   if (zonaEl) {
-    // Mostrar perfil.zona tal cual — sin transformaciones
     const z = (perfil && perfil.zona) ? String(perfil.zona).trim() : '';
     if (z) {
       zonaEl.innerHTML = `<span style="font-size:11px;color:#555;display:block;margin-bottom:2px;">Zona</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;">📍 ${z}</span>`;
