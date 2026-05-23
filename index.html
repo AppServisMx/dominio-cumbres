@@ -4378,16 +4378,33 @@ function vCorreoInput(el){
 
 // Limpiar y validar teléfono en tiempo real
 function vTelInput(el){
-  // Solo dígitos — sin prefijo (el prefijo está en el select)
   el.value=el.value.replace(/[^0-9]/g,'');
   const s=document.getElementById('v-tel-st');
   if(!s)return;
   const n=el.value.length;
   if(!el.value){s.textContent='Solo dígitos, sin espacios ni guiones';s.style.color='#aaa';return;}
-  if(n<8||n>15){
-    s.innerHTML='<span style="color:#D63A2A;">⚠️ Entre 8 y 15 dígitos</span>';
+  // Leer prefijo y aplicar misma regla que registrarVecino
+  const pref=(document.getElementById('v-tel-prefijo')?.value||'+52').replace('-CA','');
+  const reglas={'+52':10,'+1':10,'+34':9,'+57':10};
+  const msgs={
+    '+52':'WhatsApp México debe tener 10 dígitos',
+    '+1':'WhatsApp USA/Canadá debe tener 10 dígitos',
+    '+34':'WhatsApp España debe tener 9 dígitos',
+    '+57':'WhatsApp Colombia debe tener 10 dígitos'
+  };
+  const requerido=reglas[pref];
+  if(requerido){
+    if(n!==requerido){
+      s.innerHTML='<span style="color:#D63A2A;">⚠️ '+msgs[pref]+'</span>';
+    } else {
+      s.innerHTML='<span style="color:#1FC26A;">✅ Número válido</span>';
+    }
   } else {
-    s.innerHTML='<span style="color:#1FC26A;">✅ Número válido</span>';
+    if(n<8||n>15){
+      s.innerHTML='<span style="color:#D63A2A;">⚠️ Entre 8 y 15 dígitos</span>';
+    } else {
+      s.innerHTML='<span style="color:#1FC26A;">✅ Número válido</span>';
+    }
   }
 }
 
