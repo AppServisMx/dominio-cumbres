@@ -744,8 +744,18 @@
     else if (!/^[0-9]{8,15}$/.test(_numLimpio))          errores.push('WhatsApp: entre 8 y 15 dígitos, solo números');
     if (!pass1 || pass1.length < 6)                      errores.push('Contraseña: mínimo 6 números');
     else if (pass1 !== pass2)                             errores.push('Las contraseñas no coinciden');
-    if (!calle)                                           errores.push('Escribe tu calle y número');
-    else if (!/[0-9]/.test(calle))                       errores.push('Calle y número: incluye el número (ej. Calle Cedro 42)');
+    // Validación condicional según campos visibles
+    const _zona = document.getElementById('zona-sel')?.value || '';
+    const _frac = document.getElementById('frac-sel')?.value || '';
+    const _calleVisible = document.getElementById('calle-group')?.style.display !== 'none';
+    if (!_zona) {
+      errores.push('Selecciona tu zona');
+    } else if (!_frac) {
+      errores.push('Selecciona tu fraccionamiento');
+    } else if (_calleVisible) {
+      if (!calle)                    errores.push('Escribe tu calle y número');
+      else if (!/[0-9]/.test(calle)) errores.push('Calle y número: incluye el número (ej. Calle Cedro 42)');
+    }
     if (!todosChecks(['v-chk1','v-chk2']))                errores.push('Acepta los Términos y Condiciones');
 
     if (errores.length > 0) return mostrarErroresVecino(errores);
@@ -932,7 +942,7 @@
     // 5. Limpiar nombre en pantalla
     document.querySelectorAll('.user-name-display').forEach(el=>el.textContent='Usuario');
     // 6. Limpiar formularios de registro
-    ['v-nombre','v-usr','v-correo','v-tel','vp1','vp2',
+    ['v-nombre','v-usr','v-correo','v-tel','vp1','vp2','v-calle',
      'p-nombre','p-usr','p-correo','p-tel','pp1','pp2',
      'r-nombre','r-usr','r-correo','r-tel','rp1','rp2',
      'login-user','login-pass'
@@ -4326,6 +4336,11 @@ function onZona(z){
   const fh=document.getElementById('frac-hint');
   ab.classList.remove('show');
   cg.style.display='none';
+  // Limpiar calle al cambiar zona
+  const ci=document.getElementById('v-calle');
+  if(ci)ci.value='';
+  // Resetear fraccionamiento
+  if(fs)fs.value='';
   if(!z){fg.style.display='none';return;}
   fg.style.display='block';
   fs.innerHTML='<option value="">Selecciona tu fraccionamiento...</option>';
@@ -4353,9 +4368,10 @@ function onZona(z){
 function onFrac(v){
   const ab=document.getElementById('agregar-box');
   const cg=document.getElementById('calle-group');
-  if(v==='agregar'){ab.classList.add('show');cg.style.display='block';}
-  else if(v){ab.classList.remove('show');cg.style.display='block';}
-  else{ab.classList.remove('show');cg.style.display='none';}
+  const ci=document.getElementById('v-calle');
+  if(v==='agregar'){ab.classList.add('show');cg.style.display='block';if(ci)ci.value='';}
+  else if(v){ab.classList.remove('show');cg.style.display='block';if(ci)ci.value='';}
+  else{ab.classList.remove('show');cg.style.display='none';if(ci)ci.value='';}
 }
 
 /* CATEGORÍA NEGOCIO */
