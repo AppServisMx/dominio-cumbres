@@ -4037,6 +4037,17 @@ function _goCore(id,dir){
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
     if(id==='v-mis-chats')setTimeout(()=>window.cargarMisChats&&window.cargarMisChats(),300);
     if(id==='v-carrito')renderCarrito();
+    // Al entrar a cualquier vista de registro, limpiar checkboxes y formulario
+    if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
+      ['v-chk1','v-chk2',
+       'p-chk1','p-chk2','p-chk3',
+       'r-chk1','r-chk2',
+       'b-chk1','b-chk2','b-chk3'
+      ].forEach(cid=>{
+        const cel=document.getElementById(cid);
+        if(cel)cel.classList.remove('on');
+      });
+    }
   }));
 }
 function go(id,dir){
