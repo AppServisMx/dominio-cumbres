@@ -545,7 +545,19 @@
       await setDoc(doc(db,'usuarios',cred.user.uid),{
         nombre, usuario, correo, telefono:tel, tipo:'vecino',
         zona: document.getElementById('zona-sel')?.value||'',
-        fraccionamiento: document.getElementById('frac-sel')?.value||'',
+        fraccionamiento: (function(){
+          const sel = document.getElementById('frac-sel')?.value||'';
+          if(sel==='agregar'){
+            const nuevo = (document.getElementById('frac-nuevo-inp')?.value||'').trim();
+            const zona = document.getElementById('zona-sel')?.value||'';
+            if(nuevo && zona && typeof fracs!=='undefined'){
+              if(!fracs[zona]) fracs[zona]=[];
+              if(!fracs[zona].includes(nuevo)) fracs[zona].push(nuevo);
+            }
+            return nuevo;
+          }
+          return sel;
+        })(),
         creadoEn: new Date().toISOString()
       });
       notificarBienvenido(nombre, correo, 'vecino');
@@ -771,7 +783,3 @@
     }
   };
 
-
-  // Señal de que Firebase está listo para scripts externos
-  window._fbReady = true;
-  window.dispatchEvent(new Event('firebase-ready'));
