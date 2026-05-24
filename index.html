@@ -1235,6 +1235,7 @@
     window._chatIdExacto=null; window._chatUserId=null;
     window._proveedorActual=null; window._reporteActualId=null;
     window._filtroMain=null; window._filtroSub=null;
+    var _fBR=document.getElementById('fbtn-rechazados');if(_fBR)_fBR.classList.remove('on');
     window._todosUsuarios=[];
     // 5. Limpiar nombre en pantalla
     document.querySelectorAll('.user-name-display').forEach(el=>el.textContent='Usuario');
@@ -4238,10 +4239,11 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div style="padding:12px 14px 0;background:var(--green-bg);flex-shrink:0;">
 
-    <!-- PENDIENTES / APROBADOS -->
-    <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <button class="filtro-btn on" id="fbtn-pendientes" onclick="setFiltroMain(this,'pendientes')" style="flex:1;text-align:center;">⏳ Pendientes</button>
-      <button class="filtro-btn" id="fbtn-aprobados" onclick="setFiltroMain(this,'aprobados')" style="flex:1;text-align:center;">✅ Aprobados</button>
+    <!-- PENDIENTES / APROBADOS / RECHAZADOS -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <button class="filtro-btn on" id="fbtn-pendientes" onclick="setFiltroMain(this,'pendientes')" style="flex:1;text-align:center;font-size:11px;">&#9203; Pendientes</button>
+      <button class="filtro-btn" id="fbtn-aprobados" onclick="setFiltroMain(this,'aprobados')" style="flex:1;text-align:center;font-size:11px;">&#9989; Aprobados</button>
+      <button class="filtro-btn" id="fbtn-rechazados" onclick="setFiltroMain(this,'rechazados')" style="flex:1;text-align:center;font-size:11px;">&#10060; Rechazados</button>
     </div>
 
     <!-- 6 SUBFILTROS: wrap, todos visibles sin scroll -->
@@ -5657,9 +5659,14 @@ function showAdminTab(i,btn){
 
   // Botón principal: Pendientes / Aprobados
   window.setFiltroMain = async function(btn, filtro) {
-    document.querySelectorAll('#fbtn-pendientes,#fbtn-aprobados').forEach(b => b.classList.remove('on'));
+    document.querySelectorAll('#fbtn-pendientes,#fbtn-aprobados,#fbtn-rechazados').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     window._filtroMain = filtro;
+    // Siempre sincronizar subfiltro a 'todos' al cambiar tab principal
+    window._filtroSub = 'todos';
+    document.querySelectorAll('#sbtn-todos,#sbtn-residentes,#sbtn-proveedores,#sbtn-transporte,#sbtn-restaurante,#sbtn-negocio').forEach(b => b.classList.remove('on'));
+    const _sbT=document.getElementById('sbtn-todos'); if(_sbT)_sbT.classList.add('on');
+    const _subRes=document.getElementById('subfiltro-residentes'); if(_subRes)_subRes.style.display='none';
     if(!window._todosUsuarios || window._todosUsuarios.length === 0) {
       await cargarSolicitudes();
     } else {
@@ -5722,6 +5729,13 @@ function showAdminTab(i,btn){
       else if(sub === 'restaurante') datos = datos.filter(u => ['restaurante','restaurant'].includes(u.tipo));
       else if(sub === 'negocio')     datos = datos.filter(u => ['negocio','tienda','comercio'].includes(u.tipo));
       // 'todos' no filtra más
+    } else if(window._filtroMain === 'rechazados') {
+      datos = datos.filter(u => u.estado === 'rechazado');
+      if(sub === 'vecino')           datos = datos.filter(u => u.tipo === 'vecino');
+      else if(sub === 'proveedor')   datos = datos.filter(u => u.tipo === 'proveedor');
+      else if(sub === 'transporte')  datos = datos.filter(u => ['transporte','repartidor','ambos','transportista','rider'].includes(u.tipo));
+      else if(sub === 'restaurante') datos = datos.filter(u => ['restaurante','restaurant'].includes(u.tipo));
+      else if(sub === 'negocio')     datos = datos.filter(u => ['negocio','tienda','comercio'].includes(u.tipo));
     } else {
       // APROBADOS
       // Vecinos registrados antes del sistema de estados no tienen campo 'estado' → igual se muestran
@@ -5773,6 +5787,10 @@ function showAdminTab(i,btn){
         ${esPendiente ? `<div style="margin-top:8px;">
           <button onclick="window.verDetalleAdmin('${u._id}')" style="width:100%;background:#F5C51820;border:1px solid #F5C51860;color:#F5C518;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">🔍 Revisar solicitud</button>
         </div>` : ''}
+        ${u.estado==='rechazado' ? '<div style="margin-top:8px;">'
+          +'<button onclick="window.verDetalleAdmin(\''+u._id+'\')" style="width:100%;background:#D63A2A20;border:1px solid #D63A2A60;color:#D63A2A;border-radius:10px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">&#128203; Ver detalle</button>'
+          +(u.motivoRechazo ? '<div style="margin-top:6px;font-size:11px;color:#D63A2A;padding:6px 8px;background:#D63A2A10;border-radius:8px;">&#128172; '+(u.motivoRechazo||'').slice(0,80)+((u.motivoRechazo||'').length>80?'…':'')+'</div>' : '')
+          +'</div>' : ''}
       `;
       lista.appendChild(div);
     });
