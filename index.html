@@ -1075,6 +1075,7 @@
     // 2. Limpiar localStorage de sesión
     localStorage.removeItem('dcuser');
     localStorage.removeItem('dcuserTipo');
+    localStorage.removeItem('dcuserEstado');
     // 3. Cancelar subscripciones activas
     if(window._chatUnsubscribe){window._chatUnsubscribe();window._chatUnsubscribe=null;}
     if(window._provNotifUnsub){window._provNotifUnsub();window._provNotifUnsub=null;}
@@ -1177,6 +1178,7 @@
 
         // Guardar tipo en memoria para que otros paneles lo usen
         localStorage.setItem('dcuserTipo', datos.tipo || 'vecino');
+        localStorage.setItem('dcuserEstado', datos.estado || '');
 
         if (datos.tipo === 'vecino') {
           go('v-home','right');
@@ -2413,14 +2415,33 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 <div class="view go-right" id="v-espera-pago">
       <div class="success-wrap">
         <div class="success-ic" style="border-color:#F5C518;font-size:36px;">&#127881;</div>
-        <div class="si36">&iexcl;Tu perfil fue aprobado!</div>
-        <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.8;margin-bottom:24px;">
-          Tu solicitud fue revisada y aprobada.<br>
-          Para aparecer en las b&uacute;squedas de residentes,<br>
-          <strong class="si04">completa tu pago de members&iacute;a.</strong><br><br>
-          <span style="font-size:11px;color:var(--white-30);">Te contactaremos por WhatsApp con los detalles.</span>
+        <div class="si36">&iexcl;Felicidades!</div>
+        <div style="font-size:14px;font-weight:700;color:var(--white-80);text-align:center;margin-bottom:12px;">Tu perfil fue aprobado.</div>
+        <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.8;margin-bottom:28px;">
+          Solo resta completar el siguiente paso<br>
+          para comenzar a recibir solicitudes de clientes<br>
+          de la zona de <strong class="si04">Dominio Cumbres y Cumbres Garc&iacute;a.</strong>
         </div>
-        <button class="btn btn-yellow-ol" onclick="go('v-splash','left')">&#8592; Regresar al inicio</button>
+        <button class="btn btn-amber" onclick="go('v-pago-placeholder','right')" style="margin-bottom:16px;">Continuar activaci&oacute;n</button>
+        <button onclick="cerrarSesion()" style="background:none;border:none;color:var(--white-30);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;padding:4px;">Cerrar sesi&oacute;n</button>
+      </div>
+    </div>
+<div class="view go-right" id="v-pago-placeholder">
+      <div class="hdr" style="background:linear-gradient(135deg,var(--amber-dark),#3a2200);">
+        <div class="sbar dk"><span>9:41</span><span>&#9650;</span></div>
+        <div class="back-row"><button class="btn-back" onclick="go('v-espera-pago','left')">&#x2039;</button><div><div class="hdr-title">Activaci&oacute;n de cuenta</div></div></div>
+      </div>
+      <div class="si27 scroll" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;">
+        <div style="font-size:48px;margin-bottom:16px;">&#128274;</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:10px;text-align:center;">Activaci&oacute;n de cuenta</div>
+        <div style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.7;margin-bottom:28px;max-width:300px;">
+          Completa la activaci&oacute;n para comenzar<br>a recibir solicitudes.<br><br>
+          El equipo de AppServis te contactar&aacute;<br>para completar este paso.
+        </div>
+        <div class="info-box" style="background:#FFF8E1;color:var(--amber-dark);max-width:320px;text-align:center;">
+          &#128172; Pronto tendremos lista la activaci&oacute;n en l&iacute;nea.
+        </div>
+        <button onclick="cerrarSesion()" style="margin-top:32px;background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;padding:4px;">Cerrar sesi&oacute;n</button>
       </div>
     </div>
 <div class="view go-right" id="v-cuenta-suspendida">
@@ -4367,6 +4388,9 @@ function _goCore(id,dir){
   }));
 }
 function go(id,dir){
+  if(id==='v-reg-prov'&&localStorage.getItem('dcuserEstado')==='aprobado_pendiente_pago'){
+    id='v-espera-pago';dir=dir||'right';
+  }
   // Reset btn cuando se navega HACIA una vista de registro
   if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
     document.querySelectorAll('.check-row .chk.on').forEach(el=>el.classList.remove('on'));
