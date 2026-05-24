@@ -865,6 +865,44 @@
     window._omitirTypoCorreoProv=false;
   };
 
+  // Correo typo — negocio/restaurante
+  window._omitirTypoCorreoBiz = false;
+  window._mostrarSugerenciaCorreoBiz = function(correoOrig, domCorr){
+    const partes=correoOrig.split('@');
+    const correoSug=partes[0]+'@'+domCorr;
+    const ya=document.getElementById('modal-correo-typo-b');
+    const html=
+      '<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">⚠️ Revisa tu correo</div>'
+      +'<div style="font-size:13px;color:#555;margin-bottom:6px;">Escribiste:</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#D63A2A;margin-bottom:12px;">'+correoOrig+'</div>'
+      +'<div style="font-size:13px;color:#555;margin-bottom:6px;">¿Quisiste decir?</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#1FC26A;margin-bottom:20px;">'+correoSug+'</div>'
+      +'<button onclick="window._corregirCorreoBiz(\''+correoSug+'\')" '
+      +'style="width:100%;background:#1A7AB5;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:8px;">Corregir</button>'
+      +'<button onclick="window._continuarConCorreoBiz()" '
+      +'style="width:100%;background:#f0f0f0;color:#333;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:10px;">Continuar con mi correo</button>'
+      +'<div style="font-size:11px;color:#aaa;text-align:center;">Solo es una sugerencia. Algunos dominios personalizados pueden ser válidos.</div>';
+    if(ya){ya.querySelector('.modal-ct-b-body').innerHTML=html;ya.style.display='flex';return;}
+    const m=document.createElement('div');
+    m.id='modal-correo-typo-b';
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+    m.innerHTML='<div class="modal-ct-b-body" style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'+html+'</div>';
+    document.body.appendChild(m);
+  };
+  window._corregirCorreoBiz = function(c){
+    const el=document.getElementById('b-correo');
+    if(el)el.value=c;
+    const m=document.getElementById('modal-correo-typo-b');
+    if(m)m.style.display='none';
+  };
+  window._continuarConCorreoBiz = function(){
+    const m=document.getElementById('modal-correo-typo-b');
+    if(m)m.style.display='none';
+    window._omitirTypoCorreoBiz=true;
+    window.registrarBiz&&window.registrarBiz();
+    window._omitirTypoCorreoBiz=false;
+  };
+
   window._cerrarModalErrProv = function(){
     var b=document.getElementById('btn-reg-prov');
     if(b){b.textContent='Enviar solicitud →';b.disabled=false;}
@@ -1070,45 +1108,105 @@
   };
 
   // ─── REGISTRO NEGOCIO ───────────────────────────────────
+  // Modal errores biz
+  function mostrarErroresBiz(errores) {
+    const lista=errores.map(e=>'<li style="padding:3px 0;">'+e+'</li>').join('');
+    const html='<div style="font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:12px;">⚠️ Corrige lo siguiente</div>'
+      +'<ul style="padding-left:18px;font-size:13px;color:#444;line-height:1.8;margin-bottom:16px;">'+lista+'</ul>'
+      +'<button onclick="(function(){var b=document.getElementById(\'btn-reg-biz\');if(b){b.textContent=\'Enviar solicitud →\';b.disabled=false;}document.getElementById(\'modal-errores-b\').style.display=\'none\';})()" '
+      +'style="width:100%;background:#1A7AB5;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">Entendido</button>';
+    const ya=document.getElementById('modal-errores-b');
+    if(ya){ya.querySelector('.modal-eb-body').innerHTML=html;ya.style.display='flex';return;}
+    const m=document.createElement('div');
+    m.id='modal-errores-b';
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;display:flex;align-items:flex-end;justify-content:center;';
+    m.innerHTML='<div class="modal-eb-body" style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;max-height:70vh;overflow-y:auto;">'+html+'</div>';
+    m.addEventListener('click',e=>{if(e.target===m)m.style.display='none';});
+    document.body.appendChild(m);
+  }
+
   window.registrarBiz = async function() {
-    const nombre  = document.getElementById('b-nombre').value.trim();
-    const resp    = document.getElementById('b-resp').value.trim();
-    const usuario = document.getElementById('b-usr').value.trim();
-    const correo  = document.getElementById('b-correo').value.trim();
-    const tel     = document.getElementById('b-tel').value.trim();
-    const pass1   = document.getElementById('bp1').value;
-    const pass2   = document.getElementById('bp2').value;
+    // ── Leer y normalizar ───────────────────────────
+    const tipoNeg  = document.getElementById('b-tipo-negocio')?.value||'';
+    const catEl    = tipoNeg==='restaurante' ? document.getElementById('b-cat-restaurante') : document.getElementById('b-cat-negocio');
+    const categoria= catEl?.value||'';
+    const nombreCom= (document.getElementById('b-nombre-comercial')?.value||'').trim();
+    const _nomBRaw = (document.getElementById('b-nombre')?.value||'').trim();
+    const nombre   = _nomBRaw.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    const usrEl    = document.getElementById('b-usr');
+    if(usrEl) usrEl.value=usrEl.value.toLowerCase().replace(/[^a-z0-9_-]/g,'');
+    const usuario  = (usrEl?.value||'').trim();
+    const correo   = (document.getElementById('b-correo')?.value||'').trim();
+    const _prefB   = (document.getElementById('b-tel-prefijo')?.value||'+52').replace('-CA','');
+    const _numB    = (document.getElementById('b-tel')?.value||'').replace(/[^0-9]/g,'');
+    const whatsapp = _prefB+_numB;
+    const pass1    = document.getElementById('bp1')?.value||'';
+    const pass2    = document.getElementById('bp2')?.value||'';
+    const operacion= document.getElementById('b-operacion')?.value||'';
+    const entrega  = document.getElementById('b-entrega')?.value||'';
+    const cobertura= document.getElementById('b-cobertura')?.value||'';
+    const calle    = (document.getElementById('b-calle')?.value||'').trim();
+    const numero   = (document.getElementById('b-numero')?.value||'').trim();
+    const colonia  = (document.getElementById('b-colonia')?.value||'').trim();
+    const descripcion=(document.getElementById('b-descripcion')?.value||'').trim();
+    const aniosOperando=document.getElementById('b-anios')?.value||'';
 
-    if (!nombre||!resp||!usuario||!correo||!tel||!pass1)
-      return showMsg('b-firebase-msg','⚠️ Llena todos los campos obligatorios','error');
-    if (pass1 !== pass2)
-      return showMsg('b-firebase-msg','❌ Las contraseñas no coinciden','error');
-    if (!todosChecks(['b-chk1','b-chk2','b-chk3']))
-      return showMsg('b-firebase-msg','☑️ Debes aceptar todos los acuerdos para continuar','warn');
+    // ── Validar ─────────────────────────────────
+    const errores=[];
+    if(!tipoNeg)      errores.push('Selecciona el tipo: Restaurante o Negocio');
+    if(!categoria)    errores.push('Selecciona una categoría');
+    if(!nombreCom)    errores.push('Escribe el nombre comercial');
+    if(!nombre)       errores.push('Escribe tu nombre completo');
+    if(!usuario)      errores.push('Escribe un nombre de usuario');
+    else if(!/^[a-z0-9_-]+$/.test(usuario)) errores.push('Usuario: solo minúsculas, números, _ y -');
+    const _cerrB=vValidarCorreo(correo);
+    if(_cerrB) errores.push(_cerrB.replace(/^[\u26a0\ufe0f\u{1f4e7}]\s*/u,''));
+    if(!_cerrB&&!window._omitirTypoCorreoBiz){
+      const _typoB=_detectarTypoCorreo(correo);
+      if(_typoB){window._mostrarSugerenciaCorreoBiz&&window._mostrarSugerenciaCorreoBiz(correo,_typoB);return;}
+    }
+    const _waRB={'+52':10,'+1':10,'+34':9,'+57':10};
+    const _waMB={'+52':'WhatsApp México debe tener 10 dígitos','+1':'WhatsApp USA/Canadá debe tener 10 dígitos','+34':'WhatsApp España debe tener 9 dígitos','+57':'WhatsApp Colombia debe tener 10 dígitos'};
+    if(!_numB)        errores.push('Escribe tu número de WhatsApp');
+    else if(_waRB[_prefB]?_numB.length!==_waRB[_prefB]:!/^[0-9]{8,15}$/.test(_numB))
+      errores.push(_waMB[_prefB]||'WhatsApp debe tener entre 8 y 15 dígitos');
+    if(!pass1||pass1.length<6) errores.push('Contraseña: mínimo 6 números');
+    else if(pass1!==pass2)     errores.push('Las contraseñas no coinciden');
+    if(!operacion)    errores.push('Selecciona la modalidad de operación');
+    if(!entrega)      errores.push('Selecciona el tipo de entrega');
+    if(!cobertura)    errores.push('Selecciona la cobertura');
+    if(!calle)        errores.push('Escribe tu calle');
+    if(!numero)       errores.push('Escribe tu número');
+    if(!descripcion||descripcion.length<20) errores.push('Descripción: mínimo 20 caracteres');
+    if(!aniosOperando)errores.push('Selecciona los años operando');
+    if(!todosChecks(['b-chk1','b-chk2','b-chk3','b-chk4'])) errores.push('Acepta los 4 acuerdos para continuar');
 
-    // Logo e imágenes son opcionales — se pueden agregar desde el perfil una vez activo
-    // (recomendado para mayor visibilidad)
+    if(errores.length>0){mostrarErroresBiz(errores);return;}
 
-    // Validar Mercado Pago
-    const mp = document.getElementById('b-mp').value.trim();
-    if (!mp)
-      return showMsg('b-firebase-msg','💳 Debes ingresar tu cuenta de Mercado Pago','warn');
-
+    // ── Crear cuenta ─────────────────────────────
     setBtn('btn-reg-biz','Enviando... ⏳',true);
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, correo, pass1);
+    try{
+      const cred=await createUserWithEmailAndPassword(auth,correo,pass1);
       await setDoc(doc(db,'usuarios',cred.user.uid),{
-        nombreNegocio:nombre, responsable:resp, usuario, correo, telefono:tel,
-        tipo:'negocio', mercadoPago:mp,
-        estado:'pendiente_revision', creadoEn: new Date().toISOString()
+        nombre, usuario, correo,
+        prefijoWhatsapp:_prefB, telefono:_numB, whatsapp,
+        tipo: tipoNeg,
+        nombreNegocio: nombreCom,
+        categoria,
+        operacion, entrega, cobertura,
+        calle, numero, colonia,
+        descripcion, aniosOperando,
+        estado:'pendiente_revision',
+        creadoEn:new Date().toISOString()
       });
-      notificarBienvenido(nombre, correo, 'negocio');
-      notificarAdmin('Negocio', nombre, correo, tel);
-      setNombre(nombre);
+      notificarBienvenido(nombreCom||nombre,correo,tipoNeg);
+      notificarAdmin('Negocio/Restaurante',nombreCom||nombre,correo,whatsapp);
+      setNombre(nombreCom||nombre);
       go('v-ok-rev','right');
-    } catch(e) {
+    }catch(e){
+      mostrarErroresBiz([firebaseError(e.code)]);
+    }finally{
       setBtn('btn-reg-biz','Enviar solicitud →',false);
-      showMsg('b-firebase-msg', firebaseError(e.code), 'error');
     }
   };
 
@@ -1140,21 +1238,31 @@
      'r-nombre','r-usr','r-correo','r-tel','rp1','rp2',
      'p-calle','p-numero-prov','p-colonia','p-descripcion',
      'r-marca','r-modelo','r-color','r-placas','r-descripcion',
+     'b-nombre-comercial','b-nombre','b-usr','b-correo','b-tel','bp1','bp2',
+     'b-calle','b-numero','b-colonia','b-descripcion',
      'login-user','login-pass'
     ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     // 7. Limpiar mensajes de error de formularios
     ['v-firebase-msg','p-firebase-msg','r-firebase-msg','b-firebase-msg','login-err']
       .forEach(id=>{const el=document.getElementById(id);if(el){el.textContent='';el.style.display='none';}});
+    // Bug 4: limpiar divs de feedback de biz
+    ['b-usr-st','b-correo-st','b-tel-st','b-desc-st']
+      .forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='';});
     // 8. Limpiar selects de registro (selectedIndex=0 fuerza 'Selecciona tu zona')
-    ['zona-sel','frac-sel'].forEach(id=>{
+    ['zona-sel','frac-sel',
+     'b-tipo-negocio','b-cat-restaurante','b-cat-negocio',
+     'b-operacion','b-entrega','b-cobertura','b-anios','b-tel-prefijo'
+    ].forEach(id=>{
       const el=document.getElementById(id);
       if(el){el.value='';el.selectedIndex=0;}
     });
+    // Ocultar grupos de categoría de biz
+    if(typeof bTipoChange==='function')bTipoChange();
     // Limpiar checkboxes de términos (quitar clase 'on' de todos los formularios)
     ['v-chk1','v-chk2',
      'p-chk1','p-chk2','p-chk3',
      'r-chk1','r-chk2','r-chk3','r-chk4',
-     'b-chk1','b-chk2','b-chk3'
+     'b-chk1','b-chk2','b-chk3','b-chk4'
     ].forEach(id=>{
       const el=document.getElementById(id);
       if(el)el.classList.remove('on');
@@ -2396,80 +2504,157 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     </div>
 <div class="view go-right" id="v-reg-biz">
       <div class="hdr" style="background:linear-gradient(135deg,var(--navy-text),#051828);">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="back-row"><button class="btn-back" onclick="go('v-role','left')">‹</button><div><div class="hdr-title">Registro · Negocio</div><div class="hdr-sub">Revisión + pago para activarse</div></div></div>
+        <div class="sbar dk"><span>9:41</span><span>&#9650;</span></div>
+        <div class="back-row">
+          <button class="btn-back" onclick="(function(){var b=document.getElementById('btn-reg-biz');if(b){b.textContent='Enviar solicitud &rarr;';b.disabled=false;}go('v-role','left')})()">&#x2039;</button>
+          <div><div class="hdr-title">Registro &middot; Negocio</div><div class="hdr-sub">Revisi&oacute;n manual 24-48 hrs</div></div>
+        </div>
       </div>
       <div class="si27 scroll">
-        <div class="info-box" style="background:#E8F0F8;color:var(--navy-text);">🏪 Aparecerás tras revisión y pago de activación. 24-48 hrs.</div>
-        <div class="sec-div">Datos del negocio</div>
-        <div class="form-g"><label class="form-l">Nombre<span class="req-b">REQ</span></label><input class="inp" id="b-nombre" placeholder='Ej. Restaurante "El Dominio" / Boutique "Pocas Piezas"'></div>
-        <div class="form-g"><label class="form-l">Responsable<span class="req-b">REQ</span></label><input class="inp" id="b-resp" placeholder="Dueño o encargado"></div>
-        <div class="form-g"><label class="form-l">Usuario<span class="req-b">REQ</span></label><input class="inp" id="b-usr" placeholder="El que tú elijas"></div>
-        <div class="form-g"><label class="form-l">Correo<span class="req-b">REQ</span></label><input class="inp" id="b-correo" type="email" placeholder="negocio@ejemplo.com"></div>
-        <div class="form-g"><label class="form-l">WhatsApp<span class="req-b">REQ</span></label><input class="inp" id="b-tel" type="tel" placeholder="+52 81 1234 5678"></div>
-        <div class="form-g">
-          <label class="form-l">Contraseña<span class="req-b">REQ</span></label>
-          <div class="pass-w"><input class="inp inp-pass" type="password" id="bp1" placeholder="Entre 4 y 8 caracteres"><button class="pass-eye" onclick="togglePass('bp1',this)">👁️</button></div>
+        <div class="info-box" style="background:#E8F0F8;color:var(--navy-text);">&#127978; Revisaremos tu perfil antes de activarlo. Te avisaremos dentro de la app o por los medios registrados.</div>
+
+        <div class="sec-div">Tipo de negocio</div>
+        <div class="form-g"><label class="form-l">Registro como<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-tipo-negocio" onchange="bTipoChange()">
+            <option value="">Selecciona...</option>
+            <option value="restaurante">&#127828; Restaurante</option>
+            <option value="negocio">&#127978; Negocio</option>
+          </select>
+        </div>
+        <div class="form-g" id="b-cat-restaurante-group" style="display:none;">
+          <label class="form-l">Categor&iacute;a<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-cat-restaurante">
+            <option value="">Selecciona...</option>
+            <option value="mexicana">&#127790; Mexicana</option>
+            <option value="hamburguesas">&#127828; Hamburguesas</option>
+            <option value="pizzas">&#127829; Pizzas</option>
+            <option value="sushi">&#127843; Sushi</option>
+            <option value="cafeteria">&#9749; Cafeter&iacute;a</option>
+            <option value="postres">&#127868; Postres</option>
+            <option value="tacos">&#127790; Tacos</option>
+            <option value="mariscos">&#129424; Mariscos</option>
+            <option value="pollo">&#127831; Pollo</option>
+            <option value="desayunos">&#127373; Desayunos</option>
+            <option value="bebidas">&#127379; Bebidas</option>
+            <option value="otro_rest">&#127374; Otro</option>
+          </select>
+        </div>
+        <div class="form-g" id="b-cat-negocio-group" style="display:none;">
+          <label class="form-l">Categor&iacute;a<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-cat-negocio">
+            <option value="">Selecciona...</option>
+            <option value="tienda">&#128722; Tienda</option>
+            <option value="farmacia">&#128138; Farmacia</option>
+            <option value="belleza">&#128134; Belleza</option>
+            <option value="mascotas">&#128062; Mascotas</option>
+            <option value="papeleria">&#128196; Papeler&iacute;a</option>
+            <option value="salud">&#129657; Salud</option>
+            <option value="hogar">&#127968; Hogar</option>
+            <option value="tecnologia">&#128421;&#65039; Tecnolog&iacute;a</option>
+            <option value="servicios">&#128295; Servicios</option>
+            <option value="moda">&#128084; Moda</option>
+            <option value="otro_neg">&#128218; Otro</option>
+          </select>
+        </div>
+
+        <div class="sec-div">Nombre comercial</div>
+        <div class="form-g"><label class="form-l">Nombre del negocio<span class="req-b">REQ</span></label>
+          <input class="inp" id="b-nombre-comercial" placeholder="Ej. Tacos El Dominio" autocomplete="off" autocapitalize="words">
+        </div>
+
+        <div class="sec-div">Responsable</div>
+        <div class="form-g"><label class="form-l">Nombre completo<span class="req-b">REQ</span></label>
+          <input class="inp" id="b-nombre" placeholder="Tu nombre como responsable" autocomplete="off" autocorrect="off" spellcheck="false" oninput="bNombreInput(this)" onchange="bNombreInput(this)" onblur="bNombreInput(this)" autocapitalize="words">
+        </div>
+        <div class="form-g"><label class="form-l">Usuario<span class="req-b">REQ</span></label>
+          <input class="inp" id="b-usr" placeholder="El que t&uacute; elijas" autocomplete="off" oninput="bUsrInput(this)"><div id="b-usr-st" class="form-h"></div>
+        </div>
+        <div class="form-g"><label class="form-l">Correo<span class="req-b">REQ</span></label>
+          <input class="inp" type="email" id="b-correo" placeholder="tucorreo@ejemplo.com" oninput="bCorreoInput(this)"><div id="b-correo-st" class="form-h"></div>
         </div>
         <div class="form-g">
-          <label class="form-l">Confirmar contraseña<span class="req-b">REQ</span></label>
-          <div class="pass-w"><input class="inp inp-pass" type="password" id="bp2" placeholder="Repite" oninput="checkPass('bp1','bp2','bp-m')"><button class="pass-eye" onclick="togglePass('bp2',this)">👁️</button></div>
+          <label class="form-l">WhatsApp<span class="req-b">REQ</span></label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="b-tel-prefijo" class="sel" style="width:90px;flex-shrink:0;padding:10px 8px;font-size:13px;" onchange="bTelInput(document.getElementById('b-tel'))">
+              <option value="+52">&#127474;&#127485; +52</option>
+              <option value="+1">&#127482;&#127480; +1</option>
+              <option value="+1-CA">&#127464;&#127462; +1</option>
+              <option value="+34">&#127466;&#127480; +34</option>
+              <option value="+57">&#127464;&#127476; +57</option>
+              <option value="+54">&#127462;&#127479; +54</option>
+              <option value="+55">&#127463;&#127479; +55</option>
+            </select>
+            <input class="inp" type="tel" id="b-tel" placeholder="8112345678" oninput="bTelInput(this)" style="flex:1;" autocomplete="off">
+          </div>
+          <div id="b-tel-st" class="form-h">Solo d&iacute;gitos, sin espacios ni guiones</div>
+        </div>
+        <div class="form-g">
+          <label class="form-l">Contrase&ntilde;a<span class="req-b">REQ</span></label>
+          <div class="pass-w"><input class="inp inp-pass" type="password" id="bp1" placeholder="M&iacute;nimo 6 n&uacute;meros" inputmode="numeric" oninput="checkPass('bp1','bp2','bp-m')"><button class="pass-eye" onclick="togglePass('bp1',this)">&#128065;&#65039;</button></div>
+          <div class="form-h">&#128272; Usa m&iacute;nimo 6 n&uacute;meros como contrase&ntilde;a</div>
+        </div>
+        <div class="form-g">
+          <label class="form-l">Confirmar contrase&ntilde;a<span class="req-b">REQ</span></label>
+          <div class="pass-w"><input class="inp inp-pass" type="password" id="bp2" placeholder="Repite" oninput="checkPass('bp1','bp2','bp-m')"><button class="pass-eye" onclick="togglePass('bp2',this)">&#128065;&#65039;</button></div>
           <div id="bp-m" class="form-h"></div>
         </div>
-        <div class="sec-div">Tipo de negocio</div>
-        <div class="form-g">
-          <label class="form-l">Categoría<span class="req-b">REQ</span></label>
-          <select class="sel" onchange="showCatHint(this)">
-            <option value="">¿Qué tipo de negocio eres?</option>
-            <optgroup label="🍽️ Dominio Food">
-              <option value="food">🌮 Tacos / Antojitos</option>
-              <option value="food">🍕 Pizza</option>
-              <option value="food">🍣 Sushi</option>
-              <option value="food">🥗 Saludable / Vegano</option>
-              <option value="food">🍔 Hamburguesas</option>
-              <option value="food">☕ Café / Postres</option>
-              <option value="food">🍱 Comida corrida</option>
-            </optgroup>
-            <optgroup label="🏪 Dominio Plaza Digital">
-              <option value="plaza">👗 Boutique / Ropa</option>
-              <option value="plaza">👟 Zapatería</option>
-              <option value="plaza">✂️ Barbería</option>
-              <option value="plaza">💅 Salón de belleza</option>
-              <option value="plaza">💊 Farmacia</option>
-              <option value="plaza">🐾 Veterinaria</option>
-              <option value="plaza">🖥️ Electrónica</option>
-              <option value="plaza">📚 Papelería</option>
-              <option value="plaza">🏋️ Gimnasio</option>
-              <option value="plaza">Otro comercio</option>
-            </optgroup>
+
+        <div class="sec-div">Operaci&oacute;n</div>
+        <div class="form-g"><label class="form-l">Modalidad<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-operacion">
+            <option value="">Selecciona...</option>
+            <option value="fisica">&#127978; Solo tienda f&iacute;sica</option>
+            <option value="linea">&#128242; Solo operaci&oacute;n en l&iacute;nea</option>
+            <option value="ambas">&#127978;&#128242; Ambas</option>
           </select>
-          <div id="cat-hint" class="form-h" style="margin-top:6px;"></div>
         </div>
-        <div class="form-g"><label class="form-l">Dirección<span class="req-b">REQ</span></label><input class="inp" placeholder="Calle, número, colonia"></div>
-        <div class="form-g"><label class="form-l">Horario<span class="req-b">REQ</span></label><input class="inp" placeholder="Ej. Lun-Sáb 9am - 9pm"></div>
-        <div class="form-g">
-          <label class="form-l">¿Tienes repartidor propio?<span class="req-b">REQ</span></label>
-          <select class="sel"><option>✅ Sí, tenemos repartidor propio</option><option>🏍️ No — usar repartidores de la app</option></select>
+        <div class="form-g"><label class="form-l">Entrega<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-entrega">
+            <option value="">Selecciona...</option>
+            <option value="recolecta">&#128196; Recolecta local</option>
+            <option value="propia">&#128666; Entrega propia</option>
+            <option value="ride">&#128663; Dominio Ride</option>
+            <option value="ambas">&#128666;&#128663; Ambas</option>
+          </select>
         </div>
-        <div class="sec-div">Imágenes</div>
-        <div class="form-g"><label class="form-l">Logo<span class="opt-b">OPC</span></label>
-          <div class="upload-box" onclick="document.getElementById('b-logo-input').click()">
-            <div class="si18">🖼️</div>
-            <div class="si19" id="b-logo-label">Subir logo del negocio (puedes hacerlo después)</div>
-          </div>
-          <input class="si35" type="file" id="b-logo-input" accept="image/*" onchange="document.getElementById('b-logo-label').textContent='✅ '+this.files[0].name">
-          <div class="si67">📌 Recomendado para más visibilidad. Podrás subirlo desde tu perfil.</div>
+        <div class="form-g"><label class="form-l">Cobertura<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-cobertura">
+            <option value="">Selecciona...</option>
+            <option value="dominio_cumbres">Solo Dominio Cumbres</option>
+            <option value="cumbres_garcia">Toda Cumbres Garc&iacute;a</option>
+          </select>
         </div>
-        <div class="form-g"><label class="form-l">Foto de local y productos<span class="req-b">REQ</span></label><div class="upload-box"><div class="si18">📸</div><div class="si19">Hasta 6 fotos · más fotos = más clientes</div></div><div class="form-h">Podrás agregar más desde tu perfil una vez activo</div></div>
-        <div class="sec-div">Pagos</div>
-        <div class="form-g"><label class="form-l">Cuenta Mercado Pago<span class="req-b">REQ</span></label><input class="inp" id="b-mp" placeholder="Correo o teléfono de MP"></div>
-        <div class="form-g"><label class="form-l">RFC<span class="opt-b">OPC</span></label><input class="inp" placeholder="Para facturación"></div>
+
+        <div class="sec-div">Direcci&oacute;n</div>
+        <div class="info-box" style="background:#E8F0F8;color:var(--navy-text);margin-bottom:10px;">&#128274; Solo visible para el administrador de la app.</div>
+        <div class="form-g"><label class="form-l">Calle<span class="req-b">REQ</span></label><input class="inp" id="b-calle" placeholder="Ej. Calle Cedro" autocomplete="street-address"></div>
+        <div class="form-g"><label class="form-l">N&uacute;mero<span class="req-b">REQ</span></label><input class="inp" id="b-numero" placeholder="Ej. 42" inputmode="numeric"></div>
+        <div class="form-g"><label class="form-l">Colonia / Fraccionamiento<span class="opt-b">OPC</span></label><input class="inp" id="b-colonia" placeholder="Ej. Cumbres Elite"></div>
+
+        <div class="sec-div">Presentaci&oacute;n</div>
+        <div class="form-g"><label class="form-l">Descripci&oacute;n del negocio<span class="req-b">REQ</span></label>
+          <textarea class="inp" id="b-descripcion" rows="3" placeholder="Cu&eacute;ntanos qu&eacute; ofreces, tu propuesta de valor y por qu&eacute; elegirnos (m&iacute;nimo 20 caracteres)..." style="resize:none;" oninput="bDescInput(this)"></textarea>
+          <div id="b-desc-st" class="form-h"></div>
+        </div>
+        <div class="form-g"><label class="form-l">A&ntilde;os operando<span class="req-b">REQ</span></label>
+          <select class="sel" id="b-anios">
+            <option value="">Selecciona...</option>
+            <option value="menos1">Menos de 1 a&ntilde;o</option>
+            <option value="1-3">1 a 3 a&ntilde;os</option>
+            <option value="3-5">3 a 5 a&ntilde;os</option>
+            <option value="5-10">5 a 10 a&ntilde;os</option>
+            <option value="mas10">M&aacute;s de 10 a&ntilde;os</option>
+          </select>
+        </div>
+
         <div class="sec-div">Acuerdos</div>
-        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk1"></div><div class="chk-txt">Acepto 10% de comisión por cada pedido recibido por la app.</div></div>
-        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk2"></div><div class="chk-txt">Acepto pagar activación ($800) y mensualidad ($399) para mantenerme activo.</div></div>
-        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk3"></div><div class="chk-txt">Acepto los <strong class="si04">Términos y Condiciones</strong>.</div></div>
-        <button id="btn-reg-biz" class="btn btn-blue" onclick="registrarBiz()">Enviar solicitud →</button>
-        <div class="si66" id="b-firebase-msg"></div>
+        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk1"></div><div class="chk-txt">Toda la informaci&oacute;n proporcionada es real y verificable.</div></div>
+        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk2"></div><div class="chk-txt">Soy responsable de permisos, licencias y operaci&oacute;n del negocio.</div></div>
+        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk3"></div><div class="chk-txt">Reportes de usuarios pueden resultar en suspensi&oacute;n si se determina incumplimiento.</div></div>
+        <div class="check-row" onclick="this.querySelector('.chk').classList.toggle('on')"><div class="chk" id="b-chk4"></div><div class="chk-txt">Acepto los <strong class="si04">T&eacute;rminos y Condiciones</strong> de Dominio Cumbres AppServis.</div></div>
+
+        <button id="btn-reg-biz" class="btn btn-blue" style="margin-top:12px;" onclick="registrarBiz()">Enviar solicitud &rarr;</button>
+        <div id="b-firebase-msg" style="margin-top:10px;font-size:12px;"></div>
         <div class="si34"></div>
       </div>
     </div>
@@ -4484,7 +4669,7 @@ function _goCore(id,dir){
       ['v-chk1','v-chk2',
        'p-chk1','p-chk2','p-chk3','p-chk4',
        'r-chk1','r-chk2','r-chk3','r-chk4',
-       'b-chk1','b-chk2','b-chk3'
+       'b-chk1','b-chk2','b-chk3','b-chk4'
       ].forEach(cid=>{
         const cel=document.getElementById(cid);
         if(cel)cel.classList.remove('on');
@@ -4492,6 +4677,18 @@ function _goCore(id,dir){
       // Reset registro vecino btn siempre al entrar
       const _bv=document.getElementById('btn-reg-vecino');
       if(_bv){_bv.textContent='Crear mi cuenta →';_bv.disabled=false;}
+      // Bug 3: reset ride y biz buttons
+      const _br=document.getElementById('btn-reg-ride');
+      if(_br){_br.textContent='Enviar solicitud →';_br.disabled=false;}
+      const _bb=document.getElementById('btn-reg-biz');
+      if(_bb){_bb.textContent='Enviar solicitud →';_bb.disabled=false;}
+      // Bug 2c: reset biz selects and hide category groups
+      if(id==='v-reg-biz'){
+        ['b-tipo-negocio','b-cat-restaurante','b-cat-negocio',
+         'b-operacion','b-entrega','b-cobertura','b-anios','b-tel-prefijo'
+        ].forEach(function(sid){var s=document.getElementById(sid);if(s)s.selectedIndex=0;});
+        if(typeof bTipoChange==='function')bTipoChange();
+      }
     }
   }));
 }
@@ -4683,6 +4880,70 @@ function pDescInput(el){
 }
 
 // ── Helpers Registro Transporte/Repartidor ───────────────
+// ── Helpers Registro Negocio/Restaurante ─────────────
+function bTipoChange(){
+  const t=document.getElementById('b-tipo-negocio')?.value||'';
+  const gr=document.getElementById('b-cat-restaurante-group');
+  const gn=document.getElementById('b-cat-negocio-group');
+  if(gr)gr.style.display=t==='restaurante'?'block':'none';
+  if(gn)gn.style.display=t==='negocio'?'block':'none';
+  // Limpiar la categoría del tipo contrario al cambiar
+  if(t==='restaurante'){var cn=document.getElementById('b-cat-negocio');if(cn)cn.selectedIndex=0;}
+  if(t==='negocio'){var cr=document.getElementById('b-cat-restaurante');if(cr)cr.selectedIndex=0;}
+  if(!t){var cn2=document.getElementById('b-cat-negocio');if(cn2)cn2.selectedIndex=0;
+         var cr2=document.getElementById('b-cat-restaurante');if(cr2)cr2.selectedIndex=0;}
+}
+function bNombreInput(el){
+  const pos=el.selectionStart;
+  el.value=el.value.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+  try{el.setSelectionRange(pos,pos);}catch(e){}
+}
+function bUsrInput(el){
+  el.value=el.value.toLowerCase().replace(/[^a-z0-9_-]/g,'');
+  const s=document.getElementById('b-usr-st');
+  if(!s)return;
+  if(!el.value){s.textContent='';return;}
+  s.innerHTML='<span style="color:#1FC26A;">✅ '+el.value+' disponible</span>';
+}
+function bTelInput(el){
+  if(!el)return;
+  el.value=el.value.replace(/[^0-9]/g,'');
+  const s=document.getElementById('b-tel-st');
+  if(!s)return;
+  const pref=(document.getElementById('b-tel-prefijo')?.value||'+52').replace('-CA','');
+  const reglas={'+52':10,'+1':10,'+34':9,'+57':10};
+  const msgs={'+52':'WhatsApp México debe tener 10 dígitos','+1':'WhatsApp USA/Canadá 10 dígitos','+34':'WhatsApp España 9 dígitos','+57':'WhatsApp Colombia 10 dígitos'};
+  const n=el.value.length;
+  if(!el.value){s.textContent='Solo dígitos, sin espacios ni guiones';s.style.color='#aaa';return;}
+  const req=reglas[pref];
+  if(req){
+    if(n!==req)s.innerHTML='<span style="color:#D63A2A;">⚠️ '+msgs[pref]+'</span>';
+    else s.innerHTML='<span style="color:#1FC26A;">✅ Número válido</span>';
+  }else{
+    if(n<8||n>15)s.innerHTML='<span style="color:#D63A2A;">⚠️ Entre 8 y 15 dígitos</span>';
+    else s.innerHTML='<span style="color:#1FC26A;">✅ Número válido</span>';
+  }
+}
+function bCorreoInput(el){
+  const s=document.getElementById('b-correo-st');
+  if(!s)return;
+  const val=el.value.trim();
+  if(!val){s.textContent='';return;}
+  const err=vValidarCorreo(val);
+  if(err){s.innerHTML='<span style="color:#D63A2A;">'+err+'</span>';return;}
+  const dom=_detectarTypoCorreo(val);
+  if(dom)s.innerHTML='<span style="color:#D63A2A;">¿Quisiste escribir @'+dom+'?</span>';
+  else s.innerHTML='<span style="color:#1FC26A;">✅ Correo válido</span>';
+}
+function bDescInput(el){
+  const s=document.getElementById('b-desc-st');
+  if(!s)return;
+  const n=el.value.trim().length;
+  if(!n){s.textContent='';return;}
+  if(n<20)s.innerHTML='<span style="color:#D63A2A;">⚠️ Mínimo 20 caracteres ('+n+'/20)</span>';
+  else s.innerHTML='<span style="color:#1FC26A;">✅ Descripción válida</span>';
+}
+
 function rNombreInput(el){
   const pos=el.selectionStart;
   el.value=el.value.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
@@ -5424,7 +5685,7 @@ function showAdminTab(i,btn){
       else if(sub === 'proveedor')   datos = datos.filter(u => u.tipo === 'proveedor');
       else if(sub === 'transporte')  datos = datos.filter(u => ['transporte','repartidor','ambos','transportista','rider'].includes(u.tipo));
       else if(sub === 'restaurante') datos = datos.filter(u => ['restaurante','restaurant'].includes(u.tipo));
-      else if(sub === 'negocio')     datos = datos.filter(u => ['negocio','tienda','comercio'].includes(u.tipo));
+      else if(sub === 'negocio')     datos = datos.filter(u => ['negocio','restaurante','tienda','comercio'].includes(u.tipo));
       // 'todos' no filtra más
     } else {
       // APROBADOS
@@ -5444,7 +5705,7 @@ function showAdminTab(i,btn){
       } else if(sub === 'proveedor')   { datos = datos.filter(u => u.tipo === 'proveedor'); }
       else if(sub === 'transporte')    { datos = datos.filter(u => ['transporte','repartidor','ambos','transportista','rider'].includes(u.tipo)); }
       else if(sub === 'restaurante')   { datos = datos.filter(u => ['restaurante','restaurant'].includes(u.tipo)); }
-      else if(sub === 'negocio')       { datos = datos.filter(u => ['negocio','tienda','comercio'].includes(u.tipo)); }
+      else if(sub === 'negocio')       { datos = datos.filter(u => ['negocio','restaurante','tienda','comercio'].includes(u.tipo)); }
       // sub==='todos' → ya filtrado por esAprobado arriba
     }
     renderLista(datos);
@@ -5549,6 +5810,22 @@ function showAdminTab(i,btn){
       campos += row('Placas', fmt(u.placas));
       campos += row('Cobertura', u.cobertura==='cumbres_garcia'?'Toda Cumbres Garc\u00eda':'Solo Dominio Cumbres');
       campos += row('Descripci\u00f3n', fmt(u.descripcion));
+    } else if (['negocio','restaurante'].includes(u.tipo)) {
+      // Negocio / Restaurante
+      campos += row('Nombre comercial', fmt(u.nombreNegocio));
+      campos += row('Tipo', u.tipo==='restaurante'?'Restaurante':'Negocio');
+      campos += row('Categoría', fmt(u.categoria));
+      campos += row('Operación', fmt(u.operacion));
+      campos += row('Entrega', fmt(u.entrega));
+      campos += row('Cobertura', u.cobertura==='cumbres_garcia'?'Toda Cumbres García':'Solo Dominio Cumbres');
+      campos += '<div style="height:1px;background:#f0f0f0;margin:12px 0;"></div>';
+      campos += '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Dirección privada</div>';
+      campos += row('Calle', fmt(u.calle));
+      campos += row('Número', fmt(u.numero));
+      campos += row('Colonia', fmt(u.colonia));
+      campos += '<div style="height:1px;background:#f0f0f0;margin:12px 0;"></div>';
+      campos += row('Descripción', fmt(u.descripcion));
+      campos += row('Años operando', fmt(u.aniosOperando));
     } else {
       // Vecino
       campos += row('Zona', fmt(u.zona));
