@@ -5316,9 +5316,11 @@ function showAdminTab(i,btn){
 
   window.aprobarUsuario = async function(uid, correo, nombre, tipo) {
     try {
-      const { updateDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-      // Proveedores van a aprobado_pendiente_pago; vecinos van directo a activo
-      const nuevoEstado = (tipo === 'proveedor') ? 'aprobado_pendiente_pago' : 'activo';
+      const { updateDoc, doc: fsDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+      // Leer tipo directamente de Firestore — no depender del param que puede llegar vacío
+      const snap = await getDoc(fsDoc(window._fbDb, 'usuarios', uid));
+      const tipoReal = snap.exists() ? (snap.data().tipo || '') : (tipo || '');
+      const nuevoEstado = (tipoReal === 'proveedor') ? 'aprobado_pendiente_pago' : 'activo';
       await updateDoc(fsDoc(window._fbDb, 'usuarios', uid), { estado: nuevoEstado });
       notificarAprobado(nombre, correo);
       const msg = tipo === 'proveedor'
