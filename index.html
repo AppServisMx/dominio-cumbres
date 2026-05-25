@@ -1360,6 +1360,121 @@
   };
 
   // ─── CERRAR SESIÓN ──────────────────────────────────────
+
+  // ── renderHomePersonalizado — M2-HOME-PERSONALIZADO-v1 ──────────────
+  window.renderHomePersonalizado = function() {
+    const tipo   = (localStorage.getItem('dcuserTipo')   || 'vecino').toLowerCase();
+    const estado = (localStorage.getItem('dcuserEstado') || '').toLowerCase();
+    const nombre = localStorage.getItem('dcuser') || '';
+
+    // Saludo por hora
+    const h = new Date().getHours();
+    const saludo = h < 12 ? 'Buenos d\u00edas,' : h < 19 ? 'Buenas tardes,' : 'Buenas noches,';
+    const elSaludo = document.getElementById('home-saludo');
+    if (elSaludo) elSaludo.textContent = saludo;
+
+    // Tipo label + color accent
+    const _cfg = {
+      'vecino':       { label: '&#128274; Residente \u00b7 Dominio Cumbres',  color: 'rgba(31,194,106,.25)',  accent: '#1FC26A' },
+      'proveedor':    { label: '&#128295; Proveedor de servicios',             color: 'rgba(245,197,24,.20)',  accent: '#F5C518' },
+      'transporte':   { label: '&#128663; Transportista',                      color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
+      'repartidor':   { label: '&#128666; Repartidor',                         color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
+      'ambos':        { label: '&#128663; Transporte / Repartidor',            color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
+      'restaurante':  { label: '&#127828; Restaurante',                        color: 'rgba(26,122,181,.22)',  accent: '#1A7AB5' },
+      'negocio':      { label: '&#127978; Negocio',                            color: 'rgba(26,122,181,.22)',  accent: '#1A7AB5' },
+    };
+    const cfg = _cfg[tipo] || _cfg['vecino'];
+
+    // Update tipo label
+    const elTipo = document.getElementById('home-tipo-label');
+    if (elTipo) { elTipo.innerHTML = cfg.label; elTipo.style.color = cfg.accent; }
+
+    // Update avatar ring color
+    const avatarDiv = document.querySelector('#v-home .home-hdr [onclick="go(\'v-mipanel\',\'right\')"]');
+    if (avatarDiv) {
+      avatarDiv.style.borderColor   = cfg.accent;
+      avatarDiv.style.boxShadow     = '0 0 12px ' + cfg.color;
+    }
+
+    // ── Tarjeta destacada ──────────────────────────────────────────
+    const td = document.getElementById('home-tarjeta-destacada');
+    if (!td) return;
+
+    const _estadoLabel = {
+      'activo':                 { txt: 'Cuenta activa',        col: '#1FC26A' },
+      'pendiente_revision':     { txt: 'En revisi\u00f3n',         col: '#F5C518' },
+      'aprobado_pendiente_pago':{ txt: 'Pago pendiente',       col: '#1A7AB5' },
+      'rechazado':              { txt: 'No aprobada',          col: '#D63A2A' },
+    };
+    const eBadge = (estado && _estadoLabel[estado])
+      ? '<span style="font-size:10px;font-weight:700;color:'+_estadoLabel[estado].col+';background:'+_estadoLabel[estado].col+'20;padding:3px 8px;border-radius:20px;">'+_estadoLabel[estado].txt+'</span>'
+      : '';
+
+    let tarjeta = '';
+
+    const _card = (icon, titulo, subtitulo, btns) =>
+      '<div style="background:var(--card-dark);border-radius:16px;padding:14px 16px;border:.5px solid var(--card-border);">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
+      + '<span style="font-size:22px;">'+icon+'</span>'
+      + '<div><div style="font-size:13px;font-weight:700;color:#fff;">'+titulo+'</div>'
+      + '<div style="font-size:11px;color:var(--white-50);">'+subtitulo+'</div></div>'
+      + (eBadge ? '<div style="margin-left:auto;">'+eBadge+'</div>' : '')
+      + '</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+ btns +'</div>'
+      + '</div>';
+
+    const _btn = (label, onclick, bg) =>
+      '<button onclick="'+onclick+'" style="background:'+bg+';border:none;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;color:#fff;">'+label+'</button>';
+
+    if (tipo === 'vecino') {
+      tarjeta = _card(
+        '&#127968;',
+        'Bienvenido, '+( nombre||'Residente'),
+        'Todo tu fraccionamiento en un lugar',
+        _btn('&#127828; Pedir comida', "go('v-food','right')", '#F5C518') +
+        _btn('&#128663; Pedir ride', "go('v-ride','right')", '#D63A2A') +
+        _btn('&#127979; Servicios', "go('v-servicios','right')", '#1FC26A')
+      );
+
+    } else if (tipo === 'proveedor') {
+      tarjeta = _card(
+        '&#128295;',
+        'Hola, '+(nombre||'Proveedor'),
+        'Gestiona tu servicio y solicitudes',
+        _btn('&#128196; Mis solicitudes', "go('v-mi-perfil','right')", '#F5C518') +
+        _btn('&#128100; Mi Perfil', "go('v-mi-perfil','right')", '#1FC26A')
+      );
+
+    } else if (['transporte','repartidor','ambos'].includes(tipo)) {
+      tarjeta = _card(
+        '&#128666;',
+        'Hola, '+(nombre||'Transportista'),
+        'Tu cobertura y actividad del d\u00eda',
+        _btn('&#128196; Mis servicios', "go('v-mi-perfil','right')", '#D63A2A') +
+        _btn('&#128100; Mi Perfil', "go('v-mi-perfil','right')", '#1FC26A')
+      );
+
+    } else if (tipo === 'restaurante') {
+      tarjeta = _card(
+        '&#127828;',
+        nombre||'Mi Restaurante',
+        'Gestiona tu operaci\u00f3n en la app',
+        _btn('&#128100; Mi Perfil', "go('v-mi-perfil','right')", '#1A7AB5') +
+        _btn('&#128196; Solicitudes', "go('v-mi-perfil','right')", '#F5C518')
+      );
+
+    } else if (tipo === 'negocio') {
+      tarjeta = _card(
+        '&#127978;',
+        nombre||'Mi Negocio',
+        'Gestiona tu presencia en la app',
+        _btn('&#128100; Mi Perfil', "go('v-mi-perfil','right')", '#1A7AB5') +
+        _btn('&#128196; Solicitudes', "go('v-mi-perfil','right')", '#F5C518')
+      );
+    }
+
+    td.innerHTML = tarjeta;
+  };
   window.cerrarSesion = async function() {
     // 1. Cerrar sesión Firebase
     try {
@@ -1399,6 +1514,10 @@
     // Bug 4: limpiar divs de feedback de biz
     ['b-usr-st','b-correo-st','b-tel-st','b-desc-st']
       .forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='';});
+    // Limpiar home personalizado
+    const _htd=document.getElementById('home-tarjeta-destacada'); if(_htd)_htd.innerHTML='';
+    const _htl=document.getElementById('home-tipo-label'); if(_htl){_htl.innerHTML='&#128274; Dominio Cumbres &middot; Zona privada';_htl.style.color='rgba(255,255,255,.2)';}
+    const _hs=document.getElementById('home-saludo'); if(_hs)_hs.textContent='Bienvenido,';
     // 8. Limpiar selects de registro (selectedIndex=0 fuerza 'Selecciona tu zona')
     ['zona-sel','frac-sel',
      'b-tipo-negocio','b-cat-restaurante','b-cat-negocio',
@@ -2954,9 +3073,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         <div class="sbar dk"><span>9:41</span><span>▲</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px;">
           <div>
-            <div class="si28">Buenos días,</div>
+            <div class="si28" id="home-saludo">Buenos días,</div>
             <div class="si37"><span class="user-name-display">Usuario</span></div>
-            <div style="font-size:10px;color:rgba(255,255,255,.2);margin-top:1px;">🔒 Dominio Cumbres · Zona privada</div>
+            <div id="home-tipo-label" style="font-size:10px;color:rgba(255,255,255,.2);margin-top:1px;">🔒 Dominio Cumbres · Zona privada</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <button onclick="cerrarSesion()" style="background:rgba(214,58,42,.2);border:1px solid rgba(214,58,42,.4);border-radius:10px;color:#ff6b5b;font-size:10px;font-weight:700;padding:6px 10px;cursor:pointer;font-family:'Inter',sans-serif;">🚪 Salir</button>
@@ -2992,6 +3111,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <span style="font-size:12px;color:rgba(255,255,255,.6);flex:1;"><strong class="si55">HEB Dominio</strong> abre el 31 de marzo</span>
           <span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;">NUEVO</span>
         </div>
+        <div id="home-tarjeta-destacada" style="margin-bottom:14px;"></div>
         <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">Mis módulos</div>
         <div class="mod-grid">
           <div class="si51 mod" onclick="go('v-food','right')">
@@ -4838,6 +4958,7 @@ function _goCore(id,dir){
     if(id==='v-ride')setTimeout(()=>window.cargarRepartidores&&window.cargarRepartidores(),200);
     if(id==='v-admin-solicitudes')setTimeout(()=>window.cargarSolicitudes&&window.cargarSolicitudes(),300);
     if(id==='v-admin-analytics')setTimeout(()=>window.cargarAnalytics&&window.cargarAnalytics(),300);
+    if(id==='v-home')setTimeout(()=>{window.renderHomePersonalizado&&window.renderHomePersonalizado();},50);
     if(id==='v-mipanel')setTimeout(()=>{window.cargarMiPerfil&&window.cargarMiPerfil();window.verificarChatsProveedor&&window.verificarChatsProveedor();},300);
     if(id==='v-mi-perfil')setTimeout(()=>{window.cargarMiPerfilDetalle&&window.cargarMiPerfilDetalle();},300);
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
