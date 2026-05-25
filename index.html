@@ -1373,30 +1373,27 @@
     const elSaludo = document.getElementById('home-saludo');
     if (elSaludo) elSaludo.textContent = saludo;
 
-    // Tipo label + color accent
+    // Tipo label + chip class (visual only)
     const _cfg = {
-      'vecino':       { label: '&#128274; Residente \u00b7 Dominio Cumbres',  color: 'rgba(31,194,106,.25)',  accent: '#1FC26A' },
-      'proveedor':    { label: '&#128295; Proveedor de servicios',             color: 'rgba(245,197,24,.20)',  accent: '#F5C518' },
-      'transporte':   { label: '&#128663; Transportista',                      color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
-      'repartidor':   { label: '&#128666; Repartidor',                         color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
-      'ambos':        { label: '&#128663; Transporte / Repartidor',            color: 'rgba(214,58,42,.20)',   accent: '#D63A2A' },
-      'restaurante':  { label: '&#127828; Restaurante',                        color: 'rgba(26,122,181,.22)',  accent: '#1A7AB5' },
-      'negocio':      { label: '&#127978; Negocio',                            color: 'rgba(26,122,181,.22)',  accent: '#1A7AB5' },
+      'vecino':       { label: '&#127969; Residente',           chipClass: 'vecino'      },
+      'proveedor':    { label: '&#128295; Proveedor',            chipClass: 'proveedor'   },
+      'transporte':   { label: '&#128663; Transportista',        chipClass: 'transporte'  },
+      'repartidor':   { label: '&#128666; Repartidor',           chipClass: 'transporte'  },
+      'ambos':        { label: '&#128663; Transporte',           chipClass: 'transporte'  },
+      'restaurante':  { label: '&#127828; Restaurante',          chipClass: 'restaurante' },
+      'negocio':      { label: '&#127978; Negocio',              chipClass: 'negocio'     },
     };
     const cfg = _cfg[tipo] || _cfg['vecino'];
 
-    // Update tipo label
+    // Update chip de tipo
     const elTipo = document.getElementById('home-tipo-label');
-    if (elTipo) { elTipo.innerHTML = cfg.label; elTipo.style.color = cfg.accent; }
-
-    // Update avatar ring color
-    const avatarDiv = document.querySelector('#v-home .home-hdr [onclick="go(\'v-mipanel\',\'right\')"]');
-    if (avatarDiv) {
-      avatarDiv.style.borderColor   = cfg.accent;
-      avatarDiv.style.boxShadow     = '0 0 12px ' + cfg.color;
+    if (elTipo) {
+      elTipo.innerHTML = cfg.label;
+      elTipo.className = 'me-tipo-chip ' + cfg.chipClass;
+      elTipo.style.color = '';  // dejar que la clase CSS maneje el color
     }
 
-    // ── Tarjeta destacada ──────────────────────────────────────────
+    // ── Tarjeta destacada — nuevo estilo me-hero-card ──────────────
     const td = document.getElementById('home-tarjeta-destacada');
     if (!td) return;
 
@@ -1407,24 +1404,24 @@
       'rechazado':              { txt: 'No aprobada',          col: '#D63A2A' },
     };
     const eBadge = (estado && _estadoLabel[estado])
-      ? '<span style="font-size:10px;font-weight:700;color:'+_estadoLabel[estado].col+';background:'+_estadoLabel[estado].col+'20;padding:3px 8px;border-radius:20px;">'+_estadoLabel[estado].txt+'</span>'
+      ? '<span style="font-size:10px;font-weight:700;color:'+_estadoLabel[estado].col+';background:'+_estadoLabel[estado].col+'18;padding:3px 10px;border-radius:20px;border:1px solid '+_estadoLabel[estado].col+'30;">'+_estadoLabel[estado].txt+'</span>'
       : '';
 
     let tarjeta = '';
 
     const _card = (icon, titulo, subtitulo, btns) =>
-      '<div style="background:var(--card-dark);border-radius:16px;padding:14px 16px;border:.5px solid var(--card-border);">'
-      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">'
-      + '<span style="font-size:22px;">'+icon+'</span>'
-      + '<div><div style="font-size:13px;font-weight:700;color:#fff;">'+titulo+'</div>'
-      + '<div style="font-size:11px;color:var(--white-50);">'+subtitulo+'</div></div>'
-      + (eBadge ? '<div style="margin-left:auto;">'+eBadge+'</div>' : '')
+      '<div class="me-hero-card">'
+      + '<span class="me-hero-tipo-ic">'+icon+'</span>'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">'
+      + '<div class="me-hero-titulo">'+titulo+'</div>'
+      + (eBadge ? eBadge : '')
       + '</div>'
-      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+ btns +'</div>'
+      + '<div class="me-hero-sub">'+subtitulo+'</div>'
+      + '<div class="me-hero-btns">'+ btns +'</div>'
       + '</div>';
 
     const _btn = (label, onclick, bg) =>
-      '<button onclick="'+onclick+'" style="background:'+bg+';border:none;border-radius:10px;padding:8px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;color:#fff;">'+label+'</button>';
+      '<button class="me-hero-btn" onclick="'+onclick+'" style="background:'+bg+';">'+label+'</button>';
 
     if (tipo === 'vecino') {
       tarjeta = _card(
@@ -1516,7 +1513,7 @@
       .forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='';});
     // Limpiar home personalizado
     const _htd=document.getElementById('home-tarjeta-destacada'); if(_htd)_htd.innerHTML='';
-    const _htl=document.getElementById('home-tipo-label'); if(_htl){_htl.innerHTML='&#128274; Dominio Cumbres &middot; Zona privada';_htl.style.color='rgba(255,255,255,.2)';}
+    const _htl=document.getElementById('home-tipo-label'); if(_htl){_htl.innerHTML='&#127969; Residente';_htl.className='me-tipo-chip vecino';_htl.style.color='';}
     const _hs=document.getElementById('home-saludo'); if(_hs)_hs.textContent='Bienvenido,';
     // 8. Limpiar selects de registro (selectedIndex=0 fuerza 'Selecciona tu zona')
     ['zona-sel','frac-sel',
@@ -3063,110 +3060,165 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       </div>
     </div>
 <div class="view go-right" id="v-home">
-      <div class="home-hdr">
-        <svg style="position:absolute;right:-14px;top:-14px;opacity:.07;pointer-events:none;" width="110" height="110" viewBox="0 0 106 106" fill="none">
-          <polygon points="53,10 57,30 53,26 49,30" fill="white"/>
-          <polygon points="53,10 57,30 53,26 49,30" fill="#F5C518" transform="rotate(120 53 53)"/>
-          <polygon points="53,10 57,30 53,26 49,30" fill="#D63A2A" transform="rotate(180 53 53)"/>
-          <circle cx="53" cy="53" r="13" fill="white"/>
+
+  <!-- ══ HEADER MI ESPACIO ══════════════════════════════════ -->
+  <div class="me-hdr">
+    <div class="sbar dk" style="padding:8px 18px 0;"><span>9:41</span><span>▲</span></div>
+
+    <!-- Topbar: logo · notif · salir -->
+    <div class="me-topbar">
+      <div class="me-logo-strip">
+        <!-- Logo SVG existente en miniatura -->
+        <svg width="22" height="22" viewBox="0 0 106 106" fill="none">
+          <defs><radialGradient id="bgg-me" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#1E3A28"/><stop offset="100%" stop-color="#0C1A10"/></radialGradient></defs>
+          <circle cx="53" cy="53" r="52" fill="url(#bgg-me)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#1FC26A"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(60 53 53)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(120 53 53)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#D63A2A" transform="rotate(180 53 53)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(240 53 53)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(300 53 53)"/>
+          <circle cx="53" cy="53" r="4" fill="#1FC26A"/>
         </svg>
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px;">
-          <div>
-            <div class="si28" id="home-saludo">Buenos días,</div>
-            <div class="si37"><span class="user-name-display">Usuario</span></div>
-            <div id="home-tipo-label" style="font-size:10px;color:rgba(255,255,255,.2);margin-top:1px;">🔒 Dominio Cumbres · Zona privada</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button onclick="cerrarSesion()" style="background:rgba(214,58,42,.2);border:1px solid rgba(214,58,42,.4);border-radius:10px;color:#ff6b5b;font-size:10px;font-weight:700;padding:6px 10px;cursor:pointer;font-family:'Inter',sans-serif;">🚪 Salir</button>
-            <div style="width:44px;height:44px;border-radius:50%;background:#0C1A10;border:1.5px solid var(--green);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(31,194,106,.3);cursor:pointer;overflow:hidden;flex-shrink:0;" onclick="go('v-mipanel','right')">
-              <svg width="44" height="44" viewBox="0 0 106 106" fill="none" style="display:block;">
-                <defs><radialGradient id="bgg2" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#1E3A28"/><stop offset="100%" stop-color="#0C1A10"/></radialGradient></defs>
-                <circle cx="53" cy="53" r="50" fill="url(#bgg2)"/>
-                <circle cx="53" cy="53" r="49" fill="none" stroke="#1FC26A" stroke-width="1.5" stroke-dasharray="10 5" stroke-linecap="round"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#1FC26A"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(60 53 53)"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(120 53 53)"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#D63A2A" transform="rotate(180 53 53)"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(240 53 53)"/>
-                <polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(300 53 53)"/>
-                <circle cx="53" cy="53" r="14" fill="#0C1A10"/>
-                <circle cx="53" cy="53" r="14" fill="none" stroke="#1FC26A" stroke-width="1"/>
-                <polygon points="53,42 55,50 53,48 51,50" fill="#1FC26A"/>
-                <polygon points="53,42 55,50 53,48 51,50" fill="#F5C518" transform="rotate(120 53 53)"/>
-                <polygon points="53,42 55,50 53,48 51,50" fill="#D63A2A" transform="rotate(240 53 53)"/>
-                <circle cx="53" cy="53" r="4" fill="#1FC26A"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-        <div style="background:var(--card-dark);border-radius:14px;padding:11px 14px;display:flex;align-items:center;gap:9px;">
-          <span style="font-size:14px;">🔍</span>
-          <span style="font-size:12px;color:var(--white-30);">¿Qué necesitas hoy?</span>
-        </div>
+        <div class="me-logo-wordmark">Dominio<br><span>Cumbres</span></div>
       </div>
-      <div class="scroll" style="padding:14px;">
-        <div class="promo-bar">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
-          <span style="font-size:12px;color:rgba(255,255,255,.6);flex:1;"><strong class="si55">HEB Dominio</strong> abre el 31 de marzo</span>
-          <span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;">NUEVO</span>
+      <div class="me-top-actions">
+        <div class="me-notif-btn">
+          <span>🔔</span>
+          <span class="me-notif-dot"></span>
         </div>
-        <div id="home-tarjeta-destacada" style="margin-bottom:14px;"></div>
-        <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">Mis módulos</div>
-        <div class="mod-grid">
-          <div class="si51 mod" onclick="go('v-food','right')">
-            <div class="mod-ic" style="background:#F5C518;">🍽️</div>
-            <div class="mod-n" style="color:var(--amber-dark);">Dominio Food</div>
-            <div class="mod-s" style="color:var(--yellow-text);">14 restaurantes</div>
-          </div>
-          <div class="si26 mod" onclick="go('v-plaza','right')">
-            <div class="mod-ic" style="background:#1A7AB5;">🏪</div>
-            <div class="mod-n" style="color:var(--navy-text);">Dominio Plaza</div>
-            <div class="mod-s" style="color:#1A5280;">18 comercios</div>
-          </div>
-          <div class="si52 mod" onclick="go('v-ride','right')">
-            <div class="mod-ic" style="background:#D63A2A;">🏍️</div>
-            <div class="mod-n" style="color:var(--red-dark);">Dominio Ride</div>
-            <div class="mod-s" style="color:#A02018;">6 disp. · ~4 min</div>
-          </div>
-          <div class="si25 mod" onclick="go('v-servicios','right')">
-            <div class="mod-ic" style="background:#1FC26A;">🔧</div>
-            <div class="mod-n" style="color:#0A4220;">Dominio Servicios</div>
-            <div class="mod-s" style="color:#1A6840;">52 verificados</div>
-          </div>
-          <div class="mod" style="background:#EEF0FE;" onclick="go('v-informa','right')">
-            <div class="mod-ic" style="background:#5865F2;">📰</div>
-            <div class="mod-n" style="color:#1a1f7a;">Dominio Informa</div>
-            <div class="mod-s" style="color:#3a45c2;">3 noticias nuevas</div>
-          </div>
-          <div class="mod" style="background:#F0EBF8;" onclick="go('v-eventos','right')">
-            <div class="mod-ic" style="background:#7B3FA0;">🎪</div>
-            <div class="mod-n" style="color:#4A1A70;">Dominio Eventos</div>
-            <div class="mod-s" style="color:#6B2A9A;">2 próximos</div>
-          </div>
-        </div>
-        <div class="chips-row">
-          <div class="chip" onclick="go('v-seguridad','right')"><span class="chip-ic">🚨</span><span class="chip-n">Seguridad</span></div>
-          <div class="chip" onclick="go('v-favoritos','right');setTimeout(cargarFavoritos,400);"><span class="chip-ic">❤️</span><span class="chip-n">Favoritos</span></div>
-          <div class="chip" onclick="go('v-mipanel','right')"><span class="chip-ic">📊</span><span class="chip-n">Mi Panel</span></div>
-        </div>
-        <div class="si68">Actividad reciente</div>
-        <div id="home-actividad">
-          <div style="background:#F5F6F0;border-radius:14px;padding:14px;text-align:center;border:.5px solid #e0e0e0;">
-            <div style="font-size:22px;margin-bottom:6px;">📋</div>
-            <div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Sin actividad aún</div>
-            <div class="si01">Tus pedidos y servicios aparecerán aquí</div>
-          </div>
-        </div>
-        <div style="height:10px;"></div>
-      </div>
-      <div class="nav">
-        <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
-        <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
-        <div class="ni"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot"></span></div><div class="ni-lb">Alertas</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+        <button class="me-btn-salir" onclick="cerrarSesion()">Salir</button>
       </div>
     </div>
+
+    <!-- Bienvenida + nombre + chip tipo -->
+    <div class="me-bienvenida">
+      <div class="me-saludo-wrap">
+        <div class="me-saludo-txt" id="home-saludo">Buenos días,</div>
+        <div class="me-nombre-txt"><span class="user-name-display">Usuario</span></div>
+        <!-- Chip de tipo — coloreado por renderHomePersonalizado -->
+        <div id="home-tipo-label" class="me-tipo-chip vecino">🏡 Residente · Dominio Cumbres</div>
+      </div>
+      <!-- Avatar → Mi Panel (misma función que antes) -->
+      <div class="me-avatar-btn" onclick="go('v-mipanel','right')">
+        <svg width="32" height="32" viewBox="0 0 106 106" fill="none">
+          <defs><radialGradient id="bgg3" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#1E3A28"/><stop offset="100%" stop-color="#0C1A10"/></radialGradient></defs>
+          <circle cx="53" cy="53" r="50" fill="url(#bgg3)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#1FC26A"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(120 53 53)"/>
+          <polygon points="53,14 57,32 53,28 49,32" fill="#D63A2A" transform="rotate(180 53 53)"/>
+          <circle cx="53" cy="53" r="4" fill="#1FC26A"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="me-hdr-divider"></div>
+  </div>
+  <!-- ══ FIN HEADER ══════════════════════════════════════════ -->
+
+  <!-- ══ SCROLL CUERPO ══════════════════════════════════════ -->
+  <div class="me-scroll">
+
+    <!-- 1 · HERO — tarjeta destacada por tipo (renderHomePersonalizado) -->
+    <div id="home-tarjeta-destacada" style="margin-bottom:18px;"></div>
+
+    <!-- 2 · ACCIONES RÁPIDAS -->
+    <div class="me-sec-label">Acciones rápidas</div>
+    <div class="me-acciones-grid" style="margin-bottom:18px;">
+      <div class="me-accion" onclick="go('v-food','right')">
+        <span class="me-accion-ic">🍽️</span>
+        <div class="me-accion-lbl">Food</div>
+        <div class="me-accion-sub">Pedir</div>
+      </div>
+      <div class="me-accion" onclick="go('v-ride','right')">
+        <span class="me-accion-ic">🏍️</span>
+        <div class="me-accion-lbl">Ride</div>
+        <div class="me-accion-sub">Solicitar</div>
+      </div>
+      <div class="me-accion" onclick="go('v-servicios','right')">
+        <span class="me-accion-ic">🔧</span>
+        <div class="me-accion-lbl">Servicios</div>
+        <div class="me-accion-sub">Contratar</div>
+      </div>
+      <div class="me-accion" onclick="go('v-seguridad','right')">
+        <span class="me-accion-ic">🚨</span>
+        <div class="me-accion-lbl">Seguridad</div>
+        <div class="me-accion-sub">Reportar</div>
+      </div>
+      <div class="me-accion" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
+        <span class="me-accion-ic">💬</span>
+        <div class="me-accion-lbl">Chats</div>
+        <div class="me-accion-sub">Mensajes</div>
+      </div>
+      <div class="me-accion" onclick="go('v-mipanel','right')">
+        <span class="me-accion-ic">👤</span>
+        <div class="me-accion-lbl">Mi Panel</div>
+        <div class="me-accion-sub">Perfil</div>
+      </div>
+    </div>
+
+    <!-- 3 · ACTIVIDAD RECIENTE -->
+    <div class="me-sec-label">Actividad reciente</div>
+    <div id="home-actividad" style="margin-bottom:18px;">
+      <div class="me-actividad-empty">
+        <div class="me-actividad-empty-ic">📋</div>
+        <div class="me-actividad-empty-txt">Sin actividad aún</div>
+        <div class="me-actividad-empty-sub">Tus pedidos y servicios aparecerán aquí</div>
+      </div>
+    </div>
+
+    <!-- 4 · FAVORITOS -->
+    <div class="me-sec-label">Accesos guardados</div>
+    <div class="me-favoritos-row" style="margin-bottom:18px;">
+      <div class="me-fav-chip" onclick="go('v-favoritos','right');setTimeout(cargarFavoritos,400);">
+        <span class="me-fav-chip-ic">❤️</span>
+        <span class="me-fav-chip-lbl">Mis favoritos</span>
+      </div>
+      <div class="me-fav-chip" onclick="go('v-informa','right')">
+        <span class="me-fav-chip-ic">📰</span>
+        <span class="me-fav-chip-lbl">Noticias</span>
+      </div>
+    </div>
+
+    <!-- 5 · COMUNIDAD / MÓDULOS -->
+    <div class="me-sec-label">Comunidad</div>
+    <div class="me-comunidad-grid" style="margin-bottom:18px;">
+      <div class="me-com-card" onclick="go('v-plaza','right')">
+        <div class="me-com-ic" style="background:#E8F0F8;">🏪</div>
+        <div class="me-com-nombre">Dominio Plaza</div>
+        <div class="me-com-sub">Comercios</div>
+      </div>
+      <div class="me-com-card" onclick="go('v-eventos','right')">
+        <div class="me-com-ic" style="background:#F0EBF8;">🎪</div>
+        <div class="me-com-nombre">Eventos</div>
+        <div class="me-com-sub">Próximos</div>
+      </div>
+    </div>
+
+    <!-- 6 · PERFIL -->
+    <div class="me-sec-label">Mi espacio</div>
+    <div class="me-perfil-card" onclick="go('v-mipanel','right')">
+      <div class="me-perfil-av">👤</div>
+      <div class="me-perfil-info">
+        <div class="me-perfil-nombre"><span class="user-name-display">Usuario</span></div>
+        <div class="me-perfil-sub">Ver y editar mi perfil</div>
+      </div>
+      <div class="me-perfil-arrow">›</div>
+    </div>
+
+    <div style="height:14px;"></div>
+  </div>
+  <!-- ══ FIN SCROLL ═════════════════════════════════════════ -->
+
+  <!-- ══ NAVEGACIÓN INFERIOR — idéntica a la original ══════ -->
+  <div class="nav">
+    <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
+    <div class="ni"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+  </div>
+
+</div>
 <div class="view go-right" id="v-food">
       <div class="food-hdr">
         <div class="sbar dk"><span>9:41</span><span>▲</span></div>
