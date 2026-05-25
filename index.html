@@ -523,6 +523,149 @@
     } catch(e){ console.log('Perfil error:',e.message); }
   };
 
+  // ── cargarMiPerfilDetalle — vista v-mi-perfil (solo lectura por tipo) ──
+  window.cargarMiPerfilDetalle = async function() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const cont   = document.getElementById('mip-contenido');
+    const subtit = document.getElementById('mip-tipo-sub');
+    if (!cont) return;
+    cont.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--white-50);font-size:13px;">Cargando tu perfil...</div>';
+
+    try {
+      const { getDoc, doc: _mipDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+      const snap = await getDoc(_mipDoc(db, 'usuarios', user.uid));
+      if (!snap.exists()) {
+        cont.innerHTML = '<div style="padding:20px;text-align:center;color:var(--white-50);">No se encontraron datos de perfil.</div>';
+        return;
+      }
+
+      const u = snap.data();
+      const tipo = (u.tipo || '').toLowerCase();
+
+      // Helper: field row always shows, empty -> em-dash
+      const FR = (label, val) => {
+        const v = (val === null || val === undefined || val === '') ? '&#8212;' : String(val);
+        return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f5f5f5;">'
+          + '<span style="font-size:12px;color:#888;font-weight:600;flex-shrink:0;margin-right:12px;">' + label + '</span>'
+          + '<span style="font-size:13px;color:var(--text-primary);font-weight:500;text-align:right;word-break:break-word;">' + v + '</span>'
+          + '</div>';
+      };
+      const SEC = t => '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:16px 0 8px;">' + t + '</div>';
+      const CARD = inner => '<div style="background:#fff;border-radius:16px;padding:14px 16px;border:.5px solid #e0e0e0;margin-bottom:12px;">' + inner + '</div>';
+
+      const fecha = u.creadoEn ? new Date(u.creadoEn).toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'}) : '&#8212;';
+      const esRide = ['transporte','repartidor','ambos'].includes(tipo);
+      const esNeg  = ['negocio','restaurante'].includes(tipo);
+      const esProv = tipo === 'proveedor';
+
+      // Tipo label for subtitle
+      const _tipoLabel = {
+        'vecino':'Vecino', 'proveedor':'Proveedor de servicios',
+        'transporte':'Transporte', 'repartidor':'Repartidor', 'ambos':'Transporte / Repartidor',
+        'negocio':'Negocio', 'restaurante':'Restaurante'
+      };
+      if (subtit) subtit.textContent = _tipoLabel[tipo] || tipo;
+
+      // Estado badge
+      const _estadoBadge = (e) => {
+        const lbl = {
+          'activo':'Activo &#10003;', 'pendiente_revision':'En revisi&#243;n &#8987;',
+          'aprobado_pendiente_pago':'Pago pendiente &#128274;',
+          'rechazado':'No aprobado &#10060;', 'suspendido':'Suspendido &#128683;'
+        };
+        const col = {
+          'activo':'#1FC26A', 'pendiente_revision':'#F5C518',
+          'aprobado_pendiente_pago':'#1A7AB5', 'rechazado':'#D63A2A', 'suspendido':'#D63A2A'
+        };
+        const ee = (e||'').toLowerCase();
+        return '<span style="font-size:12px;font-weight:700;color:'+(col[ee]||'#888')+';">'+(lbl[ee]||e||'&#8212;')+'</span>';
+      };
+
+      let html = '';
+
+      // ── BLOQUE COMUN ────────────────────────────────────────────
+      html += SEC('Datos personales');
+      if (esNeg) {
+        html += CARD(
+          FR('Nombre comercial', u.nombreNegocio) +
+          FR('Responsable', u.nombre) +
+          FR('Usuario', u.usuario) +
+          FR('Correo', u.correo) +
+          FR('WhatsApp', u.whatsapp || ((u.prefijoWhatsapp && u.telefono) ? u.prefijoWhatsapp + u.telefono : null))
+        );
+      } else {
+        html += CARD(
+          FR('Nombre', u.nombre) +
+          FR('Usuario', u.usuario) +
+          FR('Correo', u.correo) +
+          FR('WhatsApp', u.whatsapp || ((u.prefijoWhatsapp && u.telefono) ? u.prefijoWhatsapp + u.telefono : null))
+        );
+      }
+
+      // ── BLOQUE ESPECIFICO ────────────────────────────────────────
+      if (tipo === 'vecino') {
+        html += SEC('Mi ubicaci&#243;n');
+        html += CARD(
+          FR('Zona', u.zona) +
+          FR('Fraccionamiento', u.fraccionamiento)
+        );
+
+      } else if (esProv) {
+        const oficios = [u.oficio1, u.oficio2, u.oficio3].filter(Boolean).join(' &middot; ');
+        html += SEC('Mi servicio');
+        html += CARD(
+          FR('Oficio(s)', oficios) +
+          (u.oficiosExtra ? FR('Oficios adicionales', u.oficiosExtra) : '') +
+          FR('Descripci&#243;n / Especialidad', u.descripcion) +
+          FR('A&#241;os de experiencia', u.experiencia)
+        );
+
+      } else if (esRide) {
+        const tipoSvcLabel = {'transporte':'Transporte','repartidor':'Repartidor','ambos':'Transporte y Repartidor'};
+        html += SEC('Mi veh&#237;culo');
+        html += CARD(
+          FR('Tipo de servicio', tipoSvcLabel[tipo] || tipo) +
+          FR('Veh&#237;culo', [u.tipoVehiculo, u.marca, u.modelo].filter(Boolean).join(' &middot; ')) +
+          FR('Color', u.color) +
+          FR('Placas', u.placas) +
+          FR('Cobertura', u.cobertura === 'cumbres_garcia' ? 'Toda Cumbres Garc&#237;a' : u.cobertura === 'dominio_cumbres' ? 'Solo Dominio Cumbres' : u.cobertura) +
+          FR('Descripci&#243;n', u.descripcion)
+        );
+
+      } else if (esNeg) {
+        html += SEC('Mi negocio');
+        html += CARD(
+          FR('Tipo', tipo === 'restaurante' ? 'Restaurante' : 'Negocio') +
+          FR('Categor&#237;a', u.categoria + (u.categoriaOtro ? ' &mdash; ' + u.categoriaOtro : '')) +
+          FR('Operaci&#243;n', u.operacion) +
+          FR('Entrega', u.entrega) +
+          FR('Cobertura', u.cobertura === 'cumbres_garcia' ? 'Toda Cumbres Garc&#237;a' : u.cobertura === 'dominio_cumbres' ? 'Solo Dominio Cumbres' : u.cobertura) +
+          FR('Descripci&#243;n', u.descripcion) +
+          FR('A&#241;os operando', u.aniosOperando)
+        );
+      }
+
+      // ── ESTADO + MEMBRESIA ───────────────────────────────────────
+      if (tipo !== 'vecino') {
+        html += SEC('Estado de cuenta');
+        html += '<div style="background:#fff;border-radius:16px;padding:14px 16px;border:.5px solid #e0e0e0;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">'
+          + '<span style="font-size:12px;color:#888;font-weight:600;">Estado</span>'
+          + _estadoBadge(u.estado)
+          + '</div>';
+      }
+
+      // ── PIE ───────────────────────────────────────────────────────
+      html += '<div style="text-align:center;padding:8px 0 24px;font-size:11px;color:var(--white-30);">Miembro desde ' + fecha + '</div>';
+
+      cont.innerHTML = html;
+
+    } catch(e) {
+      if (cont) cont.innerHTML = '<div style="padding:20px;text-align:center;color:#D63A2A;font-size:13px;">Error al cargar perfil: ' + e.message + '</div>';
+    }
+  };
+
   // ===== CARGAR RESTAURANTES (Food) con acceso directo a db =====
   window.cargarRestaurantes = async function() {
     const lista = document.getElementById('food-lista');
@@ -3102,7 +3245,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         </div>
         <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;margin:14px 0 8px;">Mi cuenta</div>
         <div style="background:#fff;border-radius:16px;overflow:hidden;border:.5px solid #e0e0e0;">
-          <div style="padding:12px 14px;display:flex;justify-content:space-between;border-bottom:.5px solid #f5f5f5;cursor:pointer;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">👤 Mi perfil</span><span class="si72">›</span></div>
+          <div style="padding:12px 14px;display:flex;justify-content:space-between;border-bottom:.5px solid #f5f5f5;cursor:pointer;" onclick="go('v-mi-perfil','right')"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">👤 Mi perfil</span><span class="si72">›</span></div>
           <div style="padding:12px 14px;display:flex;justify-content:space-between;border-bottom:.5px solid #f5f5f5;cursor:pointer;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">💳 Mis métodos de pago</span><span class="si72">›</span></div>
           <div style="padding:12px 14px;display:flex;justify-content:space-between;border-bottom:.5px solid #f5f5f5;cursor:pointer;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">🔔 Notificaciones</span><span class="si72">›</span></div>
           <div style="padding:12px 14px;display:flex;justify-content:space-between;cursor:pointer;" onclick="go('v-home','left')"><span style="font-size:13px;font-weight:600;color:var(--red);">🚪 Cerrar sesión</span><span class="si72">›</span></div>
@@ -3116,6 +3259,24 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         <div class="ni"><div class="ni-ic">👤</div><div class="si04 ni-lb">Mi Panel</div></div>
       </div>
     </div>
+<div class="view go-right" id="v-mi-perfil">
+      <div class="hdr" style="background:linear-gradient(135deg,#0C1A10,#1a2e1a);">
+        <div class="sbar dk"><span>9:41</span><span>&#9650;</span></div>
+        <div class="back-row">
+          <button class="btn-back" onclick="go('v-mipanel','left')">&#x2039;</button>
+          <div>
+            <div class="hdr-title">&#128100; Mi Perfil</div>
+            <div class="hdr-sub" id="mip-tipo-sub">Cargando...</div>
+          </div>
+        </div>
+      </div>
+      <div class="si27 scroll" id="mip-contenido">
+        <div style="text-align:center;padding:40px 20px;color:var(--white-50);font-size:13px;">
+          Cargando tu perfil...
+        </div>
+      </div>
+    </div>
+
 <div class="view go-right" id="v-ride">
       <div class="ride-hdr">
         <div class="sbar dk"><span>9:41</span><span>▲</span></div>
@@ -4678,6 +4839,7 @@ function _goCore(id,dir){
     if(id==='v-admin-solicitudes')setTimeout(()=>window.cargarSolicitudes&&window.cargarSolicitudes(),300);
     if(id==='v-admin-analytics')setTimeout(()=>window.cargarAnalytics&&window.cargarAnalytics(),300);
     if(id==='v-mipanel')setTimeout(()=>{window.cargarMiPerfil&&window.cargarMiPerfil();window.verificarChatsProveedor&&window.verificarChatsProveedor();},300);
+    if(id==='v-mi-perfil')setTimeout(()=>{window.cargarMiPerfilDetalle&&window.cargarMiPerfilDetalle();},300);
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
     if(id==='v-mis-chats')setTimeout(()=>window.cargarMisChats&&window.cargarMisChats(),300);
     if(id==='v-carrito')renderCarrito();
