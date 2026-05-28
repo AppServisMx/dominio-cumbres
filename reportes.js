@@ -92,15 +92,12 @@ function _esProveedor(tipo) {
 function _categoriasDeProveedor(perfil) {
   if (!perfil) return [];
   const set = new Set();
-  // categorias[]
   if (Array.isArray(perfil.categorias)) {
     perfil.categorias.forEach(c => { const v = String(c).toLowerCase().trim(); if (v) set.add(v); });
   }
-  // campo categoria (string)
   if (perfil.categoria) {
     const v = String(perfil.categoria).toLowerCase().trim(); if (v) set.add(v);
   }
-  // oficio1, oficio2, oficio3
   ['oficio1','oficio2','oficio3'].forEach(k => {
     if (perfil[k]) { const v = String(perfil[k]).toLowerCase().trim(); if (v) set.add(v); }
   });
@@ -217,10 +214,86 @@ window.publicarReporte = async function() {
 // cualquier requisito de índice en Firestore.
 // ============================================================
 
+// Tab state — module-level, persists across re-renders
+var _mrTab = 'activas';
+var _mrDocs = null;
+
+function _mrRenderTabs() {
+  var tabs = document.getElementById('mr-tabs');
+  if (!tabs) return;
+  var all = _mrDocs || [];
+  var nA = all.filter(function(r){ return r.estado === 'publicado'; }).length;
+  var nI = all.filter(function(r){ return r.estado === 'en_cotizacion'; }).length;
+  var nC = all.filter(function(r){ return r.estado === 'contratado' || r.estado === 'completado' || r.estado === 'cancelado'; }).length;
+  function btn(id, lbl, n) {
+    var sel = _mrTab === id;
+    var bdg = n > 0 ? '<span style="background:' + (sel?'#1FC26A':'#ccc') + ';color:' + (sel?'#fff':'#666') + ';border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:4px;">' + n + '</span>' : '';
+    return '<button onclick="window._mrSetTab(\'' + id + '\')" style="flex:1;padding:10px 4px;border:none;border-bottom:2.5px solid ' + (sel?'#1FC26A':'transparent') + ';background:transparent;font-size:12px;font-weight:' + (sel?'700':'500') + ';color:' + (sel?'#1FC26A':'#888') + ';cursor:pointer;font-family:\'Inter\',sans-serif;display:flex;align-items:center;justify-content:center;">' + lbl + bdg + '</button>';
+  }
+  tabs.innerHTML = btn('activas','Activas',nA) + btn('interesados','Con interesados',nI) + btn('cerradas','Cerradas',nC);
+}
+
+function _mrRenderLista() {
+  var contenedor = document.getElementById('mis-reportes-lista');
+  if (!contenedor) return;
+  var all = _mrDocs;
+  if (all === null) {
+    contenedor.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando...</div>';
+    return;
+  }
+  var grupo, emptyMsg;
+  if (_mrTab === 'activas') {
+    grupo    = all.filter(function(r){ return r.estado === 'publicado'; });
+    emptyMsg = 'Sin solicitudes activas';
+  } else if (_mrTab === 'interesados') {
+    grupo    = all.filter(function(r){ return r.estado === 'en_cotizacion'; });
+    emptyMsg = 'Sin solicitudes con interesados';
+  } else {
+    grupo    = all.filter(function(r){ return r.estado === 'contratado' || r.estado === 'completado' || r.estado === 'cancelado'; });
+    emptyMsg = 'Sin solicitudes cerradas';
+  }
+  if (grupo.length === 0) {
+    contenedor.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:10px;">' + '📋</div><div style="font-size:13px;font-weight:700;color:#aaa;">' + emptyMsg + '</div></div>';
+    return;
+  }
+  contenedor.innerHTML = '';
+  grupo.forEach(function(r) {
+    var cat  = DC_CATEGORIAS[r.categoria] || DC_CATEGORIAS.otro;
+    var card = document.createElement('div');
+    card.className = 'prov-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">'
+      + '<div style="display:flex;gap:10px;align-items:center;flex:1;">'
+      + '<div style="width:38px;height:38px;border-radius:12px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">' + cat.ic + '</div>'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px;">' + cat.label + '</div>'
+      + '<div style="font-size:11px;color:var(--text-muted);">' + _formatFecha(r.fechaCreacion) + '</div>'
+      + '</div></div>'
+      + _badgeEstado(r.estado)
+      + '</div>'
+      + '<div style="font-size:12px;color:var(--text-primary);margin-bottom:8px;line-height:1.5;">' + (r.descripcion || '') + '</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'
+      + _badgePostulantes(r.totalPostulantes || 0)
+      + (r.referencia ? '<span style="font-size:10px;color:var(--text-muted);">📍 ' + r.referencia + '</span>' : '')
+      + '</div>';
+    card.onclick = function(){ window.verDetalleReporte(r.id, r); };
+    contenedor.appendChild(card);
+  });
+}
+
+window._mrSetTab = function(tab) {
+  _mrTab = tab;
+  _mrRenderTabs();
+  _mrRenderLista();
+};
+
 window.cargarMisReportes = async function() {
-  const contenedor = document.getElementById('mis-reportes-lista');
+  var contenedor = document.getElementById('mis-reportes-lista');
   if (!contenedor) return;
 
+  _mrDocs = null;
+  _mrRenderTabs();
   contenedor.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">Cargando... ⏳</div>';
 
   const listo = await _esperarFirebase();
@@ -232,7 +305,6 @@ window.cargarMisReportes = async function() {
   const uid    = window._fbAuth.currentUser.uid;
   const perfil = await _leerPerfil(uid);
 
-  // Proveedor no debe ver esta vista
   if (perfil && _esProveedor(perfil.tipo)) {
     contenedor.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--text-muted);">Esta sección es solo para residentes.</div>';
     return;
@@ -243,59 +315,30 @@ window.cargarMisReportes = async function() {
       'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'
     );
 
-    // Sin where() — filtra en cliente para evitar requisitos de índice
     const snap = await getDocs(collection(window._fbDb, 'reportes'));
-
-    const _docs = [];
+    const docs = [];
     snap.forEach(d => {
       const data = d.data();
-      if (data.vecinoId === uid) _docs.push({ id: d.id, ...data });
+      if (data.vecinoId === uid) docs.push({ id: d.id, ...data });
     });
-    _docs.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
+    docs.sort((a, b) => (b.fechaCreacion || '').localeCompare(a.fechaCreacion || ''));
 
-    if (_docs.length === 0) {
-      contenedor.innerHTML = `
-        <div style="text-align:center;padding:30px 20px;">
-          <div style="font-size:36px;margin-bottom:10px;">📋</div>
-          <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Sin solicitudes aún</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
-            Publica tu primera solicitud de servicio<br>y proveedores verificados te contactarán.
-          </div>
-        </div>`;
+    _mrDocs = docs;
+
+    if (docs.length === 0) {
+      _mrRenderTabs();
+      contenedor.innerHTML = '<div style="text-align:center;padding:30px 20px;"><div style="font-size:36px;margin-bottom:10px;">📋</div><div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">Sin solicitudes aún</div><div style="font-size:11px;color:var(--text-muted);line-height:1.5;">Publica tu primera solicitud de servicio<br>y proveedores verificados te contactarán.</div></div>';
       return;
     }
 
-    contenedor.innerHTML = '';
-    _docs.forEach(r => {
-      const cat  = DC_CATEGORIAS[r.categoria] || DC_CATEGORIAS.otro;
-      const card = document.createElement('div');
-      card.className = 'prov-card';
-      card.style.cursor = 'pointer';
-      card.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-          <div style="display:flex;gap:10px;align-items:center;flex:1;">
-            <div style="width:38px;height:38px;border-radius:12px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${cat.ic}</div>
-            <div style="flex:1;">
-              <div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px;">${cat.label}</div>
-              <div style="font-size:11px;color:var(--text-muted);">${_formatFecha(r.fechaCreacion)}</div>
-            </div>
-          </div>
-          ${_badgeEstado(r.estado)}
-        </div>
-        <div style="font-size:12px;color:var(--text-primary);margin-bottom:8px;line-height:1.5;">${r.descripcion || ''}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          ${_badgePostulantes(r.totalPostulantes || 0)}
-          ${r.referencia ? `<span style="font-size:10px;color:var(--text-muted);">📍 ${r.referencia}</span>` : ''}
-        </div>`;
-      card.onclick = () => window.verDetalleReporte(r.id, r);
-      contenedor.appendChild(card);
-    });
+    _mrRenderTabs();
+    _mrRenderLista();
 
   } catch (e) {
     console.error('cargarMisReportes error:', e.message);
     contenedor.innerHTML = `<div style="background:#FDECEA;border-radius:12px;padding:14px;margin:10px;font-size:12px;color:#D63A2A;">❌ Error: ${e.message}</div>`;
   }
-};
+}
 
 // ============================================================
 // 3. cargarReportesDisponibles()
@@ -483,10 +526,9 @@ function _renderDetalleReporte(id, r) {
     const yaPostulado = Array.isArray(r.postulantes) && r.postulantes.includes(uid);
 
     if (esVecino) {
-      elAccion.innerHTML = `
-        <div style="background:#E8F0F8;border-radius:12px;padding:10px 12px;font-size:11px;color:#1A7AB5;margin-top:8px;">
-          💬 Los proveedores que se postulen aparecerán aquí en la siguiente actualización.
-        </div>`;
+      // Mostrar postulantes con botón de chat — async, no bloquea render inicial
+      elAccion.innerHTML = '<div id="det-rep-provlist" style="margin-top:8px;"><div style="text-align:center;padding:12px;font-size:11px;color:var(--text-muted);">Buscando proveedores interesados...</div></div>';
+      window._cargarPostulantesVecino(id, r.postulantes || [], uid);
     } else if (yaPostulado) {
       elAccion.innerHTML = `
         <div style="background:#E8F5EE;border-radius:12px;padding:10px 12px;font-size:12px;color:#0A4220;font-weight:700;margin-top:8px;">
@@ -528,39 +570,33 @@ window._postularEnReporte = async function(reporteId) {
 
   const r = repSnap.data();
 
-  // Validar estado activo
   if (r.estado !== 'publicado' && r.estado !== 'en_cotizacion') {
     alert('Esta solicitud ya no está disponible.'); return;
   }
 
-  // Validar cupo
   const _maxPost = (typeof DC_MAX_POSTULANTES !== 'undefined') ? DC_MAX_POSTULANTES : 4;
   if ((r.totalPostulantes || 0) >= _maxPost) {
     alert('Esta solicitud ya tiene el máximo de proveedores.'); return;
   }
 
-  // Validar no duplicado
   if (Array.isArray(r.postulantes) && r.postulantes.includes(uid)) {
     alert('Ya te postulaste a esta solicitud.'); return;
   }
 
-  // Registrar postulante en Firestore
   await updateDoc(repRef, {
     postulantes:      arrayUnion(uid),
     totalPostulantes: increment(1),
     estado:           'en_cotizacion'
   });
 
-  // Construir mensaje automático
-  const catLabel  = (DC_CATEGORIAS[r.categoria] || DC_CATEGORIAS.otro).label;
+  const catLabel   = (DC_CATEGORIAS[r.categoria] || DC_CATEGORIAS.otro).label;
   const nombreProv = perfil.nombre || localStorage.getItem('dcuser') || 'Proveedor';
-  const msgTexto  = `Hola, vi tu solicitud de ${catLabel}. Soy ${nombreProv} y puedo ayudarte.`;
+  const msgTexto   = `Hola, vi tu solicitud de ${catLabel}. Soy ${nombreProv} y puedo ayudarte.`;
 
-  // Abrir/crear chat con el vecino (misma lógica que enviarMensaje en index.html)
-  const vecinoId  = r.vecinoId;
+  const vecinoId = r.vecinoId;
   if (!vecinoId) { console.error('_postularEnReporte: reporte sin vecinoId', reporteId); return; }
-  const idsOrden  = [uid, vecinoId].sort().join('_');
-  const chatId    = 'chat_' + idsOrden;
+  const idsOrden = [uid, vecinoId].sort().join('_');
+  const chatId   = 'chat_' + idsOrden;
 
   await setDoc(doc(db, 'chats', chatId), {
     participantes:  [uid, vecinoId],
@@ -582,7 +618,6 @@ window._postularEnReporte = async function(reporteId) {
     timestamp:       serverTimestamp()
   });
 
-  // Actualizar render del detalle (sin recargar vista)
   const elAccion = document.getElementById('det-rep-accion');
   if (elAccion) {
     elAccion.innerHTML = `
@@ -593,10 +628,76 @@ window._postularEnReporte = async function(reporteId) {
   const elPost = document.getElementById('det-rep-postulantes');
   if (elPost) elPost.innerHTML = _badgePostulantes((r.totalPostulantes || 0) + 1);
 
-  // Abrir chat para continuar conversación
   if (typeof window.abrirChatExacto === 'function') {
     window.abrirChatExacto(chatId, vecinoId, r.vecinoNombre || 'Vecino');
   }
+};
+
+// ── Lista de postulantes visible para el vecino ────────────
+window._cargarPostulantesVecino = async function(reporteId, postulantes, vecinoUid) {
+  var lista = document.getElementById('det-rep-provlist');
+  if (!lista) return;
+
+  if (!postulantes || postulantes.length === 0) {
+    lista.innerHTML = '<div style="background:#E8F0F8;border-radius:12px;padding:10px 12px;font-size:11px;color:#1A7AB5;">👷 Aún no hay proveedores interesados.<br>Cuando alguno se postule aparecerá aquí.</div>';
+    return;
+  }
+
+  const listo = await _esperarFirebase();
+  if (!listo) return;
+
+  const { getDoc, doc } = await import(
+    'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'
+  );
+
+  var html = '<div style="font-size:12px;font-weight:700;color:var(--text-caption);margin-bottom:8px;">Proveedores interesados (' + postulantes.length + '/' + (window.DC_MAX_POSTULANTES||4) + ')</div>';
+
+  for (var i = 0; i < postulantes.length; i++) {
+    var provUid = postulantes[i];
+    var chatId  = 'chat_' + [vecinoUid, provUid].sort().join('_');
+
+    // Try to get proveedor name from chat doc nombres map (already stored)
+    var nombreProv = null;
+    var oficio     = '';
+    try {
+      var chatSnap = await getDoc(doc(window._fbDb, 'chats', chatId));
+      if (chatSnap.exists()) {
+        var cd = chatSnap.data();
+        var raw = cd.nombres && cd.nombres[vecinoUid] ? cd.nombres[vecinoUid] : null;
+        if (raw) {
+          var parts = raw.split(' · ');
+          nombreProv = parts[0];
+          oficio     = parts[1] || '';
+        }
+      }
+    } catch(e2) {}
+
+    // Fallback: read from usuarios profile
+    if (!nombreProv) {
+      try {
+        var perfSnap = await getDoc(doc(window._fbDb, 'usuarios', provUid));
+        if (perfSnap.exists()) {
+          var p = perfSnap.data();
+          nombreProv = p.nombre || 'Proveedor';
+          oficio     = p.oficio1 || p.categoria || '';
+        }
+      } catch(e3) {}
+    }
+
+    if (!nombreProv) nombreProv = 'Proveedor verificado';
+
+    html += '<div style="background:#fff;border:.5px solid #e8e8e8;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">' + nombreProv + '</div>'
+      + (oficio ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">🔧 ' + oficio + '</div>' : '')
+      + '</div>'
+      + '<button onclick="window.abrirChatExacto(\'' + chatId + '\',\'' + provUid + '\',\'' + nombreProv.replace(/'/g,'') + '\')" '
+      + 'style="background:var(--green,#1FC26A);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">'
+      + '💬 Chatear</button>'
+      + '</div>';
+  }
+
+  lista.innerHTML = html;
 };
 
 // ── Inicialización al cargar el formulario ───────────────────
