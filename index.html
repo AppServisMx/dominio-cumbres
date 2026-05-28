@@ -7985,7 +7985,7 @@ window.activarNotificacionesProveedor = async function() {
       if(!chatDoc.id.includes(myUid)) return;
       const msgsRef = collection(db, 'chats', chatDoc.id, 'mensajes');
       let init = false;
-      const unsub = onSnapshot(query(msgsRef, orderBy('timestamp','asc')), snap => {
+      const unsub = onSnapshot(query(msgsRef, orderBy('timestamp','asc')), async snap => {
         if(!init) { init = true; return; }
         const last = snap.docs[snap.docs.length - 1];
         if(!last) return;
