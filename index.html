@@ -7969,6 +7969,7 @@ window.verificarChatsProveedor = async function() {
 
 // ============ NOTIFICACIONES WEB v32 ============
 window.activarNotificacionesProveedor = async function() {
+  if(window._provNotifUnsub){window._provNotifUnsub();window._provNotifUnsub=null;}
   if(!window._fbAuth || !window._fbAuth.currentUser) return;
   if(!window._fbDb || !window._fs) return;
   const myUid = window._fbAuth.currentUser.uid;
