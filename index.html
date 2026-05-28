@@ -72,7 +72,7 @@
 
   window.contactarProveedor = function() {
     const p = window._proveedorActual || {};
-    abrirChat(p.uid || p.id || 'demo', p.nombre||'Proveedor', '🔧');
+    abrirChat(p.uid || p.id || p._id || 'demo', p.nombre||'Proveedor', '🔧');
   };
 
   // ============ CARGAR RESTAURANTES DESDE FIREBASE ============
