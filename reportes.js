@@ -28,7 +28,7 @@ const DC_CATEGORIAS = {
 
 const DC_ESTADOS_LABEL = {
   publicado:    { label: 'Publicado',  color: '#1FC26A', bg: '#E8F5EE' },
-  en_cotizacion:{ label: 'Cotizando',  color: '#1A7AB5', bg: '#E8F0F8' },
+  en_cotizacion:{ label: 'Con interesados',  color: '#1A7AB5', bg: '#E8F0F8' },
   contratado:   { label: 'Contratado', color: '#9A6800', bg: '#FFF8E1' },
   completado:   { label: 'Completado', color: '#0A4220', bg: '#E8F5EE' },
   cancelado:    { label: 'Cancelado',  color: '#D63A2A', bg: '#FDECEA' }
@@ -629,7 +629,7 @@ window._postularEnReporte = async function(reporteId) {
   if (elPost) elPost.innerHTML = _badgePostulantes((r.totalPostulantes || 0) + 1);
 
   if (typeof window.abrirChatExacto === 'function') {
-    window.abrirChatExacto(chatId, vecinoId, r.vecinoNombre || 'Vecino');
+    window.abrirChatExacto(chatId, vecinoId, r.vecinoNombre || 'Vecino', 'v-reporte-detalle');
   }
 };
 
@@ -691,7 +691,7 @@ window._cargarPostulantesVecino = async function(reporteId, postulantes, vecinoU
       + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">' + nombreProv + '</div>'
       + (oficio ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">🔧 ' + oficio + '</div>' : '')
       + '</div>'
-      + '<button onclick="window.abrirChatExacto(\'' + chatId + '\',\'' + provUid + '\',\'' + nombreProv.replace(/'/g,'') + '\')" '
+      + '<button onclick="window.abrirChatExacto(\'' + chatId + '\',\'' + provUid + '\',\'' + nombreProv.replace(/'/g,'') + '\',\'v-reporte-detalle\')" '
       + 'style="background:var(--green,#1FC26A);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">'
       + '💬 Chatear</button>'
       + '</div>';

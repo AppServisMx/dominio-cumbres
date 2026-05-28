@@ -37,7 +37,7 @@
   };
 
   // Abre chat desde la bandeja usando chatId exacto — no duplica hilos
-  window.abrirChatExacto = function(chatId, otroId, nombre) {
+  window.abrirChatExacto = function(chatId, otroId, nombre, backView) {
     window._chatProveedorId = otroId;
     window._chatIdExacto = chatId;
     window._chatProveedorNombre = nombre || 'Usuario';
@@ -46,7 +46,7 @@
     const btn = document.querySelector('#v-chat .btn-back');
     if(nom) nom.textContent = nombre || 'Usuario';
     if(ic)  ic.textContent  = '💬';
-    if(btn) btn.onclick = function(){ go('v-mis-chats','left'); cerrarChat(); };
+    if(btn) btn.onclick = function(){ go(backView||'v-mis-chats','left'); cerrarChat(); };
     go('v-chat','right');
     cargarMensajes();
   };
