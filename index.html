@@ -5025,8 +5025,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <input style="background:none;border:none;outline:none;font-size:12px;color:#fff;font-family:'Inter',sans-serif;flex:1;" placeholder="Buscar plomero, jardinero...">
         </div>
       </div>
-      <div style="padding:8px 14px 4px;background:linear-gradient(135deg,#0A4220,#062a14);">
+      <div style="padding:8px 14px 4px;background:linear-gradient(135deg,#0A4220,#062a14);display:flex;flex-direction:column;gap:6px;">
         <button onclick="window.irASolicitudes&&window.irASolicitudes()" id="btn-solicitud-rol" style="width:100%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;text-align:left;display:flex;align-items:center;gap:8px;">&#128203; <span id="btn-solicitud-label">Publicar solicitud de servicio</span><span style="margin-left:auto;opacity:.6;">&rarr;</span></button>
+        <button id="btn-mis-solicitudes-vecino" onclick="go('v-mis-reportes','right');setTimeout(function(){window.cargarMisReportes&&window.cargarMisReportes();},300)" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;text-align:left;display:flex;align-items:center;gap:8px;">📋 <span>Mis solicitudes de servicio</span><span style="margin-left:auto;opacity:.6;">&rarr;</span></button>
       </div>
       <div class="cat-grid">
         <div class="cat-item" onclick="setCatS(this)"><div class="si25 cat-ic on">🔧</div><div class="cat-nm on">Todos</div></div>
