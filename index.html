@@ -41,6 +41,8 @@
     window._chatProveedorId = otroId;
     window._chatIdExacto = chatId;
     window._chatProveedorNombre = nombre || 'Usuario';
+    const _uid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
+    if(_uid && chatId) localStorage.setItem('dcChatVisto_' + _uid + '_' + chatId, Date.now());
     const nom = document.getElementById('chat-prov-nombre');
     const ic  = document.getElementById('chat-prov-ic');
     const btn = document.querySelector('#v-chat .btn-back');
@@ -284,6 +286,7 @@
     const provId = window._chatProveedorId || 'proveedor_demo';
     const chatId = window._chatIdExacto || ('chat_' + [userId, provId].sort().join('_'));
     window._chatIdExacto = null;
+    if(userId !== 'anonimo' && chatId) localStorage.setItem('dcChatVisto_' + userId + '_' + chatId, Date.now());
     try {
       const msgsRef = collection(db, 'chats', chatId, 'mensajes');
       if(window._chatUnsubscribe) window._chatUnsubscribe();
@@ -2099,12 +2102,12 @@
       var myUid = _auth && _auth.currentUser && _auth.currentUser.uid;
       if (myUid && _db && window._fs) {
         var { getDocs: _gd, collection: _col, query: _q, where: _w } = window._fs;
-        var _lastVisit = parseInt(localStorage.getItem('dcChatsVisto_'+myUid)||'0');
         var cSnap = await _gd(_q(_col(_db,'chats'), _w('participantes','array-contains',myUid)));
         var pendientes = 0;
         cSnap.forEach(function(d){
           var c = d.data();
-          if (c.ultimoEmisor && c.ultimoEmisor !== myUid && (!_lastVisit || (c.fecha||0) > _lastVisit)) pendientes++;
+          var _chatVistoTs = parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + d.id) || '0');
+          if (c.ultimoEmisor && c.ultimoEmisor !== myUid && (!_chatVistoTs || (c.fecha||0) > _chatVistoTs)) pendientes++;
         });
         counts['chats'] = pendientes;
       }
@@ -7866,8 +7869,6 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 window.cargarMisChats = async function() {
   window.setBadge&&window.setBadge('chats',0,'normal');
   document.querySelectorAll('.nav-chats-badge').forEach(function(el){el.textContent='';el.style.display='none';});
-  var _vistoUid = window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid;
-  if(_vistoUid) localStorage.setItem('dcChatsVisto_'+_vistoUid, Date.now());
   const container = document.getElementById('lista-mis-chats');
   if(!container) return;
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Cargando tus mensajes...</div>';
@@ -7884,7 +7885,6 @@ window.cargarMisChats = async function() {
   try {
     const { collection, getDocs, query, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
     const myUid = window._fbAuth.currentUser.uid;
-    const lastVisitTs = parseInt(localStorage.getItem('dcChatsVisto_' + myUid) || '0');
     const chatsSnap = await getDocs(collection(window._fbDb, 'chats'));
     const resultados = [];
     const promises = [];
@@ -7907,7 +7907,7 @@ window.cargarMisChats = async function() {
           nombre: (d.nombres && d.nombres[myUid]) || d.nombreContacto || d.ultimoNombre || 'Usuario',
           ultimo: d.ultimoMsg,
           hora, ts,
-          noRespondido: d.ultimoEmisor !== myUid && ((d.fecha || 0) > lastVisitTs)
+          noRespondido: d.ultimoEmisor !== myUid && ((d.fecha || 0) > parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + cId) || '0'))
         });
       } else {
         // Fallback: leer último mensaje de la subcolección (mensajes viejos)
@@ -7924,7 +7924,7 @@ window.cargarMisChats = async function() {
             nombre: last.remitenteNombre || 'Usuario',
             ultimo: last.texto || '',
             hora, ts,
-            noRespondido: last.remitenteId !== myUid && (((last.timestamp && last.timestamp.seconds ? last.timestamp.seconds * 1000 : 0)) > lastVisitTs)
+            noRespondido: last.remitenteId !== myUid && (((last.timestamp && last.timestamp.seconds ? last.timestamp.seconds * 1000 : 0)) > parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + cId) || '0'))
           });
         })());
       }
