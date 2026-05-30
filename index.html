@@ -41,8 +41,6 @@
     window._chatProveedorId = otroId;
     window._chatIdExacto = chatId;
     window._chatProveedorNombre = nombre || 'Usuario';
-    const _uid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
-    if(_uid && chatId) localStorage.setItem('dcChatVisto_' + _uid + '_' + chatId, Date.now());
     const nom = document.getElementById('chat-prov-nombre');
     const ic  = document.getElementById('chat-prov-ic');
     const btn = document.querySelector('#v-chat .btn-back');
@@ -116,6 +114,43 @@
 
     console.log('[DIAG] fallback abrirChat — provId:', provId);
     abrirChat(provId, nombre, '🔧');
+  };
+
+  // ============ CARGAR RESTAURANTES DESDE FIREBASE ============
+  window.cargarRestaurantes = async function() {
+    const lista = document.getElementById('food-lista');
+    const demo  = document.getElementById('food-demo');
+    const hdr   = document.getElementById('food-lista-header');
+    if(!lista) return;
+    try {
+      const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+      const q = query(collection(window._fbDb,'usuarios'), where('tipo','==','negocio'));
+      const snap = await getDocs(q);
+      if(snap.empty) {
+        if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Abiertos ahora</div>';
+        return;
+      }
+      if(demo) demo.style.display='none';
+      if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Restaurantes registrados</div>';
+      snap.forEach(d => {
+        const r = d.data();
+        const div = document.createElement('div');
+        div.className = 'rest-card';
+        div.innerHTML = `
+          <div class="si15 rest-banner">&#x1F37D;
+            <span class="si32">&#x23F0; ${r.horario||'Ver horario'}</span>
+          </div>
+          <div class="rest-body">
+            <div class="si05"><div class="rest-name">${r.nombreNegocio||r.nombre||'&#x2014;'}</div><span class="si44">Abierto</span></div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">&#x2B50; Nuevo en la app</div>
+            <div class="rest-footer"><span class="si01">${r.descripcion||''}</span><span class="si16">Pedir &#x2192;</span></div>
+          </div>`;
+        div.onclick = () => go('v-food-det','right');
+        lista.appendChild(div);
+      });
+    } catch(e) {
+      if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Abiertos ahora</div>';
+    }
   };
 
   // ============ FIN FIREBASE LOADERS ============
@@ -226,7 +261,6 @@
         ultimoMsg: texto,
         ultimoNombre: userName,
         nombreContacto: window._chatProveedorNombre || 'Usuario',
-        nombres: { [userId]: window._chatProveedorNombre || 'Proveedor', [provId]: localStorage.getItem('dcuser') || 'Vecino' },
         ultimoEmisor: userId,
         respondido: false,
         fecha: Date.now()
@@ -250,7 +284,6 @@
     const provId = window._chatProveedorId || 'proveedor_demo';
     const chatId = window._chatIdExacto || ('chat_' + [userId, provId].sort().join('_'));
     window._chatIdExacto = null;
-    if(userId !== 'anonimo' && chatId) localStorage.setItem('dcChatVisto_' + userId + '_' + chatId, Date.now());
     try {
       const msgsRef = collection(db, 'chats', chatId, 'mensajes');
       if(window._chatUnsubscribe) window._chatUnsubscribe();
@@ -2059,23 +2092,6 @@
         counts[n.modulo] = (counts[n.modulo] || 0) + 1;
       }
     });
-    // Contar chats sin responder directamente desde colección chats
-    try {
-      var _auth = window._fbAuth;
-      var _db   = window._fbDb;
-      var myUid = _auth && _auth.currentUser && _auth.currentUser.uid;
-      if (myUid && _db && window._fs) {
-        var { getDocs: _gd, collection: _col, query: _q, where: _w } = window._fs;
-        var cSnap = await _gd(_q(_col(_db,'chats'), _w('participantes','array-contains',myUid)));
-        var pendientes = 0;
-        cSnap.forEach(function(d){
-          var c = d.data();
-          var _chatVistoTs = parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + d.id) || '0');
-          if (c.ultimoEmisor && c.ultimoEmisor !== myUid && (!_chatVistoTs || (c.fecha||0) > _chatVistoTs)) pendientes++;
-        });
-        counts['chats'] = pendientes;
-      }
-    } catch(_ce) { /* silencioso — no bloquear badges de agenda */ }
     // Actualizar badge de cada módulo
     var MODULOS = ['chats','solicitudes','pedidos','promocion','sistema'];
     MODULOS.forEach(function(m) {
@@ -2089,16 +2105,6 @@
     var total = notifs.filter(function(n){ return !n.leida; }).length;
     document.querySelectorAll('.notif-dot').forEach(function(el) {
       el.style.display = total > 0 ? 'inline-block' : 'none';
-    });
-    // Actualizar badge rojo de Chats en nav — sin rerenderizar el home
-    var chatCount = counts['chats'] || 0;
-    document.querySelectorAll('.nav-chats-badge').forEach(function(el) {
-      if (chatCount > 0) {
-        el.textContent = chatCount > 9 ? '9+' : String(chatCount);
-        el.style.display = 'inline-flex';
-      } else {
-        el.style.display = 'none';
-      }
     });
     return notifs;
   };
@@ -2411,7 +2417,7 @@
     (function limpiarBadgesExpirados() {
       // Módulos válidos por rol
       var modulosPorRol = {
-        vecino:      ['informa', 'solicitudes_vecino', 'chats'],
+        vecino:      ['informa', 'solicitudes_vecino'],
         proveedor:   ['solicitudes','chats'],
         transporte:  ['solicitudes','chats'],
         repartidor:  ['solicitudes','chats'],
@@ -2459,9 +2465,7 @@
 
     function modulo(ic, bg, lbl, sub, ruta, badgeKey) {
       var txt = badgeKey ? window.renderBadge(badgeKey) : '';
-      var dot = (badgeKey === 'chats')
-        ? '<div class="nav-chats-badge" style="position:absolute;top:8px;right:8px;background:#D63A2A;color:#fff;font-size:8px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:' + (txt ? 'flex' : 'none') + ';align-items:center;justify-content:center;padding:0 3px;line-height:1;white-space:nowrap;">' + (txt||'') + '</div>'
-        : (txt ? '<div class="" style="position:absolute;top:8px;right:8px;background:#D63A2A;color:#fff;font-size:8px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;white-space:nowrap;">' + txt + '</div>' : '');
+      var dot = txt ? '<div style="position:absolute;top:8px;right:8px;background:#D63A2A;color:#fff;font-size:8px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;white-space:nowrap;">' + txt + '</div>' : '';
       return '<div onclick="' + ruta + '" style="position:relative;background:#fff;border-radius:16px;padding:14px 14px 13px;display:flex;flex-direction:column;gap:9px;border:.5px solid #e8e8e8;box-shadow:0 1px 4px rgba(0,0,0,.05);cursor:pointer;">'
         + dot
         + '<div style="width:40px;height:40px;border-radius:11px;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;">' + ic + '</div>'
@@ -3027,7 +3031,6 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .ni-lb{font-size:9px;font-weight:700;color:#C0C4BA;}
 .notif-w{position:relative;display:inline-block;}
 .notif-dot{width:10px;height:10px;min-width:10px;background:#E53935;border-radius:50%;position:absolute;top:-3px;right:-3px;border:2px solid #fff;z-index:10;}
-.nav-chats-badge{min-width:16px;height:16px;background:#D63A2A;color:#fff;font-size:9px;font-weight:700;border-radius:9px;position:absolute;top:-4px;right:-4px;border:2px solid #fff;z-index:10;display:none;align-items:center;justify-content:center;padding:0 3px;line-height:1;white-space:nowrap;}
 .demo-note{color:var(--white-30);font-size:11px;text-align:center;margin-top:12px;}
 
 /* HOME */
@@ -4747,7 +4750,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   <!-- ── BOTTOM NAV (igual que antes) ── -->
   <div class="nav">
     <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -4794,124 +4797,135 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni"><div class="ni-ic">🍽️</div><div class="ni-lb" style="color:#c8940a;">Food</div></div>
-        <div class="ni" onclick="go('v-mis-pedidos-vec','right');setTimeout(()=>window._cargarMisPedidosVecino&&window._cargarMisPedidosVecino(),300)"><div class="ni-ic">🛒</div><div class="ni-lb">Mis Pedidos</div></div>
+        <div class="ni"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
       </div>
     </div>
 <div class="view go-right" id="v-food-det">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-food','left')">‹</button>
-      <div style="flex:1;"><div class="si13" id="fdet-nombre">Cargando...</div><div class="si21" id="fdet-desc"></div></div>
+      <div class="si15 det-banner">🌮
+        <button class="det-back" onclick="go('v-food','left')">‹</button>
+        <button class="det-fav" id="food-fav" onclick="toggleFav('food-fav')">🤍</button>
+      </div>
+      <div style="padding:12px 16px;background:#fff;border-bottom:.5px solid #f0f0f0;flex-shrink:0;">
+        <div class="si05">
+          <div style="font-size:18px;font-weight:700;color:var(--text-primary);" id="food-det-nombre">—</div>
+          <span class="si44">Abierto</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap;">
+          <span class="si01">★ 4.9 (128)</span>
+          <span class="si01">⚡ 20 min</span>
+          <span class="si01">🛵 Envío $25</span>
+          <span class="si01">📦 Mín $150</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-caption);margin-top:6px;line-height:1.5;">Los mejores tacos de la zona. Ingredientes frescos del mercado. Lun-Dom 8am-10pm.</div>
+      </div>
+      <div class="scroll">
+        <div class="menu-sec">🌮 Tacos</div>
+        <div class="menu-item">
+          <div class="si15 menu-emoji">🌮</div>
+          <div class="si03"><div class="menu-name">Taco de Bistec</div><div class="menu-desc">Bistec, cebolla, cilantro, salsa</div><div class="menu-price">$85 c/u</div></div>
+          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('bistec',-1,85)">−</button><span class="qty-num" id="q-bistec">0</span><button class="qty-btn" onclick="changeQty('bistec',1,85)">+</button></div>
+        </div>
+        <div class="menu-item">
+          <div class="si15 menu-emoji">🌽</div>
+          <div class="si03"><div class="menu-name">Taco de Pastor</div><div class="menu-desc">Pastor, piña, cebolla, cilantro</div><div class="menu-price">$75 c/u</div></div>
+          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('pastor',-1,75)">−</button><span class="qty-num" id="q-pastor">0</span><button class="qty-btn" onclick="changeQty('pastor',1,75)">+</button></div>
+        </div>
+        <div class="menu-item">
+          <div class="si15 menu-emoji">🥩</div>
+          <div class="si03"><div class="menu-name">Taco de Arrachera</div><div class="menu-desc">Arrachera, guacamole</div><div class="menu-price">$90 c/u</div></div>
+          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('arrachera',-1,90)">−</button><span class="qty-num" id="q-arrachera">0</span><button class="qty-btn" onclick="changeQty('arrachera',1,90)">+</button></div>
+        </div>
+        <div class="menu-sec">🥤 Bebidas</div>
+        <div class="menu-item">
+          <div class="si25 menu-emoji">🥤</div>
+          <div class="si03"><div class="menu-name">Agua Fresca</div><div class="menu-desc">Jamaica, horchata o limón</div><div class="menu-price">$35</div></div>
+          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('agua',-1,35)">−</button><span class="qty-num" id="q-agua">0</span><button class="qty-btn" onclick="changeQty('agua',1,35)">+</button></div>
+        </div>
+        <div class="menu-item">
+          <div class="si26 menu-emoji">🥛</div>
+          <div class="si03"><div class="menu-name">Refresco</div><div class="menu-desc">Coca, Sprite, Manzanita</div><div class="menu-price">$25</div></div>
+          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('refresco',-1,25)">−</button><span class="qty-num" id="q-refresco">0</span><button class="qty-btn" onclick="changeQty('refresco',1,25)">+</button></div>
+        </div>
+        <div style="height:80px;"></div>
+      </div>
+      <div class="si12 cart-bar" id="cart-bar" onclick="go('v-carrito','right')">
+        <div class="cart-badge" id="cart-count">0</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver mi pedido</div>
+        <div style="font-size:13px;font-weight:700;color:var(--yellow);" id="cart-total">$0</div>
+      </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;">
-      <span style="background:rgba(255,255,255,.15);color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;" id="fdet-tiempo">⏱ --</span>
-      <span style="background:rgba(255,255,255,.15);color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;" id="fdet-envio">🛵 Envío --</span>
-      <span style="background:rgba(255,255,255,.15);color:#fff;font-size:10px;padding:3px 8px;border-radius:20px;" id="fdet-rating">⭐ --</span>
-    </div>
-  </div>
-  <div class="scroll" id="fdet-menu-scroll">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando menú...</div>
-  </div>
-  <div class="si12 cart-bar" id="cart-bar" style="display:none;" onclick="go('v-carrito','right')">
-    <div class="cart-badge" id="cart-count">0</div>
-    <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver mi pedido</div>
-    <div style="font-size:13px;font-weight:700;color:var(--yellow);" id="cart-total">$0</div>
-  </div>
-</div>
 <div class="view go-right" id="v-carrito">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-food-det','left')">‹</button>
-      <div><div class="si13">🛒 Mi pedido</div><div class="si21" id="carr-rest-nombre">Revisa antes de confirmar</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding-top:12px;">
-    <div id="carrito-items"></div>
-    <div style="padding:0 14px 12px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📝 Nota al restaurante</div>
-      <textarea class="nota-inp" id="carr-notas" rows="2" placeholder="Sin cebolla, salsa aparte..."></textarea>
-    </div>
-    <div style="padding:0 14px 12px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">💳 Forma de pago</div>
-      <div class="pago-opt on" onclick="window.setPago(this)" data-pago="efectivo">
-        <div style="width:32px;height:32px;border-radius:9px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:16px;">💵</div>
-        <div><div class="si33">Efectivo al entregar</div><div class="si01">Paga en la puerta</div></div>
-        <div class="radio-c on"></div>
+      <div style="background:linear-gradient(135deg,var(--amber-dark),#3a2000);padding:12px 18px 18px;flex-shrink:0;">
+        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+        <div class="si07">
+          <button class="btn-back" onclick="go('v-food-det','left')">‹</button>
+          <div><div class="si37">Mi pedido</div><div class="si28">Revisa antes de confirmar</div></div>
+        </div>
       </div>
-      <div class="pago-opt" onclick="window.setPago(this)" data-pago="tarjeta">
-        <div style="width:32px;height:32px;border-radius:9px;background:#E8F0F8;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
-        <div><div class="si33">Tarjeta al entregar</div><div class="si01">Terminal en la puerta</div></div>
-        <div class="radio-c"></div>
+      <div class="scroll" style="padding-top:12px;">
+        <div id="carrito-items"></div>
+        <div style="padding:0 14px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📝 Nota al restaurante</div>
+          <textarea class="nota-inp" rows="2" placeholder="Sin cebolla, salsa aparte..."></textarea>
+        </div>
+        <div style="padding:0 14px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📍 Entregar en</div>
+          <div style="background:#F5F6F0;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:.5px solid #e0e0e0;">
+            <span class="si54">🏠</span>
+            <div class="si03"><div class="si06">Mi dirección registrada</div><div class="si01">🔒 Tu dirección privada</div></div>
+            <span style="font-size:12px;color:var(--green);font-weight:600;cursor:pointer;">Cambiar</span>
+          </div>
+        </div>
+        <div style="padding:0 14px 12px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">💳 Forma de pago</div>
+          <div class="pago-opt on" onclick="setPago(this)">
+            <div style="width:32px;height:32px;border-radius:9px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
+            <div><div class="si33">Mercado Pago</div><div class="si01">Tarjeta o saldo</div></div>
+            <div class="radio-c on"></div>
+          </div>
+          <div class="pago-opt" onclick="setPago(this)">
+            <div style="width:32px;height:32px;border-radius:9px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:16px;">💵</div>
+            <div><div class="si33">Efectivo al entregar</div><div class="si01">El repartidor lleva cambio</div></div>
+            <div class="radio-c"></div>
+          </div>
+          <div class="pago-opt" onclick="setPago(this)">
+            <div style="width:32px;height:32px;border-radius:9px;background:#E8F0F8;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
+            <div><div class="si33">Tarjeta al entregar</div><div class="si01">Repartidor lleva terminal Clip</div></div>
+            <div class="radio-c"></div>
+          </div>
+        </div>
+        <div class="total-card">
+          <div class="total-row"><span>Subtotal</span><span id="sub-txt">$0</span></div>
+          <div class="total-row"><span>Envío</span><span>$25</span></div>
+          <div class="total-row"><span>Comisión app</span><span style="font-size:10px;color:var(--text-hint);">Incluida en precios</span></div>
+          <div class="total-final"><span>Total</span><span class="si04" id="total-txt">$0</span></div>
+        </div>
+        <div style="padding:0 14px 20px;">
+          <button class="btn btn-yellow" onclick="go('v-tracking','right')">Confirmar y pedir →</button>
+        </div>
       </div>
-      <div class="pago-opt" onclick="window.setPago(this)" data-pago="transferencia">
-        <div style="width:32px;height:32px;border-radius:9px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:16px;">📱</div>
-        <div><div class="si33">Transferencia</div><div class="si01">SPEI / Nómina</div></div>
-        <div class="radio-c"></div>
-      </div>
     </div>
-    <div class="total-card">
-      <div class="total-row"><span>Subtotal</span><span id="sub-txt">$0</span></div>
-      <div class="total-row"><span>Envío</span><span id="carr-envio-txt">—</span></div>
-      <div class="total-final"><span>Total</span><span class="si04" id="total-txt">$0</span></div>
-    </div>
-    <div style="padding:0 14px 20px;">
-      <button class="btn btn-yellow" id="btn-confirmar-pedido" onclick="window.confirmarPedido()">Confirmar y pedir →</button>
-    </div>
-  </div>
-</div>
 <div class="view go-right" id="v-tracking">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-mis-pedidos-vec','left')">‹</button>
-      <div><div class="si13">📦 Seguimiento</div><div class="si21" id="trk-rest-nombre">Tu pedido</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding:16px 14px;">
-    <div id="trk-estado-banner" style="background:#fff;border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;border:.5px solid #e8e8e8;">
-      <div style="font-size:40px;margin-bottom:8px;" id="trk-estado-ic">📦</div>
-      <div style="font-size:16px;font-weight:700;color:#111;" id="trk-estado-txt">Nuevo pedido</div>
-      <div style="font-size:11px;color:#888;margin-top:4px;" id="trk-tiempo-txt"></div>
-    </div>
-    <div id="trk-pasos" style="background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:.5px solid #e8e8e8;"></div>
-    <div id="trk-repartidor-card" style="display:none;background:#fff;border-radius:16px;padding:14px;margin-bottom:16px;border:.5px solid #e8e8e8;">
-      <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Repartidor</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#D63A2A;display:flex;align-items:center;justify-content:center;font-size:18px;">🏍️</div>
-        <div><div style="font-size:13px;font-weight:700;color:#111;" id="trk-rep-nombre">—</div><div style="font-size:11px;color:#888;">En camino</div></div>
-      </div>
-    </div>
-    <div id="trk-calificar-card" style="display:none;background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:.5px solid #e8e8e8;">
-      <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:12px;">¿Cómo estuvo tu pedido?</div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;">Restaurante</div>
-        <div id="trk-stars-rest" style="display:flex;gap:6px;">
-          <span onclick="window._setStarsRest(1)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRest(2)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRest(3)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRest(4)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRest(5)" style="font-size:24px;cursor:pointer;">☆</span>
+      <div class="track-wrap">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+          <div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:4px;">¡Pedido confirmado!</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;">Tu pedido fue recibido.<br>El restaurante confirmará el tiempo estimado.</div>
         </div>
-      </div>
-      <div id="trk-stars-rep-wrap" style="display:none;margin-bottom:10px;">
-        <div style="font-size:11px;color:#888;margin-bottom:6px;">Repartidor</div>
-        <div id="trk-stars-rep" style="display:flex;gap:6px;">
-          <span onclick="window._setStarsRep(1)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRep(2)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRep(3)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRep(4)" style="font-size:24px;cursor:pointer;">☆</span>
-          <span onclick="window._setStarsRep(5)" style="font-size:24px;cursor:pointer;">☆</span>
+        <div class="si03">
+          <div class="track-step"><div class="track-line"></div><div class="track-dot td-done">✅</div><div><div class="tl-done">Pedido recibido</div><div class="si22">Hace 1 min</div></div></div>
+          <div class="track-step"><div class="track-line"></div><div class="track-dot td-active">👨‍🍳</div><div><div class="tl-active">Preparando tu orden</div><div style="font-size:10px;color:var(--green);">En proceso ahora</div></div></div>
+          <div class="track-step"><div class="track-line"></div><div class="track-dot td-wait">🏍️</div><div><div class="tl-wait">Repartidor en camino</div></div></div>
+          <div class="track-step"><div class="track-dot td-wait">🏠</div><div><div class="tl-wait">Entregado</div></div></div>
         </div>
+        <div style="background:var(--card-dark);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;border:.5px solid var(--white-08);">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏍️</div>
+          <div><div class="si53">Repartidor asignado</div><div class="si28">En camino a tu ubicación</div></div>
+        </div>
+        <button class="btn btn-yellow" onclick="go('v-food','left')">✅ Entregado — Calificar pedido</button>
       </div>
-      <textarea id="trk-comentario" rows="2" class="nota-inp" placeholder="Comentario opcional..."></textarea>
-      <button class="btn btn-green" style="margin-top:10px;" onclick="window._enviarCalificacion()">Enviar calificación →</button>
     </div>
-    <button class="btn btn-yellow" id="trk-btn-volver" onclick="go('v-mis-pedidos-vec','left')" style="display:none;">Ver mis pedidos →</button>
-  </div>
-</div>
 <div class="view go-right" id="v-mipanel">
   <div style="background:#fff;flex-shrink:0;border-bottom:.5px solid #eee;">
     <div class="sbar dk" style="background:#fff;padding:10px 18px 0;display:flex;justify-content:space-between;"><span style="color:#111;font-size:11px;font-weight:600;">9:41</span><span style="color:#111;font-size:11px;">▲ ■ ■</span></div>
@@ -4931,7 +4945,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
     <div class="ni"><div class="ni-ic">👤</div><div class="si04 ni-lb">Mi Panel</div></div>
   </div>
@@ -5419,7 +5433,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
     </div>
     <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
-      <div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div>
+      <div class="ni-ic">💬</div><div class="ni-lb">Chats</div>
     </div>
     <div class="ni" onclick="go('v-mis-reportes','right');setTimeout(()=>window.cargarMisReportes&&window.cargarMisReportes(),300)">
       <div class="ni-ic">📋</div><div class="ni-lb" style="color:var(--green);">Solicitudes</div>
@@ -5469,7 +5483,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
     </div>
     <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
-      <div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div>
+      <div class="ni-ic">💬</div><div class="ni-lb">Chats</div>
     </div>
     <div class="ni" onclick="window.irASolicitudes&&window.irASolicitudes()">
       <div class="ni-ic">📋</div><div class="ni-lb" style="color:var(--green);">Solicitudes</div>
@@ -5490,115 +5504,43 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-home','left')">‹</button>
-      <div><div class="si13">📦 Pedidos</div><div class="si21" id="mpr-subtitle">Cargando...</div></div>
-    </div>
-    <div style="display:flex;gap:6px;padding-top:8px;overflow-x:auto;scrollbar-width:none;">
-      <button class="filter-chip on" onclick="window._mprSetTab('activos',this)" style="font-size:11px;">🔴 Activos</button>
-      <button class="filter-chip" onclick="window._mprSetTab('listos',this)" style="font-size:11px;">✅ Listos</button>
-      <button class="filter-chip" onclick="window._mprSetTab('entregados',this)" style="font-size:11px;">📬 Entregados</button>
+      <button class="btn-back" onclick="go('v-home','left')">‹</button>
+      <div>
+        <div class="si13">📦 Mis pedidos</div>
+        <div class="si21">Pedidos de tu restaurante</div>
+      </div>
     </div>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="mpr-lista">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando pedidos...</div>
+
+  <div class="scroll" style="padding:10px 0;">
+    <div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:36px;margin-bottom:12px;">📭</div>
+      <div style="font-size:13px;font-weight:700;color:#222;margin-bottom:6px;">Sin pedidos todavía</div>
+      <div style="font-size:11px;color:#888;line-height:1.5;margin-bottom:16px;">Cuando recibas pedidos,<br>aparecerán aquí.</div>
+      <button onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"
+        style="background:#D63A2A;border:none;border-radius:12px;padding:10px 20px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
+        Ver mis chats
+      </button>
+    </div>
+    <div style="height:8px;"></div>
   </div>
+
   <div class="nav">
-    <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
-    <div class="ni"><div class="ni-ic">📦</div><div class="ni-lb" style="color:#D63A2A;">Pedidos</div></div>
-    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+    <div class="ni" onclick="go('v-home','left')">
+      <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
+    </div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)">
+      <div class="ni-ic">💬</div><div class="ni-lb">Chats</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">📦</div><div class="ni-lb" style="color:#D63A2A;">Pedidos</div>
+    </div>
+    <div class="ni" onclick="go('v-mipanel','right')">
+      <div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div>
+    </div>
   </div>
 </div>
 
-<!-- ── P3: Mis Pedidos Vecino ────────────────────────────── -->
-<div class="view go-right" id="v-mis-pedidos-vec">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-food','left')">‹</button>
-      <div><div class="si13">🛒 Mis pedidos</div><div class="si21">Historial de órdenes</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding:10px 0;" id="mpv-lista">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando...</div>
-  </div>
-  <div class="nav">
-    <div class="ni" onclick="go('v-food','left')"><div class="ni-ic">🍽️</div><div class="ni-lb">Food</div></div>
-    <div class="ni"><div class="ni-ic">🛒</div><div class="ni-lb" style="color:#D63A2A;">Mis Pedidos</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
-    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
-  </div>
-</div>
-
-<!-- ── P3: Detalle Pedido Restaurante ───────────────────── -->
-<div class="view go-right" id="v-pedido-det">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-mis-pedidos-rest','left')">‹</button>
-      <div><div class="si13">📦 Detalle pedido</div><div class="si21" id="pdet-subtitle">Pedido</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding:14px;" id="pdet-contenido">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando...</div>
-  </div>
-</div>
-
-<!-- ── P3: Admin Menú Restaurante ───────────────────────── -->
-<div class="view go-right" id="v-menu-admin">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-mi-restaurante','left')">‹</button>
-      <div><div class="si13">✏️ Mi Menú</div><div class="si21">Gestionar productos</div></div>
-    </div>
-    <button onclick="window._abrirFormProducto(null)" style="margin-top:8px;width:100%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Agregar producto</button>
-  </div>
-  <div class="scroll" style="padding:10px 0;" id="menu-admin-lista">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando menú...</div>
-  </div>
-</div>
-
-<!-- ── P3: Form Producto ─────────────────────────────────── -->
-<div class="view go-right" id="v-producto-form">
-  <div style="background:linear-gradient(135deg,#7A1810,#D63A2A);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-menu-admin','left')">‹</button>
-      <div><div class="si13" id="pform-titulo">Nuevo producto</div><div class="si21">Ingresa los datos</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding:16px;">
-    <input type="hidden" id="pform-id">
-    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Nombre *</label><input id="pform-nombre" class="inp" placeholder="Ej: Taco de Bistec"></div>
-    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Categoría *</label><input id="pform-categoria" class="inp" placeholder="Ej: Tacos, Bebidas, Postres"></div>
-    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Descripción</label><textarea id="pform-desc" class="nota-inp" rows="2" placeholder="Ingredientes o descripción breve..."></textarea></div>
-    <div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Precio * ($)</label><input id="pform-precio" class="inp" type="number" placeholder="0" min="0"></div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;"><input type="checkbox" id="pform-disponible" checked style="width:18px;height:18px;cursor:pointer;"><label for="pform-disponible" style="font-size:13px;font-weight:600;color:#111;cursor:pointer;">Disponible ahora</label></div>
-    <div id="pform-error" style="color:#D63A2A;font-size:12px;margin-bottom:10px;display:none;"></div>
-    <button class="btn btn-green" onclick="window._guardarProducto()">Guardar producto →</button>
-  </div>
-</div>
-
-<!-- ── P3: Pedidos Repartidor DC ─────────────────────────── -->
-<div class="view go-right" id="v-pedidos-repartidor">
-  <div style="background:linear-gradient(135deg,#0A3055,#1A7AB5);padding:12px 18px 14px;flex-shrink:0;">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="si07">
-      <button style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" onclick="go('v-home','left')">‹</button>
-      <div><div class="si13">🏍️ Pedidos disponibles</div><div class="si21" id="repd-subtitle">Busca tu próxima entrega</div></div>
-    </div>
-  </div>
-  <div class="scroll" style="padding:10px 0;" id="repd-lista">
-    <div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando pedidos...</div>
-  </div>
-  <div class="nav">
-    <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni"><div class="ni-ic">🏍️</div><div class="ni-lb" style="color:#1A7AB5;">Pedidos DC</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
-    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
-  </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════
   VISTA 5: Detalle de un reporte
@@ -6311,7 +6253,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni"><div class="ni-ic">🏪</div><div class="ni-lb" style="color:#7B3FA0;">Mi Negocio</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -6340,19 +6282,19 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         <div style="font-size:9px;color:#999;margin-top:2px;">Ventas</div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:12px 8px;text-align:center;border:.5px solid #e8e8e8;">
-        <div style="font-size:18px;font-weight:700;color:#D63A2A;" id="vmr-rating">—</div>
-        <div style="font-size:9px;color:#999;margin-top:2px;">Rating</div>
+        <div style="font-size:22px;font-weight:700;color:#D63A2A;" id="vmr-visitas">0</div>
+        <div style="font-size:9px;color:#999;margin-top:2px;">Visitas</div>
       </div>
     </div>
 
     <!-- Acciones rápidas -->
     <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;padding:0 18px;margin-bottom:10px;">Acciones</div>
     <div style="background:#fff;border-radius:16px;border:.5px solid #e8e8e8;margin:0 14px 16px;overflow:hidden;">
-      <div onclick="go('v-menu-admin','right');setTimeout(()=>window._cargarMenuAdmin&&window._cargarMenuAdmin(),300)" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;">
+      <div onclick="go('v-mipanel','right')" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;">
         <span style="font-size:13px;font-weight:600;color:#111;">✏️ Editar menú</span>
         <span style="color:#ccc;font-size:16px;">›</span>
       </div>
-      <div onclick="window.marcarModuloVisto('pedidos');go('v-mis-pedidos-rest','right');setTimeout(()=>window._cargarPedidosRestaurante&&window._cargarPedidosRestaurante(),300)" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;">
+      <div onclick="window.marcarModuloVisto('pedidos');go('v-mis-pedidos-rest','right')" style="padding:13px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;">
         <span style="font-size:13px;font-weight:600;color:#111;">📦 Ver pedidos</span>
         <span style="color:#ccc;font-size:16px;">›</span>
       </div>
@@ -6373,7 +6315,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni" onclick="window.marcarModuloVisto('pedidos');go('v-mis-pedidos-rest','right')"><div class="ni-ic">📦</div><div class="ni-lb" style="color:#D63A2A;">Pedidos</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -6638,7 +6580,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni"><div class="ni-ic">📅</div><div class="ni-lb" style="color:#1FC26A;">Agenda</div></div>
     <div class="ni" onclick="go('v-mipanel','left')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -6828,7 +6770,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb" style="color:#1f7a38;">Alertas</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -6940,7 +6882,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   </div>
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>
     <div class="ni"><div class="ni-ic">📋</div><div class="ni-lb" style="color:#1FC26A;">Reservas</div></div>
     <div class="ni" onclick="go('v-mipanel','left')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -7175,7 +7117,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   </div>
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">&#x1F3E0;</div><div class="ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">&#x1F4AC;</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb">Chats</div></div>
+    <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">&#x1F4AC;</div><div class="ni-lb">Chats</div></div>
     <div class="ni"><div class="ni-ic">&#x1F4C5;</div><div class="ni-lb" style="color:#1FC26A;">Mi Agenda</div></div>
     <div class="ni" onclick="go('v-mipanel','left')"><div class="ni-ic">&#x1F464;</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -7347,7 +7289,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       </div>
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="notif-w"><div class="ni-ic">💬</div><span class="nav-chats-badge" style="display:none;"></span></div><div class="ni-lb" style="color:var(--green);">Chats</div></div>
+        <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb" style="color:var(--green);">Chats</div></div>
         <div class="ni"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
       </div>
@@ -7892,8 +7834,6 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
 // ============ MIS CHATS — BANDEJA DE ENTRADA v36 ============
 window.cargarMisChats = async function() {
-  window.setBadge&&window.setBadge('chats',0,'normal');
-  document.querySelectorAll('.nav-chats-badge').forEach(function(el){el.textContent='';el.style.display='none';});
   const container = document.getElementById('lista-mis-chats');
   if(!container) return;
   container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Cargando tus mensajes...</div>';
@@ -7932,7 +7872,7 @@ window.cargarMisChats = async function() {
           nombre: (d.nombres && d.nombres[myUid]) || d.nombreContacto || d.ultimoNombre || 'Usuario',
           ultimo: d.ultimoMsg,
           hora, ts,
-          noRespondido: d.ultimoEmisor !== myUid && ((d.fecha || 0) > parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + cId) || '0'))
+          noRespondido: d.ultimoEmisor !== myUid
         });
       } else {
         // Fallback: leer último mensaje de la subcolección (mensajes viejos)
@@ -7949,7 +7889,7 @@ window.cargarMisChats = async function() {
             nombre: last.remitenteNombre || 'Usuario',
             ultimo: last.texto || '',
             hora, ts,
-            noRespondido: last.remitenteId !== myUid && (((last.timestamp && last.timestamp.seconds ? last.timestamp.seconds * 1000 : 0)) > parseInt(localStorage.getItem('dcChatVisto_' + myUid + '_' + cId) || '0'))
+            noRespondido: last.remitenteId !== myUid
           });
         })());
       }
@@ -8103,7 +8043,17 @@ window.activarNotificacionesProveedor = async function() {
         if(!window._provChatNotifTs) window._provChatNotifTs = {};
         if(!window._provChatNotifTs[_cid] || _now - window._provChatNotifTs[_cid] > 60000) {
           window._provChatNotifTs[_cid] = _now;
-          window.actualizarBadgesReales && window.actualizarBadgesReales();
+          try {
+            const { addDoc: _add, collection: _col, serverTimestamp: _st } =
+              await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+            await _add(_col(db, 'notificaciones'), {
+              uid: myUid, tipo: 'chat', modulo: 'chats',
+              titulo: 'Nuevo mensaje', mensaje: m.remitenteNombre || 'Un cliente te escribió.',
+              leida: false, eliminada: false, prioridad: 'normal',
+              chatId: _cid, fecha: _st()
+            });
+            window.actualizarBadgesReales && window.actualizarBadgesReales();
+          } catch(_ne) { console.warn('[NOTIF chat prov]', _ne.message); }
         }
         window.verificarChatsProveedor && window.verificarChatsProveedor();
       });
@@ -8219,10 +8169,6 @@ function _goCore(id,dir){
     if(id==='v-food')setTimeout(()=>window.cargarRestaurantes&&window.cargarRestaurantes(),200);
     if(id==='v-plaza')setTimeout(()=>window.cargarPlaza&&window.cargarPlaza(),200);
     if(id==='v-ride')setTimeout(()=>window.cargarRepartidores&&window.cargarRepartidores(),200);
-    if(id==='v-mis-pedidos-rest')setTimeout(()=>window._cargarPedidosRestaurante&&window._cargarPedidosRestaurante(),300);
-    if(id==='v-mis-pedidos-vec')setTimeout(()=>window._cargarMisPedidosVecino&&window._cargarMisPedidosVecino(),300);
-    if(id==='v-menu-admin')setTimeout(()=>window._cargarMenuAdmin&&window._cargarMenuAdmin(),300);
-    if(id==='v-pedidos-repartidor')setTimeout(()=>window._cargarPedidosRepartidor&&window._cargarPedidosRepartidor(),300);
     if(id==='v-admin-solicitudes')setTimeout(()=>window.cargarSolicitudes&&window.cargarSolicitudes(),300);
     if(id==='v-admin-analytics')setTimeout(()=>window.cargarAnalytics&&window.cargarAnalytics(),300);
     if(id==='v-home')setTimeout(()=>{window.renderHomePersonalizado&&window.renderHomePersonalizado();},50);
@@ -8238,7 +8184,7 @@ function _goCore(id,dir){
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
     if(id==='v-mi-agenda')setTimeout(()=>window._initMiAgenda&&window._initMiAgenda(),200);
     if(id==='v-mis-chats')setTimeout(()=>window.cargarMisChats&&window.cargarMisChats(),300);
-    if(id==='v-carrito')window.renderCarrito&&window.renderCarrito();
+    if(id==='v-carrito')renderCarrito();
     // Al entrar a cualquier vista de registro, limpiar checkboxes y formulario
     if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
       ['v-chk1','v-chk2',
@@ -8902,744 +8848,86 @@ document.querySelectorAll('.code-inp').forEach((inp,i,arr)=>{
 /* go() → ver función maestra arriba */
 
 // CARRITO
-// ═══════════════════════════════════════════════════════════
-// MÓDULO RESTAURANTES REAL — Dominio Cumbres AppServis
-// P4-P10: reemplaza bloque demo + funciones nuevas
-// ═══════════════════════════════════════════════════════════
-
-// ── P4: Estado global carrito ───────────────────────────────
-window._dcCarrito = {
-  restauranteId: null, restauranteNombre: '', restauranteEntrega: 'propia',
-  costo_envio: 0, restauranteTiempoEst: 25, _metodoPago: 'efectivo', items: {}
-};
-window._dcPedidoTracking = null;
-window._dcPedidoTrackingUnsub = null;
-window._dcStarsRest = 0;
-window._dcStarsRep  = 0;
-window._mprTab = 'activos';
-
-// ── P10: cargarRestaurantes real ────────────────────────────
-window.cargarRestaurantes = async function() {
-  var lista = document.getElementById('food-lista');
-  var demo  = document.getElementById('food-demo');
-  var hdr   = document.getElementById('food-lista-header');
-  if (!lista) return;
-  lista.innerHTML = '';
-  try {
-    var fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var db = window._fbDb;
-    var snapN = await fb.getDocs(fb.query(fb.collection(db,'usuarios'), fb.where('tipo','==','negocio')));
-    var snapR = await fb.getDocs(fb.query(fb.collection(db,'usuarios'), fb.where('tipo','==','restaurante')));
-    var docs = [];
-    [].concat(snapN.docs, snapR.docs).forEach(function(d) {
-      var r = d.data();
-      if (r.estado === 'activo') docs.push(Object.assign({ _id: d.id }, r));
-    });
-    if (docs.length === 0) {
-      if (hdr) hdr.innerHTML = '<div class="si09">🍽️ Restaurantes</div>';
-      if (demo) demo.style.display = 'block';
-      return;
-    }
-    if (demo) demo.style.display = 'none';
-    if (hdr) hdr.innerHTML = '<div class="si09">🟢 ' + docs.length + ' restaurante' + (docs.length!==1?'s':'') + ' disponible' + (docs.length!==1?'s':'') + '</div>';
-    var EMOJIS = { tacos:'🌮', pizza:'🍕', sushi:'🍣', saludable:'🥗', hamburguesas:'🍔', cafe:'☕', corrida:'🍱', otro:'🍽️' };
-    docs.forEach(function(r) {
-      var cat   = (r.categoria||'otro').toLowerCase();
-      var emoji = EMOJIS[cat] || '🍽️';
-      var div   = document.createElement('div');
-      div.className = 'rest-card';
-      div.innerHTML = '<div class="si15 rest-banner" style="font-size:48px;display:flex;align-items:center;justify-content:center;">' + emoji + '<span class="si32">⏰ ' + (r.horario||'Abierto') + '</span></div>'
-        + '<div class="rest-body">'
-        + '<div class="si05"><div class="rest-name">' + (r.nombreNegocio||r.nombre||'—') + '</div><span class="si44">Abierto</span></div>'
-        + '<div style="font-size:11px;color:var(--text-hint);margin-top:3px;">' + (r.descripcion||cat) + '</div>'
-        + '<div class="rest-footer"><span class="si01">🛵 Entrega disponible</span><span class="si16">Pedir →</span></div>'
-        + '</div>';
-      div.onclick = (function(rr){ return function(){ window._abrirRestaurante(rr); }; })(r);
-      lista.appendChild(div);
-    });
-  } catch(e) {
-    if (hdr) hdr.innerHTML = '<div class="si09">🍽️ Restaurantes</div>';
-    if (demo) demo.style.display = 'block';
-    console.log('cargarRestaurantes:', e.message);
-  }
-};
-
-// ── P4: Abrir restaurante ───────────────────────────────────
-window._abrirRestaurante = async function(r) {
-  if (window._dcCarrito.restauranteId && window._dcCarrito.restauranteId !== r._id) {
-    window._dcCarrito.items = {};
-  }
-  window._dcCarrito.restauranteId    = r._id;
-  window._dcCarrito.restauranteNombre = r.nombreNegocio || r.nombre || 'Restaurante';
-  window._dcCarrito.restauranteEntrega = r.entrega || 'propia';
-  window._dcCarrito.costo_envio       = r.costoEnvio || 0;
-  window._dcCarrito.restauranteTiempoEst = r.tiempoEstimado || 25;
-  var nom = document.getElementById('fdet-nombre');
-  var dsc = document.getElementById('fdet-desc');
-  var tpo = document.getElementById('fdet-tiempo');
-  var env = document.getElementById('fdet-envio');
-  var rat = document.getElementById('fdet-rating');
-  if (nom) nom.textContent = window._dcCarrito.restauranteNombre;
-  if (dsc) dsc.textContent = r.descripcion || r.categoria || '';
-  if (tpo) tpo.textContent = '⏱ ' + (r.tiempoEstimado||25) + ' min';
-  if (env) env.textContent = r.costoEnvio > 0 ? '🛵 Envío $' + r.costoEnvio : '🛵 Envío gratis';
-  if (rat) rat.textContent = '⭐ Nuevo';
-  go('v-food-det', 'right');
-  await window._cargarMenuRestaurante(r._id);
-};
-
-// ── P4: Cargar menú desde Firestore ────────────────────────
-window._cargarMenuRestaurante = async function(restId) {
-  var scroll = document.getElementById('fdet-menu-scroll');
-  if (!scroll) return;
-  scroll.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;font-size:13px;">Cargando menú...</div>';
-  try {
-    var fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var db = window._fbDb;
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'menu',restId,'productos'), fb.orderBy('orden','asc')));
-    if (snap.empty) {
-      scroll.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">🍽️</div><div style="font-size:13px;font-weight:700;color:#888;">Este restaurante aún no tiene menú disponible.</div></div>';
-      window._updateCartBar();
-      return;
-    }
-    var cats = {};
-    snap.forEach(function(d) {
-      var p = Object.assign({ _id: d.id }, d.data());
-      var cat = p.categoria || 'Otros';
-      if (!cats[cat]) cats[cat] = [];
-      cats[cat].push(p);
-    });
-    var html = '';
-    Object.keys(cats).forEach(function(cat) {
-      html += '<div class="menu-sec">' + cat + '</div>';
-      cats[cat].forEach(function(p) {
-        var qty  = (window._dcCarrito.items[p._id] && window._dcCarrito.items[p._id].cantidad) || 0;
-        var disp = p.disponible !== false;
-        var nomEsc = (p.nombre||'').replace(/'/g, '&#39;');
-        var catEsc = (p.categoria||'').replace(/'/g, '&#39;');
-        html += '<div class="menu-item" style="' + (disp ? '' : 'opacity:.45;pointer-events:none;') + '">'
-          + '<div style="width:40px;height:40px;border-radius:10px;background:#F5F5F5;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🍽️</div>'
-          + '<div class="si03"><div class="menu-name">' + (p.nombre||'—') + (disp ? '' : ' <span style="color:#D63A2A;font-size:10px;">(No disponible)</span>') + '</div>'
-          + '<div class="menu-desc">' + (p.descripcion||'') + '</div>'
-          + '<div class="menu-price">$' + (p.precio||0) + '</div></div>'
-          + '<div class="qty-wrap">'
-          + '<button class="qty-btn" onclick="window._qtyChange(\'' + p._id + '\',-1,' + (p.precio||0) + ',\'' + nomEsc + '\',\'' + catEsc + '\')">−</button>'
-          + '<span class="qty-num" id="q-' + p._id + '">' + qty + '</span>'
-          + '<button class="qty-btn" onclick="window._qtyChange(\'' + p._id + '\',1,' + (p.precio||0) + ',\'' + nomEsc + '\',\'' + catEsc + '\')">+</button>'
-          + '</div></div>';
-      });
-    });
-    html += '<div style="height:80px;"></div>';
-    scroll.innerHTML = html;
-    window._updateCartBar();
-  } catch(e) {
-    scroll.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">⚠️</div><div style="font-size:12px;color:#888;">Error al cargar el menú.</div></div>';
-    console.log('_cargarMenuRestaurante:', e.message);
-  }
-};
-
-// ── P4: Carrito ─────────────────────────────────────────────
-window._qtyChange = function(id, delta, precio, nombre, categoria) {
-  var c = window._dcCarrito;
-  if (!c.items[id]) c.items[id] = { nombre: nombre, precio: precio, cantidad: 0, categoria: categoria };
-  c.items[id].cantidad = Math.max(0, c.items[id].cantidad + delta);
-  if (c.items[id].cantidad === 0) delete c.items[id];
-  var el = document.getElementById('q-' + id);
-  if (el) el.textContent = (c.items[id] && c.items[id].cantidad) || 0;
-  window._updateCartBar();
-};
-window._updateCartBar = function() {
-  var c     = window._dcCarrito;
-  var vals  = Object.values(c.items);
-  var count = vals.reduce(function(a,i){ return a+i.cantidad; }, 0);
-  var sub   = vals.reduce(function(a,i){ return a+i.cantidad*i.precio; }, 0);
-  var bar   = document.getElementById('cart-bar');
-  if (!bar) return;
-  if (count > 0) {
-    bar.style.display = 'flex';
-    var bc = document.getElementById('cart-count');
-    var bt = document.getElementById('cart-total');
-    if (bc) bc.textContent = count;
-    if (bt) bt.textContent = '$' + sub;
+const items={bistec:{n:'Taco de Bistec',p:85,q:0},pastor:{n:'Taco de Pastor',p:75,q:0},arrachera:{n:'Taco de Arrachera',p:90,q:0},agua:{n:'Agua Fresca',p:35,q:0},refresco:{n:'Refresco',p:25,q:0}};
+function changeQty(k,d,p){
+  items[k].q=Math.max(0,items[k].q+d);
+  document.getElementById('q-'+k).textContent=items[k].q;
+  updateCartBar();
+}
+function updateCartBar(){
+  const total=Object.values(items).reduce((a,i)=>a+i.q*i.p,0);
+  const count=Object.values(items).reduce((a,i)=>a+i.q,0);
+  const bar=document.getElementById('cart-bar');
+  if(count>0){
+    bar.style.display='flex';
+    document.getElementById('cart-count').textContent=count;
+    document.getElementById('cart-total').textContent='$'+total;
   } else {
-    bar.style.display = 'none';
+    bar.style.display='none';
   }
-};
-window.renderCarrito = function() {
-  var container = document.getElementById('carrito-items');
-  var c = window._dcCarrito;
-  var rnombre = document.getElementById('carr-rest-nombre');
-  if (rnombre) rnombre.textContent = c.restauranteNombre || 'Tu pedido';
-  var items = Object.entries(c.items).filter(function(e){ return e[1].cantidad > 0; });
-  var btn = document.getElementById('btn-confirmar-pedido');
-  if (!container) return;
-  if (items.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:30px 20px;"><div style="font-size:36px;">🛒</div><div style="font-size:13px;color:#888;margin-top:8px;">Tu carrito está vacío.</div></div>';
-    if (btn) btn.style.display = 'none';
-    return;
+}
+function renderCarrito(){
+  const container=document.getElementById('carrito-items');
+  const active=Object.entries(items).filter(([k,v])=>v.q>0);
+  if(!active.length){
+    // demo por defecto
+    items.bistec.q=2;items.pastor.q=1;items.agua.q=1;
+    document.getElementById('q-bistec').textContent=2;
+    document.getElementById('q-pastor').textContent=1;
+    document.getElementById('q-agua').textContent=1;
+    updateCartBar();
+    return renderCarrito();
   }
-  if (btn) btn.style.display = 'block';
-  var sub   = items.reduce(function(a,e){ return a+e[1].cantidad*e[1].precio; }, 0);
-  var envio = c.costo_envio || 0;
-  container.innerHTML = items.map(function(e) {
-    var id = e[0]; var v = e[1];
-    var nomEsc = v.nombre.replace(/'/g, '&#39;');
-    var catEsc = (v.categoria||'').replace(/'/g, '&#39;');
-    return '<div class="carrito-item">'
-      + '<div style="font-size:24px;width:40px;text-align:center;">🍽️</div>'
-      + '<div class="si03"><div class="si33">' + v.nombre + '</div><div class="si01">' + v.cantidad + ' x $' + v.precio + '</div></div>'
-      + '<div class="si29">$' + (v.cantidad*v.precio) + '</div>'
-      + '<button class="del-btn" onclick="window._qtyChange(\'' + id + '\',-' + v.cantidad + ',' + v.precio + ',\'' + nomEsc + '\',\'' + catEsc + '\')">✕</button>'
-      + '</div>';
-  }).join('');
-  var sub_el  = document.getElementById('sub-txt');
-  var env_el  = document.getElementById('carr-envio-txt');
-  var tot_el  = document.getElementById('total-txt');
-  if (sub_el) sub_el.textContent = '$' + sub;
-  if (env_el) env_el.textContent = envio > 0 ? '$' + envio : 'Gratis';
-  if (tot_el) tot_el.textContent = '$' + (sub + envio);
-};
-window.setPago = function(el) {
-  document.querySelectorAll('.pago-opt').forEach(function(p) {
-    p.classList.remove('on');
-    var r = p.querySelector('.radio-c');
-    if (r) r.classList.remove('on');
-  });
+  const sub=active.reduce((a,[k,v])=>a+v.q*v.p,0);
+  container.innerHTML=active.map(([k,v])=>`
+    <div class="carrito-item">
+      <div style="font-size:24px;width:40px;text-align:center;">🌮</div>
+      <div class="si03"><div class="si33">${v.n}</div><div class="si01">${v.q} x $${v.p}</div></div>
+      <div class="si29">$${v.q*v.p}</div>
+      <button class="del-btn" onclick="removeItem('${k}')">✕</button>
+    </div>`).join('');
+  document.getElementById('sub-txt').textContent='$'+sub;
+  document.getElementById('total-txt').textContent='$'+(sub+25);
+}
+function removeItem(k){items[k].q=0;document.getElementById('q-'+k).textContent=0;updateCartBar();renderCarrito();}
+
+function setFilter(btn){document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function setCat(btn){
+  document.querySelectorAll('.cat-ic').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.cat-nm').forEach(c=>c.classList.remove('on'));
+  btn.querySelector('.cat-ic').classList.add('on');
+  btn.querySelector('.cat-nm').classList.add('on');
+}
+function setPago(el){
+  document.querySelectorAll('.pago-opt').forEach(p=>{p.classList.remove('on');p.querySelector('.radio-c').classList.remove('on');});
+  el.classList.add('on');el.querySelector('.radio-c').classList.add('on');
+}
+function toggleFav(id){const b=document.getElementById(id);b.textContent=b.textContent==='🤍'?'❤️':'🤍';}
+
+
+/* go() → ver función maestra arriba */
+function setSvc(el){document.querySelectorAll('.svc-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+function selRider(el,price,name,time){
+  document.querySelectorAll('.rider-chip').forEach(r=>r.classList.remove('on'));
   el.classList.add('on');
-  var r = el.querySelector('.radio-c');
-  if (r) r.classList.add('on');
-  window._dcCarrito._metodoPago = el.getAttribute('data-pago') || 'efectivo';
-};
-
-// ── P5: Confirmar pedido ────────────────────────────────────
-window.confirmarPedido = async function() {
-  var c    = window._dcCarrito;
-  var auth = window._fbAuth;
-  var db   = window._fbDb;
-  if (!auth || !auth.currentUser || !db) { alert('Inicia sesión para pedir.'); return; }
-  if (!c.restauranteId) { alert('Selecciona un restaurante.'); return; }
-  var items = Object.entries(c.items).filter(function(e){ return e[1].cantidad > 0; });
-  if (items.length === 0) { alert('Tu carrito está vacío.'); return; }
-  var btn = document.getElementById('btn-confirmar-pedido');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
-  var uid = auth.currentUser.uid;
-  var nombreVecino = localStorage.getItem('dcuser') || 'Vecino';
-  var sub   = items.reduce(function(a,e){ return a+e[1].cantidad*e[1].precio; }, 0);
-  var envio = c.costo_envio || 0;
-  var pedidoData = {
-    vecinoId: uid, vecinoNombre: nombreVecino,
-    restauranteId: c.restauranteId, restauranteNombre: c.restauranteNombre,
-    items: items.map(function(e){ return { productoId:e[0], nombre:e[1].nombre, precio:e[1].precio, cantidad:e[1].cantidad, categoria:e[1].categoria||'' }; }),
-    subtotal: sub, envio: envio, total: sub+envio,
-    metodoPago: c._metodoPago || 'efectivo',
-    tipoEntrega: c.restauranteEntrega || 'propia',
-    requiereRepartidor: c.restauranteEntrega === 'dc',
-    repartidorId: null, repartidorNombre: null,
-    estado: 'nuevo', tiempoEstimado: null,
-    notas: (document.getElementById('carr-notas') ? document.getElementById('carr-notas').value.trim() : ''),
-    fecha: Date.now(), actualizado: Date.now(),
-    calificadoRestaurante: false, calificadoRepartidor: false
-  };
-  try {
-    var fb  = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var ref = await fb.addDoc(fb.collection(db,'pedidos'), pedidoData);
-    // Notificar al restaurante
-    try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:c.restauranteId, tipo:'pedido', modulo:'pedidos', titulo:'Nuevo pedido', mensaje:nombreVecino+' realizó un pedido de $'+(sub+envio), leida:false, eliminada:false, prioridad:'alta', pedidoId:ref.id, fecha:Date.now() }); } catch(ne) {}
-    // Notificar al vecino
-    try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:uid, tipo:'pedido', modulo:'pedidos', titulo:'Pedido enviado', mensaje:'Tu pedido en '+c.restauranteNombre+' fue recibido.', leida:false, eliminada:false, prioridad:'normal', pedidoId:ref.id, fecha:Date.now() }); } catch(ne2) {}
-    window._dcCarrito.items = {};
-    window._dcCarrito._metodoPago = 'efectivo';
-    window._dcPedidoTracking = ref.id;
-    go('v-tracking','right');
-    window._iniciarTracking(ref.id);
-  } catch(e) {
-    alert('Error al enviar pedido: ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Confirmar y pedir →'; }
-  }
-};
-
-// ── P5: Tracking ────────────────────────────────────────────
-window._iniciarTracking = async function(pedidoId) {
-  if (window._dcPedidoTrackingUnsub) { window._dcPedidoTrackingUnsub(); window._dcPedidoTrackingUnsub = null; }
-  try {
-    var fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    window._dcPedidoTrackingUnsub = fb.onSnapshot(fb.doc(window._fbDb,'pedidos',pedidoId), function(snap) {
-      if (!snap.exists()) return;
-      window._renderTracking(snap.data());
-    });
-  } catch(e) { console.log('_iniciarTracking:', e.message); }
-};
-window._renderTracking = function(d) {
-  var ESTADOS = {
-    nuevo:               { ic:'📦', txt:'Pedido enviado', sub:'Esperando confirmación del restaurante' },
-    aceptado:            { ic:'✅', txt:'Pedido aceptado', sub:'Confirmado por el restaurante' },
-    rechazado:           { ic:'❌', txt:'Pedido rechazado', sub:'El restaurante no pudo aceptarlo' },
-    preparando:          { ic:'👨‍🍳', txt:'Preparando tu orden', sub: d.tiempoEstimado ? '~' + d.tiempoEstimado + ' min' : 'En proceso' },
-    listo:               { ic:'🛎️', txt:'¡Listo!', sub:'Esperando repartidor o salida' },
-    buscando_repartidor: { ic:'🔍', txt:'Buscando repartidor DC', sub:'Asignando...' },
-    repartidor_asignado: { ic:'🏍️', txt:'Repartidor asignado', sub: d.repartidorNombre || 'En camino' },
-    recogido:            { ic:'🛵', txt:'Repartidor recogió el pedido', sub:'En camino' },
-    en_camino:           { ic:'🏍️', txt:'En camino', sub:'Tu pedido va hacia ti' },
-    ya_estoy_aqui:       { ic:'📍', txt:'¡Ya llegó!', sub:'El repartidor está en tu puerta' },
-    entregado:           { ic:'🎉', txt:'¡Entregado!', sub:'Disfruta tu pedido' },
-    cancelado:           { ic:'🚫', txt:'Cancelado', sub:'' }
-  };
-  var e = ESTADOS[d.estado] || ESTADOS.nuevo;
-  var ic  = document.getElementById('trk-estado-ic');
-  var txt = document.getElementById('trk-estado-txt');
-  var sub = document.getElementById('trk-tiempo-txt');
-  var rnm = document.getElementById('trk-rest-nombre');
-  if (ic)  ic.textContent  = e.ic;
-  if (txt) txt.textContent = e.txt;
-  if (sub) sub.textContent = e.sub;
-  if (rnm) rnm.textContent = d.restauranteNombre || 'Tu pedido';
-  var PASOS = [
-    { est:['nuevo','aceptado','rechazado','preparando','listo','buscando_repartidor','repartidor_asignado','recogido','en_camino','ya_estoy_aqui','entregado','cancelado'], ic:'📦', lbl:'Pedido recibido' },
-    { est:['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','recogido','en_camino','ya_estoy_aqui','entregado'], ic:'✅', lbl:'Aceptado' },
-    { est:['preparando','listo','buscando_repartidor','repartidor_asignado','recogido','en_camino','ya_estoy_aqui','entregado'], ic:'👨‍🍳', lbl:'Preparando' },
-    { est:['listo','buscando_repartidor','repartidor_asignado','recogido','en_camino','ya_estoy_aqui','entregado'], ic:'🛎️', lbl:'Listo' },
-    { est:['en_camino','recogido','ya_estoy_aqui','entregado'], ic:'🏍️', lbl:'En camino' },
-    { est:['entregado'], ic:'🏠', lbl:'Entregado' }
-  ];
-  var pasos = document.getElementById('trk-pasos');
-  if (pasos) {
-    pasos.innerHTML = PASOS.map(function(p, i) {
-      var done = p.est.indexOf(d.estado) !== -1;
-      var dotStyle = done ? 'background:#1FC26A;color:#fff;' : 'background:#f0f0f0;color:#aaa;';
-      return '<div class="track-step">'
-        + (i < PASOS.length-1 ? '<div class="track-line" style="' + (done?'background:#1FC26A':'') + '"></div>' : '')
-        + '<div class="track-dot" style="' + dotStyle + 'border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">' + p.ic + '</div>'
-        + '<div><div style="font-size:12px;font-weight:' + (done?'700':'500') + ';color:' + (done?'#111':'#aaa') + ';">' + p.lbl + '</div></div></div>';
-    }).join('');
-  }
-  var repCard = document.getElementById('trk-repartidor-card');
-  var repNom  = document.getElementById('trk-rep-nombre');
-  if (repCard) {
-    var showRep = ['repartidor_asignado','recogido','en_camino','ya_estoy_aqui'].indexOf(d.estado) !== -1 && d.repartidorNombre;
-    repCard.style.display = showRep ? 'block' : 'none';
-    if (repNom && d.repartidorNombre) repNom.textContent = d.repartidorNombre;
-  }
-  var calCard  = document.getElementById('trk-calificar-card');
-  var btnVolver = document.getElementById('trk-btn-volver');
-  if (calCard) {
-    calCard.style.display = (d.estado === 'entregado' && !d.calificadoRestaurante) ? 'block' : 'none';
-    if (d.repartidorId) { var rw = document.getElementById('trk-stars-rep-wrap'); if (rw) rw.style.display = 'block'; }
-  }
-  if (btnVolver) btnVolver.style.display = ['entregado','rechazado','cancelado'].indexOf(d.estado) !== -1 ? 'block' : 'none';
-};
-
-// ── P5: Mis Pedidos Vecino ──────────────────────────────────
-window._cargarMisPedidosVecino = async function() {
-  var lista = document.getElementById('mpv-lista');
-  if (!lista) return;
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) { lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">Inicia sesión.</div>'; return; }
-  lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">Cargando...</div>';
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'pedidos'), fb.where('vecinoId','==',auth.currentUser.uid)));
-    var docs = [];
-    snap.forEach(function(d){ docs.push(Object.assign({_id:d.id}, d.data())); });
-    docs.sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
-    if (docs.length === 0) {
-      lista.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">🛒</div><div style="font-size:13px;font-weight:700;color:#888;">Sin pedidos todavía</div><div style="font-size:11px;color:#bbb;margin-top:4px;">Haz tu primer pedido en Dominio Food</div></div>';
-      return;
-    }
-    var IC = { nuevo:'📦', aceptado:'✅', rechazado:'❌', preparando:'👨‍🍳', listo:'🛎️', en_camino:'🏍️', entregado:'🎉', cancelado:'🚫' };
-    lista.innerHTML = docs.map(function(p) {
-      var ic    = IC[p.estado] || '📦';
-      var fecha = p.fecha ? new Date(p.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      var bg = p.estado==='entregado'?'#E8F5EE':p.estado==='rechazado'?'#FDECEA':'#FFF8E1';
-      var col = p.estado==='entregado'?'#0A4220':p.estado==='rechazado'?'#D63A2A':'#7a5000';
-      return '<div class="prov-card" style="cursor:pointer;" onclick="window._verTracking(\'' + p._id + '\')">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">'
-        + '<div style="font-size:14px;font-weight:700;color:#111;">' + ic + ' ' + (p.restauranteNombre||'—') + '</div>'
-        + '<span style="font-size:10px;color:#888;">' + fecha + '</span></div>'
-        + '<div style="font-size:12px;color:#666;margin-bottom:4px;">' + (p.items||[]).slice(0,3).map(function(i){ return i.nombre; }).join(', ') + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-        + '<span style="font-size:13px;font-weight:700;color:#111;">$' + (p.total||0) + '</span>'
-        + '<span style="background:' + bg + ';color:' + col + ';font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">' + (p.estado||'nuevo') + '</span>'
-        + '</div></div>';
-    }).join('');
-  } catch(e) {
-    lista.innerHTML = '<div style="text-align:center;padding:20px;color:#D63A2A;font-size:12px;">Error al cargar.</div>';
-    console.log('_cargarMisPedidosVecino:', e.message);
-  }
-};
-window._verTracking = function(pedidoId) {
-  window._dcPedidoTracking = pedidoId;
-  go('v-tracking','right');
-  window._iniciarTracking(pedidoId);
-};
-
-// ── P6: Pedidos restaurante ─────────────────────────────────
-window._cargarPedidosRestaurante = async function() {
-  var lista = document.getElementById('mpr-lista');
-  var sub_el = document.getElementById('mpr-subtitle');
-  if (!lista) return;
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">Cargando...</div>';
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'pedidos'), fb.where('restauranteId','==',auth.currentUser.uid)));
-    var docs = [];
-    snap.forEach(function(d){ docs.push(Object.assign({_id:d.id},d.data())); });
-    docs.sort(function(a,b){ return (b.fecha||0)-(a.fecha||0); });
-    var ACTIVOS   = ['nuevo','aceptado','preparando'];
-    var LISTOS    = ['listo','buscando_repartidor','repartidor_asignado'];
-    var ENTREGADOS = ['en_camino','recogido','ya_estoy_aqui','entregado','rechazado','cancelado'];
-    var grupos = {
-      activos:    docs.filter(function(p){ return ACTIVOS.indexOf(p.estado)!==-1; }),
-      listos:     docs.filter(function(p){ return LISTOS.indexOf(p.estado)!==-1; }),
-      entregados: docs.filter(function(p){ return ENTREGADOS.indexOf(p.estado)!==-1; })
-    };
-    var grupo   = grupos[window._mprTab] || grupos.activos;
-    var actCount = grupos.activos.length + grupos.listos.length;
-    if (sub_el) sub_el.textContent = actCount > 0 ? actCount + ' pedido' + (actCount!==1?'s':'') + ' activo' + (actCount!==1?'s':'') : 'Sin pedidos activos';
-    if (grupo.length === 0) {
-      lista.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">📭</div><div style="font-size:13px;font-weight:700;color:#888;">Sin pedidos en esta sección</div></div>';
-      return;
-    }
-    lista.innerHTML = grupo.map(function(p) {
-      var fecha = p.fecha ? new Date(p.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
-      var items_str = (p.items||[]).map(function(i){ return i.cantidad+'x '+i.nombre; }).join(', ');
-      return '<div class="prov-card" style="cursor:pointer;" onclick="window._abrirDetallePedido(\'' + p._id + '\')">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">'
-        + '<div style="font-size:13px;font-weight:700;color:#111;">📦 ' + (p.vecinoNombre||'Vecino') + '</div>'
-        + '<span style="font-size:10px;color:#888;">' + fecha + '</span></div>'
-        + '<div style="font-size:11px;color:#666;margin-bottom:6px;">' + items_str + '</div>'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-        + '<span style="font-size:13px;font-weight:700;color:#111;">$' + (p.total||0) + ' · ' + (p.metodoPago||'efectivo') + '</span>'
-        + '<span style="background:#FDECEA;color:#D63A2A;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">' + (p.estado||'nuevo') + '</span>'
-        + '</div></div>';
-    }).join('');
-  } catch(e) {
-    lista.innerHTML = '<div style="text-align:center;padding:20px;color:#D63A2A;font-size:12px;">Error al cargar.</div>';
-    console.log('_cargarPedidosRestaurante:', e.message);
-  }
-};
-window._mprSetTab = function(tab, btn) {
-  window._mprTab = tab;
-  document.querySelectorAll('#v-mis-pedidos-rest .filter-chip').forEach(function(b){ b.classList.remove('on'); });
-  if (btn) btn.classList.add('on');
-  window._cargarPedidosRestaurante();
-};
-
-// ── P6: Detalle + acciones pedido restaurante ───────────────
-window._abrirDetallePedido = async function(pedidoId) {
-  window._dcPedidoActivo = pedidoId;
-  var cont = document.getElementById('pdet-contenido');
-  var sub  = document.getElementById('pdet-subtitle');
-  if (!cont) return;
-  cont.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">Cargando...</div>';
-  go('v-pedido-det','right');
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDoc(fb.doc(window._fbDb,'pedidos',pedidoId));
-    if (!snap.exists()) { cont.innerHTML = '<div style="padding:20px;color:#D63A2A;">Pedido no encontrado.</div>'; return; }
-    var p = Object.assign({ _id: snap.id }, snap.data());
-    if (sub) sub.textContent = 'Pedido #' + pedidoId.slice(-6).toUpperCase();
-    window._renderDetallePedido(p);
-  } catch(e) {
-    cont.innerHTML = '<div style="padding:20px;color:#D63A2A;">Error: ' + e.message + '</div>';
-  }
-};
-window._renderDetallePedido = function(p) {
-  var cont = document.getElementById('pdet-contenido');
-  if (!cont) return;
-  var itemsHTML = (p.items||[]).map(function(i) {
-    return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:.5px solid #f5f5f5;">'
-      + '<span style="font-size:12px;color:#111;">' + i.cantidad + 'x ' + i.nombre + '</span>'
-      + '<span style="font-size:12px;font-weight:700;color:#111;">$' + (i.cantidad*i.precio) + '</span></div>';
-  }).join('');
-  var ACCIONES = {
-    nuevo:      [{ lbl:'✅ Aceptar', fn:"window._cambiarEstadoPedido('aceptado')" }, { lbl:'❌ Rechazar', fn:"window._cambiarEstadoPedido('rechazado')" }],
-    aceptado:   [{ lbl:'👨‍🍳 Preparando', fn:"window._cambiarEstadoPedido('preparando')" }],
-    preparando: [{ lbl:'🛎️ Listo para entregar', fn:"window._cambiarEstadoPedido('listo')" }],
-    listo: p.requiereRepartidor
-      ? [{ lbl:'🔍 Buscar repartidor DC', fn:"window._cambiarEstadoPedido('buscando_repartidor')" }]
-      : [{ lbl:'🏍️ Salió a entregar', fn:"window._cambiarEstadoPedido('en_camino')" }],
-    en_camino: [{ lbl:'🏠 Marcar entregado', fn:"window._cambiarEstadoPedido('entregado')" }]
-  };
-  var acciones = ACCIONES[p.estado] || [];
-  cont.innerHTML = '<div class="prov-card" style="margin-bottom:12px;">'
-    + '<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">👤 ' + (p.vecinoNombre||'Vecino') + '</div>'
-    + '<div style="font-size:11px;color:#888;">💳 ' + (p.metodoPago||'efectivo') + ' · ' + (p.tipoEntrega||'propia') + '</div>'
-    + (p.notas ? '<div style="font-size:11px;color:#666;margin-top:6px;font-style:italic;">📝 ' + p.notas + '</div>' : '')
-    + '</div>'
-    + '<div class="prov-card" style="margin-bottom:12px;">' + itemsHTML
-    + '<div style="display:flex;justify-content:space-between;padding:10px 0 0;">'
-    + '<span style="font-size:13px;font-weight:700;color:#111;">Total</span>'
-    + '<span style="font-size:14px;font-weight:700;color:#D63A2A;">$' + (p.total||0) + '</span></div></div>'
-    + (p.estado === 'nuevo' ? '<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#666;display:block;margin-bottom:4px;">Tiempo estimado (min)</label><input type="number" id="pdet-tiempo" class="inp" value="25" min="5" max="120"></div>' : '')
-    + acciones.map(function(a) {
-        return '<button class="btn" style="background:#D63A2A;color:#fff;margin-bottom:8px;" onclick="' + a.fn + '">' + a.lbl + '</button>';
-      }).join('')
-    + '<div id="pdet-msg" style="font-size:12px;color:#D63A2A;margin-top:8px;display:none;"></div>';
-};
-window._cambiarEstadoPedido = async function(nuevoEstado) {
-  var pedidoId = window._dcPedidoActivo;
-  if (!pedidoId) return;
-  var db = window._fbDb;
-  if (!db) return;
-  try {
-    var fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var pSnap = await fb.getDoc(fb.doc(db,'pedidos',pedidoId));
-    if (!pSnap.exists()) return;
-    var p = pSnap.data();
-    var upd = { estado: nuevoEstado, actualizado: Date.now() };
-    if (nuevoEstado === 'aceptado') {
-      var tel = document.getElementById('pdet-tiempo');
-      upd.tiempoEstimado = tel ? (parseInt(tel.value)||25) : 25;
-    }
-    if (nuevoEstado === 'buscando_repartidor') {
-      try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:'__repartidores__', tipo:'pedido_disponible', modulo:'pedidos', titulo:'Pedido disponible', mensaje:'Pedido en '+(p.restauranteNombre||'restaurante')+' · $'+(p.total||0), leida:false, eliminada:false, prioridad:'alta', pedidoId:pedidoId, fecha:Date.now() }); } catch(ne) {}
-    }
-    await fb.updateDoc(fb.doc(db,'pedidos',pedidoId), upd);
-    var msgs = { aceptado:'¡Tu pedido fue aceptado!', rechazado:'Tu pedido fue rechazado.', listo:'Tu pedido está listo.', en_camino:'Tu pedido está en camino.' };
-    if (msgs[nuevoEstado] && p.vecinoId) {
-      try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:p.vecinoId, tipo:'pedido', modulo:'pedidos', titulo:'Actualización de pedido', mensaje:msgs[nuevoEstado], leida:false, eliminada:false, prioridad:'normal', pedidoId:pedidoId, fecha:Date.now() }); } catch(ne2) {}
-    }
-    go('v-mis-pedidos-rest','left');
-    setTimeout(function(){ window._cargarPedidosRestaurante && window._cargarPedidosRestaurante(); }, 300);
-  } catch(e) {
-    var msg = document.getElementById('pdet-msg');
-    if (msg) { msg.textContent = 'Error: '+e.message; msg.style.display = 'block'; }
-  }
-};
-
-// ── P6: Stats restaurante (reemplaza localStorage) ──────────
-window._cargarRestStats = async function() {
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'pedidos'), fb.where('restauranteId','==',auth.currentUser.uid)));
-    var pedidos = 0; var ventas = 0;
-    snap.forEach(function(d){ var p=d.data(); pedidos++; if(p.estado==='entregado') ventas+=p.total||0; });
-    var g = function(id){ return document.getElementById(id); };
-    if (g('vmr-pedidos')) g('vmr-pedidos').textContent = pedidos;
-    if (g('vmr-ventas'))  g('vmr-ventas').textContent  = '$'+ventas;
-    var vSnap = await fb.getDocs(fb.query(fb.collection(db,'valoraciones'), fb.where('restauranteId','==',auth.currentUser.uid)));
-    var totalR = 0; var countR = 0;
-    vSnap.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){totalR+=v.ratingRestaurante;countR++;} });
-    if (g('vmr-rating')) g('vmr-rating').textContent = countR>0 ? (totalR/countR).toFixed(1)+'★' : '—';
-  } catch(e) { console.log('_cargarRestStats:', e.message); }
-};
-
-// ── P7: Menú admin ──────────────────────────────────────────
-window._cargarMenuAdmin = async function() {
-  var lista = document.getElementById('menu-admin-lista');
-  if (!lista) return;
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  var restId = auth.currentUser.uid;
-  lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">Cargando menú...</div>';
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'menu',restId,'productos'), fb.orderBy('orden','asc')));
-    if (snap.empty) {
-      lista.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">📋</div><div style="font-size:13px;font-weight:700;color:#888;">Sin productos todavía</div><div style="font-size:11px;color:#bbb;margin-top:4px;">Agrega tu primer producto arriba</div></div>';
-      return;
-    }
-    lista.innerHTML = '';
-    snap.forEach(function(d) {
-      var p = Object.assign({ _id: d.id }, d.data());
-      var div = document.createElement('div');
-      div.className = 'prov-card';
-      div.style.marginBottom = '8px';
-      div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
-        + '<div style="flex:1;">'
-        + '<div style="font-size:13px;font-weight:700;color:#111;">' + (p.nombre||'—') + '</div>'
-        + '<div style="font-size:11px;color:#888;margin-top:2px;">' + (p.categoria||'') + (p.descripcion ? ' · ' + p.descripcion : '') + '</div>'
-        + '<div style="font-size:14px;font-weight:700;color:#D63A2A;margin-top:4px;">$' + (p.precio||0) + '</div>'
-        + '</div>'
-        + '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">'
-        + '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;' + (p.disponible!==false?'background:#E8F5EE;color:#0A4220':'background:#F5F5F5;color:#999') + ';">' + (p.disponible!==false?'✅ Disponible':'⛔ No disponible') + '</span>'
-        + '<button onclick="window._abrirFormProducto(\'' + p._id + '\')" style="background:#1FC26A;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">Editar</button>'
-        + '</div></div>';
-      lista.appendChild(div);
-    });
-  } catch(e) {
-    lista.innerHTML = '<div style="padding:20px;color:#D63A2A;font-size:12px;">Error: '+e.message+'</div>';
-  }
-};
-window._abrirFormProducto = async function(productoId) {
-  var titulo = document.getElementById('pform-titulo');
-  if (titulo) titulo.textContent = productoId ? 'Editar producto' : 'Nuevo producto';
-  document.getElementById('pform-id').value = productoId || '';
-  ['pform-nombre','pform-categoria','pform-desc','pform-precio'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
-  var disp = document.getElementById('pform-disponible');
-  if (disp) disp.checked = true;
-  var err = document.getElementById('pform-error');
-  if (err) err.style.display = 'none';
-  if (productoId) {
-    var auth = window._fbAuth; var db = window._fbDb;
-    if (auth && auth.currentUser && db) {
-      try {
-        var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-        var snap = await fb.getDoc(fb.doc(db,'menu',auth.currentUser.uid,'productos',productoId));
-        if (snap.exists()) {
-          var p = snap.data();
-          var s = function(id,v){ var el=document.getElementById(id); if(el) el.value=v||''; };
-          s('pform-nombre',p.nombre); s('pform-categoria',p.categoria); s('pform-desc',p.descripcion); s('pform-precio',p.precio);
-          if (disp) disp.checked = p.disponible !== false;
-        }
-      } catch(e) {}
-    }
-  }
-  go('v-producto-form','right');
-};
-window._guardarProducto = async function() {
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  var restId = auth.currentUser.uid;
-  var pid    = document.getElementById('pform-id').value.trim();
-  var nombre = document.getElementById('pform-nombre').value.trim();
-  var cat    = document.getElementById('pform-categoria').value.trim();
-  var desc   = document.getElementById('pform-desc').value.trim();
-  var precio = parseFloat(document.getElementById('pform-precio').value) || 0;
-  var disp   = document.getElementById('pform-disponible').checked;
-  var err    = document.getElementById('pform-error');
-  if (!nombre || !cat || precio <= 0) {
-    if (err) { err.textContent = 'Nombre, categoría y precio son obligatorios.'; err.style.display = 'block'; }
-    return;
-  }
-  if (err) err.style.display = 'none';
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var data = { nombre:nombre, categoria:cat, descripcion:desc, precio:precio, disponible:disp, actualizado:Date.now() };
-    if (pid) {
-      await fb.setDoc(fb.doc(db,'menu',restId,'productos',pid), data, { merge: true });
-    } else {
-      var countSnap = await fb.getDocs(fb.collection(db,'menu',restId,'productos'));
-      data.orden  = countSnap.size;
-      data.creado = Date.now();
-      await fb.addDoc(fb.collection(db,'menu',restId,'productos'), data);
-    }
-    go('v-menu-admin','left');
-    setTimeout(function(){ window._cargarMenuAdmin && window._cargarMenuAdmin(); }, 300);
-  } catch(e) {
-    if (err) { err.textContent = 'Error: '+e.message; err.style.display = 'block'; }
-  }
-};
-
-// ── P8: Calificaciones ──────────────────────────────────────
-window._setStarsRest = function(n) {
-  window._dcStarsRest = n;
-  document.querySelectorAll('#trk-stars-rest span').forEach(function(s,i){ s.textContent = i < n ? '⭐' : '☆'; });
-};
-window._setStarsRep = function(n) {
-  window._dcStarsRep = n;
-  document.querySelectorAll('#trk-stars-rep span').forEach(function(s,i){ s.textContent = i < n ? '⭐' : '☆'; });
-};
-window._enviarCalificacion = async function() {
-  if (!window._dcStarsRest) { alert('Califica el restaurante primero.'); return; }
-  var pedidoId = window._dcPedidoTracking;
-  if (!pedidoId) return;
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  try {
-    var fb    = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var pSnap = await fb.getDoc(fb.doc(db,'pedidos',pedidoId));
-    if (!pSnap.exists()) return;
-    var p = pSnap.data();
-    await fb.addDoc(fb.collection(db,'valoraciones'), {
-      pedidoId:pedidoId, vecinoId:auth.currentUser.uid,
-      restauranteId:p.restauranteId, repartidorId:p.repartidorId||null,
-      ratingRestaurante:window._dcStarsRest, ratingRepartidor:window._dcStarsRep||null,
-      comentario:document.getElementById('trk-comentario')?document.getElementById('trk-comentario').value.trim():'',
-      fecha:Date.now()
-    });
-    await fb.updateDoc(fb.doc(db,'pedidos',pedidoId), { calificadoRestaurante: true });
-    var calCard = document.getElementById('trk-calificar-card');
-    if (calCard) calCard.innerHTML = '<div style="text-align:center;padding:16px;"><div style="font-size:32px;">✅</div><div style="font-size:13px;font-weight:700;color:#111;margin-top:8px;">¡Gracias por tu calificación!</div></div>';
-  } catch(e) { alert('Error: '+e.message); }
-};
-
-// ── P9: Pedidos repartidor DC ───────────────────────────────
-window._cargarPedidosRepartidor = async function() {
-  var lista = document.getElementById('repd-lista');
-  var sub_el = document.getElementById('repd-subtitle');
-  if (!lista) return;
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">Cargando...</div>';
-  try {
-    var fb   = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await fb.getDocs(fb.query(fb.collection(db,'pedidos'), fb.where('estado','==','buscando_repartidor')));
-    var docs = [];
-    snap.forEach(function(d){ docs.push(Object.assign({_id:d.id},d.data())); });
-    if (sub_el) sub_el.textContent = docs.length > 0 ? docs.length + ' pedido' + (docs.length!==1?'s':'') + ' disponible' + (docs.length!==1?'s':'') : 'Sin pedidos disponibles';
-    if (docs.length === 0) {
-      lista.innerHTML = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:36px;margin-bottom:8px;">🏍️</div><div style="font-size:13px;font-weight:700;color:#888;">Sin pedidos disponibles</div><div style="font-size:11px;color:#bbb;margin-top:4px;">Cuando un restaurante necesite repartidor DC aparecerá aquí</div></div>';
-      return;
-    }
-    lista.innerHTML = docs.map(function(p) {
-      return '<div class="prov-card" style="margin:0 0 8px;">'
-        + '<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:4px;">📦 ' + (p.restauranteNombre||'Restaurante') + '</div>'
-        + '<div style="font-size:11px;color:#888;margin-bottom:8px;">Para: ' + (p.vecinoNombre||'Vecino') + ' · $' + (p.total||0) + '</div>'
-        + '<button class="btn btn-green" style="font-size:12px;padding:8px;" onclick="window._tomarPedidoRepartidor(\'' + p._id + '\')">🏍️ Tomar este pedido →</button>'
-        + '</div>';
-    }).join('');
-  } catch(e) {
-    lista.innerHTML = '<div style="text-align:center;padding:20px;color:#D63A2A;font-size:12px;">Error.</div>';
-  }
-};
-window._tomarPedidoRepartidor = async function(pedidoId) {
-  var auth = window._fbAuth; var db = window._fbDb;
-  if (!auth || !auth.currentUser || !db) return;
-  var uid = auth.currentUser.uid;
-  var nombreRep = localStorage.getItem('dcuser') || 'Repartidor';
-  try {
-    var fb    = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap  = await fb.getDoc(fb.doc(db,'pedidos',pedidoId));
-    if (!snap.exists()) { alert('Pedido no encontrado.'); return; }
-    var p = snap.data();
-    if (p.estado !== 'buscando_repartidor') { alert('Este pedido ya fue tomado.'); window._cargarPedidosRepartidor(); return; }
-    await fb.updateDoc(fb.doc(db,'pedidos',pedidoId), { estado:'repartidor_asignado', repartidorId:uid, repartidorNombre:nombreRep, actualizado:Date.now() });
-    if (p.vecinoId) {
-      try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:p.vecinoId, tipo:'pedido', modulo:'pedidos', titulo:'Repartidor asignado', mensaje:nombreRep+' va a recoger tu pedido.', leida:false, eliminada:false, prioridad:'normal', pedidoId:pedidoId, fecha:Date.now() }); } catch(ne) {}
-    }
-    window._mostrarControlRepartidor(pedidoId, p);
-  } catch(e) { alert('Error: '+e.message); }
-};
-window._mostrarControlRepartidor = function(pedidoId, p) {
-  var lista = document.getElementById('repd-lista');
-  if (!lista) return;
-  lista.innerHTML = '<div class="prov-card" style="margin:14px 0;">'
-    + '<div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;">📦 ' + (p.restauranteNombre||'Restaurante') + '</div>'
-    + '<div style="font-size:12px;color:#888;margin-bottom:12px;">Para: ' + (p.vecinoNombre||'Vecino') + ' · $' + (p.total||0) + '</div>'
-    + '<button class="btn btn-green" style="margin-bottom:8px;" onclick="window._avanzarRepartidor(\'' + pedidoId + '\',\'recogido\')">✅ Ya recogí el pedido</button>'
-    + '<button class="btn" style="background:#1A7AB5;color:#fff;margin-bottom:8px;" onclick="window._avanzarRepartidor(\'' + pedidoId + '\',\'ya_estoy_aqui\')">📍 Ya estoy aquí</button>'
-    + '<button class="btn btn-yellow" onclick="window._avanzarRepartidor(\'' + pedidoId + '\',\'entregado\')">🏠 Entregado</button>'
-    + '</div>';
-};
-window._avanzarRepartidor = async function(pedidoId, estado) {
-  var db = window._fbDb;
-  if (!db) return;
-  try {
-    var fb    = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap  = await fb.getDoc(fb.doc(db,'pedidos',pedidoId));
-    if (!snap.exists()) return;
-    var p = snap.data();
-    await fb.updateDoc(fb.doc(db,'pedidos',pedidoId), { estado:estado, actualizado:Date.now() });
-    var msgs = { recogido:'Repartidor ya recogió tu pedido.', ya_estoy_aqui:'¡Tu repartidor está en la puerta!', entregado:'¡Tu pedido fue entregado!' };
-    if (msgs[estado] && p.vecinoId) {
-      try { await fb.addDoc(fb.collection(db,'notificaciones'), { uid:p.vecinoId, tipo:'pedido', modulo:'pedidos', titulo:'Pedido actualizado', mensaje:msgs[estado], leida:false, eliminada:false, prioridad:'alta', pedidoId:pedidoId, fecha:Date.now() }); } catch(ne) {}
-    }
-    if (estado === 'entregado') { setTimeout(function(){ window._cargarPedidosRepartidor && window._cargarPedidosRepartidor(); }, 500); }
-  } catch(e) { alert('Error: '+e.message); }
-};
-
-// ── Fix funciones demo rotas (setSvc, setStars) ─────────────
-function setFilter(btn){document.querySelectorAll('.filter-chip').forEach(function(b){b.classList.remove('on')});btn.classList.add('on');}
-function setCat(btn){document.querySelectorAll('.cat-ic').forEach(function(c){c.classList.remove('on')});document.querySelectorAll('.cat-nm').forEach(function(c){c.classList.remove('on')});btn.querySelector('.cat-ic').classList.add('on');btn.querySelector('.cat-nm').classList.add('on');}
-function setSvc(el){document.querySelectorAll('.svc-tab').forEach(function(t){t.classList.remove('on')});el.classList.add('on');}
-function setStars(n){document.querySelectorAll('#ride-stars .rate-star').forEach(function(s,i){s.textContent=i<n?'⭐':'☆';});}
-
+  document.getElementById('rider-price').textContent='$'+price;
+  document.getElementById('rider-lbl').textContent=name+' · '+time+' · Moto';
+}
+function setCatS(btn){
+  document.querySelectorAll('.cat-ic').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.cat-nm').forEach(c=>c.classList.remove('on'));
+  btn.querySelector('.cat-ic').classList.add('on');
+  btn.querySelector('.cat-nm').classList.add('on');
+  const nombre = btn.querySelector('.cat-nm').textContent.trim().toLowerCase();
+  // Mapear nombre visual a valor de categoria en Firebase
+  const mapa = {'todos':'todos','plomero':'plomero','eléctrico':'electricista','jardín':'jardinero','limpieza':'limpieza','pintura':'pintura','a/c':'ac','cerrajero':'cerrajero','mascotas':'mascotas','belleza':'belleza','tecnología':'tecnologia','albanileria':'albanileria','otro':'otro'};
+  const cat = mapa[nombre] || nombre;
+  if(window.diagFirebase) window.diagFirebase(cat);
+}
+function setStars(n){
+  const stars=document.querySelectorAll('#ride-stars .rate-star');
+  stars.forEach((s,i)=>s.textContent=i<n?'⭐':'☆');
+}
 
 
 /* go() → ver función maestra arriba */
