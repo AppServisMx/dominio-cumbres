@@ -1058,48 +1058,93 @@
   };
 
   // ===== CARGAR RESTAURANTES (Food) con acceso directo a db =====
+  // v2 — consulta tipo:restaurante + tipo:negocio (categorías food)
+  //       acepta estado:activo y aprobado_pendiente_pago
+  //       guarda _S.historial para filtros del módulo Food
+  //       onclick pasa r._id a dcFood_abrirRest()
+
+  // ── STUB temporal: se reemplaza cuando v-food-det se integre ──
+  // Conserva la navegación actual (go v-food-det) hasta entonces.
+  if (!window.dcFood_abrirRest) {
+    window.dcFood_abrirRest = function(restId) {
+      // TODO: stub — reemplazar con implementación real en paso de v-food-det
+      window._foodRestSeleccionado = restId; // guarda para uso futuro
+      go('v-food-det', 'right');
+    };
+  }
+
+  // ── Estado mínimo necesario para historial/filtros ────────────
+  // Solo se declara si dcFood aún no lo inicializó.
+  if (!window._foodState) {
+    window._foodState = { historial: [], filtro: 'todos' };
+  }
+
   window.cargarRestaurantes = async function() {
     const lista = document.getElementById('food-lista');
     const demo  = document.getElementById('food-demo');
     const hdr   = document.getElementById('food-lista-header');
-    if(!lista) return;
+    if (!lista) return;
+
+    // Categorías de negocio que se consideran food
+    const CATS_FOOD = ['mexicana','hamburguesas','pizzas','sushi','cafeteria',
+                       'postres','tacos','mariscos','pollo','desayunos',
+                       'bebidas','otro_rest','restaurante'];
+    const ESTADOS_OK = ['activo', 'aprobado_pendiente_pago'];
+
+    const EMOJIS = {
+      'tacos':'🌮','mexicana':'🌮','pizzas':'🍕','sushi':'🍣',
+      'hamburguesas':'🍔','cafeteria':'☕','mariscos':'🦞','pollo':'🍗',
+      'postres':'🧁','desayunos':'🍳','bebidas':'🥤',
+      'saludable':'🥗','cafe':'☕','comida corrida':'🍱',
+      'otro_rest':'🍽️','otro':'🍽️','restaurante':'🍽️'
+    };
+
     try {
-      const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-      const snap = await getDocs(query(collection(db,'usuarios'), where('tipo','==','negocio')));
+      const { getDocs, collection, query, where } =
+        await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+
+      // Dos queries en paralelo: tipo restaurante + tipo negocio
+      const [snapR, snapN] = await Promise.all([
+        getDocs(query(collection(db, 'usuarios'), where('tipo', '==', 'restaurante'))),
+        getDocs(query(collection(db, 'usuarios'), where('tipo', '==', 'negocio')))
+      ]);
+
       const docs = [];
-      snap.forEach(d => { const r = d.data(); if(r.estado==='activo') docs.push({_id:d.id,...r}); });
-      if(docs.length === 0) {
-        if(hdr) hdr.innerHTML = '<div class="si09">🟢 Abiertos ahora</div>';
-        if(demo) demo.style.display='block'; // Mostrar demo si no hay reales
+
+      // tipo:'restaurante' — incluir si estado OK
+      snapR.forEach(d => {
+        const r = d.data();
+        if (ESTADOS_OK.includes(r.estado)) docs.push({ _id: d.id, ...r });
+      });
+
+      // tipo:'negocio' — solo si categoría es food y estado OK
+      snapN.forEach(d => {
+        const r = d.data();
+        if (!ESTADOS_OK.includes(r.estado)) return;
+        const cat = (r.categoria || '').toLowerCase();
+        if (!CATS_FOOD.includes(cat)) return;
+        docs.push({ _id: d.id, ...r });
+      });
+
+      // Guardar en estado para filtros futuros
+      window._foodState.historial = docs;
+
+      if (docs.length === 0) {
+        if (hdr) hdr.textContent = '🟢 Abiertos ahora';
+        if (demo) demo.style.display = 'block';
         return;
       }
-      if(demo) demo.style.display='none';
-      if(hdr) hdr.innerHTML = '<div class="si09">🟢 Restaurantes activos</div>';
+
+      if (demo) demo.style.display = 'none';
+      if (hdr) hdr.textContent = '🟢 Restaurantes activos';
       lista.innerHTML = '';
-      const EMOJIS = {'tacos':'🌮','pizza':'🍕','sushi':'🍣','saludable':'🥗','hamburguesas':'🍔','cafe':'☕','comida corrida':'🍱','otro':'🍽️'};
-      docs.forEach(r => {
-        const cat = (r.categoria||'otro').toLowerCase();
-        const emoji = EMOJIS[cat] || '🍽️';
-        const div = document.createElement('div');
-        div.className = 'rest-card';
-        div.innerHTML = `
-          <div class="si15 rest-banner">${emoji}
-            <span class="si32">⏰ ${r.horario||'Ver horario'}</span>
-          </div>
-          <div class="rest-body">
-            <div class="si05">
-              <div class="rest-name">${r.nombreNegocio||r.nombre||'—'}</div>
-              <span class="si44">Abierto</span>
-            </div>
-            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">⭐ Nuevo · ${r.descripcion||r.categoria||''}</div>
-            <div class="rest-footer"><span class="si01">Envío disponible</span><span class="si16">Pedir →</span></div>
-          </div>`;
-        div.onclick = () => go('v-food-det','right');
-        lista.appendChild(div);
-      });
+
+      // Render delegado a _foodRenderLista — usa CSS del index + filtro activo
+      window._foodRenderLista && window._foodRenderLista(docs);
+
     } catch(e) {
-      if(hdr) hdr.innerHTML = '<div class="si09">🟢 Abiertos ahora</div>';
-      console.log('Food error:',e.message);
+      if (hdr) hdr.textContent = '🟢 Abiertos ahora';
+      console.log('Food cargarRestaurantes error:', e.message);
     }
   };
 
@@ -4757,155 +4802,169 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
 </div>
 <div class="view go-right" id="v-food">
-      <div class="food-hdr">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si69">
-          <button class="btn-back" onclick="go('v-home','left')">‹</button>
-          <div><div class="si13">🍽️ Dominio Food</div><div class="si21">14 restaurantes · abiertos ahora</div></div>
-        </div>
-        <div style="background:var(--white-12);border-radius:12px;padding:9px 14px;display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <span class="si70">🔍</span>
-          <input style="background:none;border:none;outline:none;font-size:12px;color:#fff;font-family:'Inter',sans-serif;flex:1;" placeholder="Buscar restaurante o platillo...">
-        </div>
-        <div class="filter-scroll">
-          <button class="filter-chip on" onclick="setFilter(this)">🟢 Abiertos</button>
-          <button class="filter-chip" onclick="setFilter(this)">⭐ Mejor calificados</button>
-          <button class="filter-chip" onclick="setFilter(this)">⚡ Más rápidos</button>
-          <button class="filter-chip" onclick="setFilter(this)">🏷️ Ofertas</button>
-        </div>
+
+  <!-- Header Food — gradiente amber del módulo aprobado -->
+  <div class="food-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+
+    <!-- Título + botón Mis pedidos -->
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <span style="font-size:26px;">🍽️</span>
+      <div style="flex:1;">
+        <div style="font-size:18px;font-weight:700;color:#fff;">Dominio Food</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);" id="food-lista-header">Cargando...</div>
       </div>
-      <div class="cat-scroll">
-        <div class="cat-btn" onclick="setCat(this)"><div class="si51 cat-ic on">🍽️</div><div class="cat-nm on">Todos</div></div>
-        <div class="cat-btn" onclick="setCat(this)"><div class="si15 cat-ic">🌮</div><div class="cat-nm">Tacos</div></div>
-        <div class="cat-btn" onclick="setCat(this)"><div class="si52 cat-ic">🍕</div><div class="cat-nm">Pizza</div></div>
-        <div class="cat-btn" onclick="setCat(this)"><div class="si25 cat-ic">🥗</div><div class="cat-nm">Sano</div></div>
-        <div class="cat-btn" onclick="setCat(this)"><div class="si26 cat-ic">🍣</div><div class="cat-nm">Sushi</div></div>
-        <div class="cat-btn" onclick="setCat(this)"><div class="cat-ic" style="background:#F5F0FF;">☕</div><div class="cat-nm">Café</div></div>
-      </div>
-      <div class="scroll" style="padding:12px 0 12px;">
-        <div id="food-lista-header" style="padding:0 14px;margin-bottom:6px;"><div class="si09">🟢 Cargando restaurantes...</div></div>
-        <div id="food-lista"></div>
-        <!-- RESTAURANTES DEMO (se ocultan cuando carga Firebase) -->
-        <div class="si12" id="food-demo">
-        <div style="padding:32px 20px;text-align:center;">
-          <div style="font-size:40px;margin-bottom:12px;">🍽️</div>
-          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">No hay registros disponibles en este momento.</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">Los restaurantes registrados y aprobados aparecerán aquí.</div>
+      <button onclick="go('v-home','left')"
+        style="background:var(--white-12);border:1px solid rgba(255,255,255,.3);color:#fff;
+               border-radius:10px;padding:6px 12px;font-size:11px;font-weight:700;
+               cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;">
+        ← Inicio
+      </button>
+    </div>
+
+    <!-- Filtros por categoría -->
+    <div class="filter-scroll" style="margin-top:10px;padding-bottom:2px;">
+      <button class="filter-chip on" onclick="_foodFiltrar('todos',this)">Todos</button>
+      <button class="filter-chip" onclick="_foodFiltrar('tacos',this)">🌮 Tacos</button>
+      <button class="filter-chip" onclick="_foodFiltrar('mexicana',this)">🌮 Mexicana</button>
+      <button class="filter-chip" onclick="_foodFiltrar('pizzas',this)">🍕 Pizza</button>
+      <button class="filter-chip" onclick="_foodFiltrar('hamburguesas',this)">🍔 Burger</button>
+      <button class="filter-chip" onclick="_foodFiltrar('sushi',this)">🍣 Sushi</button>
+      <button class="filter-chip" onclick="_foodFiltrar('cafeteria',this)">☕ Café</button>
+      <button class="filter-chip" onclick="_foodFiltrar('mariscos',this)">🦞 Mariscos</button>
+      <button class="filter-chip" onclick="_foodFiltrar('desayunos',this)">🍳 Desayunos</button>
+    </div>
+  </div>
+
+  <!-- Lista de restaurantes — poblada por cargarRestaurantes() / _foodFiltrar() -->
+  <div class="scroll" style="padding:10px 0;">
+    <div id="food-lista"></div>
+
+    <!-- Estado vacío / fallback — se muestra si Firebase no devuelve resultados -->
+    <div id="food-demo" style="display:none;">
+      <div style="padding:40px 20px;text-align:center;">
+        <div style="font-size:40px;margin-bottom:12px;">🍽️</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+          No hay restaurantes disponibles
         </div>
-      </div>
-        </div><!-- end food-demo -->
-      <div class="nav">
-        <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni"><div class="ni-ic">🍽️</div><div class="ni-lb" style="color:#c8940a;">Food</div></div>
-        <div class="ni"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">
+          Los restaurantes registrados y aprobados aparecerán aquí.
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- Nav inferior -->
+  <div class="nav">
+    <div class="ni" onclick="go('v-home','left')">
+      <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
+    </div>
+    <div class="ni">
+      <div class="ni-ic">🍽️</div><div class="ni-lb" style="color:#c8940a;">Food</div>
+    </div>
+    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);">
+      <div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div>
+    </div>
+    <div class="ni" onclick="go('v-mipanel','right')">
+      <div class="ni-ic">👤</div><div class="ni-lb">Perfil</div>
+    </div>
+  </div>
+
+</div>
 <div class="view go-right" id="v-food-det">
-      <div class="si15 det-banner">🌮
-        <button class="det-back" onclick="go('v-food','left')">‹</button>
-        <button class="det-fav" id="food-fav" onclick="toggleFav('food-fav')">🤍</button>
-      </div>
-      <div style="padding:12px 16px;background:#fff;border-bottom:.5px solid #f0f0f0;flex-shrink:0;">
-        <div class="si05">
-          <div style="font-size:18px;font-weight:700;color:var(--text-primary);" id="food-det-nombre">—</div>
-          <span class="si44">Abierto</span>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:5px;flex-wrap:wrap;">
-          <span class="si01">★ 4.9 (128)</span>
-          <span class="si01">⚡ 20 min</span>
-          <span class="si01">🛵 Envío $25</span>
-          <span class="si01">📦 Mín $150</span>
-        </div>
-        <div style="font-size:11px;color:var(--text-caption);margin-top:6px;line-height:1.5;">Los mejores tacos de la zona. Ingredientes frescos del mercado. Lun-Dom 8am-10pm.</div>
-      </div>
-      <div class="scroll">
-        <div class="menu-sec">🌮 Tacos</div>
-        <div class="menu-item">
-          <div class="si15 menu-emoji">🌮</div>
-          <div class="si03"><div class="menu-name">Taco de Bistec</div><div class="menu-desc">Bistec, cebolla, cilantro, salsa</div><div class="menu-price">$85 c/u</div></div>
-          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('bistec',-1,85)">−</button><span class="qty-num" id="q-bistec">0</span><button class="qty-btn" onclick="changeQty('bistec',1,85)">+</button></div>
-        </div>
-        <div class="menu-item">
-          <div class="si15 menu-emoji">🌽</div>
-          <div class="si03"><div class="menu-name">Taco de Pastor</div><div class="menu-desc">Pastor, piña, cebolla, cilantro</div><div class="menu-price">$75 c/u</div></div>
-          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('pastor',-1,75)">−</button><span class="qty-num" id="q-pastor">0</span><button class="qty-btn" onclick="changeQty('pastor',1,75)">+</button></div>
-        </div>
-        <div class="menu-item">
-          <div class="si15 menu-emoji">🥩</div>
-          <div class="si03"><div class="menu-name">Taco de Arrachera</div><div class="menu-desc">Arrachera, guacamole</div><div class="menu-price">$90 c/u</div></div>
-          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('arrachera',-1,90)">−</button><span class="qty-num" id="q-arrachera">0</span><button class="qty-btn" onclick="changeQty('arrachera',1,90)">+</button></div>
-        </div>
-        <div class="menu-sec">🥤 Bebidas</div>
-        <div class="menu-item">
-          <div class="si25 menu-emoji">🥤</div>
-          <div class="si03"><div class="menu-name">Agua Fresca</div><div class="menu-desc">Jamaica, horchata o limón</div><div class="menu-price">$35</div></div>
-          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('agua',-1,35)">−</button><span class="qty-num" id="q-agua">0</span><button class="qty-btn" onclick="changeQty('agua',1,35)">+</button></div>
-        </div>
-        <div class="menu-item">
-          <div class="si26 menu-emoji">🥛</div>
-          <div class="si03"><div class="menu-name">Refresco</div><div class="menu-desc">Coca, Sprite, Manzanita</div><div class="menu-price">$25</div></div>
-          <div class="qty-wrap"><button class="qty-btn" onclick="changeQty('refresco',-1,25)">−</button><span class="qty-num" id="q-refresco">0</span><button class="qty-btn" onclick="changeQty('refresco',1,25)">+</button></div>
-        </div>
-        <div style="height:80px;"></div>
-      </div>
-      <div class="si12 cart-bar" id="cart-bar" onclick="go('v-carrito','right')">
-        <div class="cart-badge" id="cart-count">0</div>
-        <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver mi pedido</div>
-        <div style="font-size:13px;font-weight:700;color:var(--yellow);" id="cart-total">$0</div>
+
+  <!-- Header con fondo amber, nombre y badges de entrega -->
+  <div style="background:linear-gradient(135deg,#6B4200,#c8940a);padding:12px 18px 14px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <button class="btn-back" onclick="go('v-food','left')">‹</button>
+      <div style="flex:1;">
+        <div style="font-size:18px;font-weight:700;color:#fff;" id="food-det-nombre">—</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);" id="food-det-desc"></div>
       </div>
     </div>
+    <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
+      <span style="background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="food-det-tiempo">🍳 —</span>
+      <span style="background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="food-det-envio">🛵 —</span>
+    </div>
+  </div>
+
+  <!-- Menú dinámico — poblado por window.dcFood_cargarMenu() -->
+  <div class="scroll" id="food-det-menu" style="padding-bottom:72px;">
+    <div style="text-align:center;padding:40px 20px;color:var(--text-hint);font-size:13px;">
+      Selecciona un restaurante para ver el menú
+    </div>
+  </div>
+
+  <!-- Cart bar — mismos IDs que antes para no romper updateCartBar existente -->
+  <div class="cart-bar" id="cart-bar" style="display:none;position:absolute;bottom:0;left:0;right:0;margin:0 14px 10px;" onclick="go('v-carrito','right')">
+    <div class="cart-badge" id="cart-count">0</div>
+    <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver mi pedido</div>
+    <div style="font-size:13px;font-weight:700;color:var(--yellow);" id="cart-total">$0</div>
+  </div>
+
+</div>
 <div class="view go-right" id="v-carrito">
-      <div style="background:linear-gradient(135deg,var(--amber-dark),#3a2000);padding:12px 18px 18px;flex-shrink:0;">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si07">
-          <button class="btn-back" onclick="go('v-food-det','left')">‹</button>
-          <div><div class="si37">Mi pedido</div><div class="si28">Revisa antes de confirmar</div></div>
-        </div>
-      </div>
-      <div class="scroll" style="padding-top:12px;">
-        <div id="carrito-items"></div>
-        <div style="padding:0 14px 12px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📝 Nota al restaurante</div>
-          <textarea class="nota-inp" rows="2" placeholder="Sin cebolla, salsa aparte..."></textarea>
-        </div>
-        <div style="padding:0 14px 12px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📍 Entregar en</div>
-          <div style="background:#F5F6F0;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:.5px solid #e0e0e0;">
-            <span class="si54">🏠</span>
-            <div class="si03"><div class="si06">Mi dirección registrada</div><div class="si01">🔒 Tu dirección privada</div></div>
-            <span style="font-size:12px;color:var(--green);font-weight:600;cursor:pointer;">Cambiar</span>
-          </div>
-        </div>
-        <div style="padding:0 14px 12px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">💳 Forma de pago</div>
-          <div class="pago-opt on" onclick="setPago(this)">
-            <div style="width:32px;height:32px;border-radius:9px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
-            <div><div class="si33">Mercado Pago</div><div class="si01">Tarjeta o saldo</div></div>
-            <div class="radio-c on"></div>
-          </div>
-          <div class="pago-opt" onclick="setPago(this)">
-            <div style="width:32px;height:32px;border-radius:9px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:16px;">💵</div>
-            <div><div class="si33">Efectivo al entregar</div><div class="si01">El repartidor lleva cambio</div></div>
-            <div class="radio-c"></div>
-          </div>
-          <div class="pago-opt" onclick="setPago(this)">
-            <div style="width:32px;height:32px;border-radius:9px;background:#E8F0F8;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
-            <div><div class="si33">Tarjeta al entregar</div><div class="si01">Repartidor lleva terminal Clip</div></div>
-            <div class="radio-c"></div>
-          </div>
-        </div>
-        <div class="total-card">
-          <div class="total-row"><span>Subtotal</span><span id="sub-txt">$0</span></div>
-          <div class="total-row"><span>Envío</span><span>$25</span></div>
-          <div class="total-row"><span>Comisión app</span><span style="font-size:10px;color:var(--text-hint);">Incluida en precios</span></div>
-          <div class="total-final"><span>Total</span><span class="si04" id="total-txt">$0</span></div>
-        </div>
-        <div style="padding:0 14px 20px;">
-          <button class="btn btn-yellow" onclick="go('v-tracking','right')">Confirmar y pedir →</button>
-        </div>
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,var(--amber-dark),#3a2000);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+      <button class="btn-back" onclick="go('v-food-det','left')">‹</button>
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#fff;">🛒 Mi pedido</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);" id="carr-rest-nombre">—</div>
       </div>
     </div>
+  </div>
+
+  <div class="scroll" style="padding-top:12px;">
+
+    <!-- Items del carrito — poblado por dcFood_renderCarrito() -->
+    <div id="carrito-items"></div>
+
+    <!-- Nota al restaurante -->
+    <div style="padding:0 14px 12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">📝 Nota al restaurante</div>
+      <textarea class="nota-inp" id="carr-nota" rows="2" placeholder="Sin cebolla, salsa aparte..."></textarea>
+    </div>
+
+    <!-- Forma de pago -->
+    <div style="padding:0 14px 12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text-caption);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">💳 Forma de pago</div>
+      <div class="pago-opt on" onclick="setPago(this)" data-pago="efectivo">
+        <div style="width:32px;height:32px;border-radius:9px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:16px;">💵</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text-primary);">Efectivo al entregar</div><div style="font-size:11px;color:var(--text-muted);">Paga en la puerta</div></div>
+        <div class="radio-c on"></div>
+      </div>
+      <div class="pago-opt" onclick="setPago(this)" data-pago="tarjeta">
+        <div style="width:32px;height:32px;border-radius:9px;background:#E8F0F8;display:flex;align-items:center;justify-content:center;font-size:16px;">💳</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text-primary);">Tarjeta al entregar</div><div style="font-size:11px;color:var(--text-muted);">Terminal en la puerta</div></div>
+        <div class="radio-c"></div>
+      </div>
+      <div class="pago-opt" onclick="setPago(this)" data-pago="transferencia">
+        <div style="width:32px;height:32px;border-radius:9px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:16px;">📱</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text-primary);">Transferencia</div><div style="font-size:11px;color:var(--text-muted);">SPEI / Nómina</div></div>
+        <div class="radio-c"></div>
+      </div>
+    </div>
+
+    <!-- Totales -->
+    <div class="total-card">
+      <div class="total-row"><span>Subtotal</span><span id="sub-txt">$0</span></div>
+      <div class="total-row"><span>Envío</span><span id="carr-envio">Gratis</span></div>
+      <div class="total-final"><span>Total</span><span id="total-txt">$0</span></div>
+    </div>
+
+    <!-- Botón confirmar — bloqueado hasta integración de pedido -->
+    <div style="padding:0 14px 20px;">
+      <button class="btn btn-yellow" id="btn-confirmar-pedido" onclick="dcFood_confirmarPedidoStub()">
+        Confirmar y pedir →
+      </button>
+    </div>
+
+  </div>
+</div>
 <div class="view go-right" id="v-tracking">
       <div class="track-wrap">
         <div style="text-align:center;margin-bottom:24px;">
@@ -8184,7 +8243,7 @@ function _goCore(id,dir){
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
     if(id==='v-mi-agenda')setTimeout(()=>window._initMiAgenda&&window._initMiAgenda(),200);
     if(id==='v-mis-chats')setTimeout(()=>window.cargarMisChats&&window.cargarMisChats(),300);
-    if(id==='v-carrito')renderCarrito();
+    if(id==='v-carrito')setTimeout(()=>window.dcFood_renderCarrito&&window.dcFood_renderCarrito(),50);
     // Al entrar a cualquier vista de registro, limpiar checkboxes y formulario
     if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
       ['v-chk1','v-chk2',
@@ -8872,9 +8931,9 @@ function renderCarrito(){
   if(!active.length){
     // demo por defecto
     items.bistec.q=2;items.pastor.q=1;items.agua.q=1;
-    document.getElementById('q-bistec').textContent=2;
-    document.getElementById('q-pastor').textContent=1;
-    document.getElementById('q-agua').textContent=1;
+    var _qb=document.getElementById('q-bistec'); if(_qb)_qb.textContent=2;
+    var _qp=document.getElementById('q-pastor'); if(_qp)_qp.textContent=1;
+    var _qa=document.getElementById('q-agua'); if(_qa)_qa.textContent=1;
     updateCartBar();
     return renderCarrito();
   }
@@ -9565,6 +9624,382 @@ function showAdminTab(i,btn){
   v-mi-agenda: reservas del vecino en Firestore.
   Acceso: Mi Panel → Mi Agenda
 ════════════════════════════════════════════════════════════ -->
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// MÓDULO FOOD — v-food-det: detalle real de restaurante
+// Paso 2 de integración — solo abrirRest + cargarMenu + renderMenu
+// ════════════════════════════════════════════════════════════════
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+// Asegurar que _foodState tenga carrito (puede haberse init sin él)
+if (window._foodState && !window._foodState.carrito) {
+  window._foodState.carrito = {};
+}
+
+function _foodEntregaLabel(entr) {
+  if (entr === 'recolecta') return '🏪 Recoger en tienda';
+  if (entr === 'propia')    return '🚚 Repartidor de la tienda';
+  if (entr === 'ride')      return '🛵 Repartidor DC';
+  if (entr === 'todas')     return '🛵🚚 Repartidor DC / Tienda';
+  return '🛵 Entrega disponible';
+}
+
+function _foodDeriveFlags(r) {
+  if (typeof r.permiteRecoger !== 'undefined') return r;
+  var entr = r.entrega || 'propia';
+  var flags = {};
+  if (entr === 'recolecta') { flags.permiteRecoger = true;  flags.permiteEntrega = false; flags.entregaInterna = 'recolecta'; }
+  else if (entr === 'propia')    { flags.permiteRecoger = false; flags.permiteEntrega = true;  flags.entregaInterna = 'tienda'; }
+  else if (entr === 'ride')      { flags.permiteRecoger = false; flags.permiteEntrega = true;  flags.entregaInterna = 'dc'; }
+  else if (entr === 'todas')     { flags.permiteRecoger = true;  flags.permiteEntrega = true;  flags.entregaInterna = 'dc_tienda'; }
+  else                           { flags.permiteRecoger = false; flags.permiteEntrega = true;  flags.entregaInterna = 'tienda'; }
+  return Object.assign({}, r, flags);
+}
+
+// ── Actualizar cart bar (usa IDs del index: cart-bar, cart-count, cart-total) ──
+function _foodUpdateCartBar() {
+  if (!window._foodState) return;
+  var carrito = window._foodState.carrito || {};
+  var vs = Object.values(carrito);
+  var n = vs.reduce(function(a, i) { return a + i.cantidad; }, 0);
+  var s = vs.reduce(function(a, i) { return a + i.cantidad * i.precio; }, 0);
+  var bar = document.getElementById('cart-bar');
+  if (!bar) return;
+  if (n > 0) {
+    bar.style.display = 'flex';
+    var bc = document.getElementById('cart-count');
+    var bt = document.getElementById('cart-total');
+    if (bc) bc.textContent = n;
+    if (bt) bt.textContent = '$' + s;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ── Cambiar cantidad en menú ──────────────────────────────────────
+window.dcFood_qtyChange = function(id, delta, precio, nombre, cat) {
+  if (!window._foodState) return;
+  var carrito = window._foodState.carrito;
+  if (!carrito[id]) carrito[id] = { nombre: nombre, precio: precio, cantidad: 0, categoria: cat };
+  carrito[id].cantidad = Math.max(0, carrito[id].cantidad + delta);
+  if (carrito[id].cantidad === 0) delete carrito[id];
+  var el = document.getElementById('q-' + id);
+  if (el) el.textContent = (carrito[id] && carrito[id].cantidad) || 0;
+  _foodUpdateCartBar();
+};
+
+// ── Render menú — usa clases CSS ya definidas en el index ────────
+function _foodRenderMenu(el, prods) {
+  if (!window._foodState) return;
+  var carrito = window._foodState.carrito || {};
+  var cats = {};
+  prods.forEach(function(p) {
+    var c = p.categoria || 'General';
+    if (!cats[c]) cats[c] = [];
+    cats[c].push(p);
+  });
+
+  var html = '';
+  Object.keys(cats).forEach(function(cat) {
+    html += '<div class="menu-sec">' + cat + '</div>';
+    cats[cat].forEach(function(p) {
+      var qty   = (carrito[p._id] && carrito[p._id].cantidad) || 0;
+      var disp  = p.disponible !== false;
+      var n     = (p.nombre || '').replace(/'/g, "&#39;");
+      var c     = (p.categoria || '').replace(/'/g, "&#39;");
+      var agot  = disp ? '' : 'opacity:.4;pointer-events:none;';
+      html += '<div class="menu-item" style="' + agot + '">'
+            +   '<div class="menu-emoji" style="background:#F5F5F5;">🍽️</div>'
+            +   '<div style="flex:1;">'
+            +     '<div class="menu-name">' + (p.nombre || '—')
+            +       (disp ? '' : ' <span style="font-size:10px;color:var(--red);">(Agotado)</span>')
+            +     '</div>'
+            +     '<div class="menu-desc">' + (p.descripcion || '') + '</div>'
+            +     '<div class="menu-price">$' + (p.precio || 0) + '</div>'
+            +   '</div>'
+            +   '<div class="qty-wrap">'
+            +     '<button class="qty-btn" onclick="dcFood_qtyChange('' + p._id + '',-1,' + p.precio + ','' + n + '','' + c + '')">−</button>'
+            +     '<span class="qty-num" id="q-' + p._id + '">' + qty + '</span>'
+            +     '<button class="qty-btn" onclick="dcFood_qtyChange('' + p._id + '',1,' + p.precio + ','' + n + '','' + c + '')">+</button>'
+            +   '</div>'
+            + '</div>';
+    });
+  });
+  html += '<div style="height:80px;"></div>';
+  el.innerHTML = html;
+  _foodUpdateCartBar();
+}
+
+// ── Cargar menú desde Firestore (colección menu/{restId}/productos) ──
+window.dcFood_cargarMenu = async function(restId) {
+  var el = document.getElementById('food-det-menu');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px;">Cargando menú...</div>';
+
+  try {
+    var f = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var db = window._fbDb;
+    if (!db) throw new Error('Sin conexión Firebase');
+
+    var snap = await f.getDocs(
+      f.query(
+        f.collection(db, 'menu', restId, 'productos'),
+        f.orderBy('orden', 'asc')
+      )
+    );
+
+    if (snap.empty) {
+      el.innerHTML = '<div style="text-align:center;padding:40px 20px;">'
+                   + '<div style="font-size:36px;margin-bottom:8px;">🍽️</div>'
+                   + '<div style="font-size:13px;font-weight:700;color:var(--text-muted);">Sin menú disponible</div>'
+                   + '<div style="font-size:11px;color:var(--text-hint);margin-top:4px;">Este restaurante aún no ha cargado su menú.</div>'
+                   + '</div><div style="height:80px;"></div>';
+      _foodUpdateCartBar();
+      return;
+    }
+
+    var prods = [];
+    snap.forEach(function(d) { prods.push(Object.assign({ _id: d.id }, d.data())); });
+    _foodRenderMenu(el, prods);
+
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 20px;">'
+                 + '<div style="font-size:36px;margin-bottom:8px;">⚠️</div>'
+                 + '<div style="font-size:13px;font-weight:700;color:var(--red);">Error al cargar</div>'
+                 + '<div style="font-size:11px;color:var(--text-hint);margin-top:4px;">' + e.message + '</div>'
+                 + '</div>';
+    console.log('dcFood_cargarMenu error:', e.message);
+  }
+};
+
+// ── Abrir restaurante — reemplaza el stub del paso anterior ──────
+// Se llama desde cargarRestaurantes (onclick de cada .rest-card)
+window.dcFood_abrirRest = async function(restId) {
+  // Asegurar _foodState
+  if (!window._foodState) window._foodState = { historial: [], filtro: 'todos', carrito: {} };
+  if (!window._foodState.carrito) window._foodState.carrito = {};
+
+  // Buscar en historial (ya cargado por cargarRestaurantes)
+  var r = (window._foodState.historial || []).find(function(x) { return x._id === restId; });
+
+  if (!r) {
+    // Fallback: si no está en historial (acceso directo), regresar a lista
+    console.warn('dcFood_abrirRest: restaurante no encontrado en historial, id=' + restId);
+    go('v-food', 'left');
+    return;
+  }
+
+  // Si cambió de restaurante, limpiar carrito
+  if (window._foodState.restActual && window._foodState.restActual._id !== restId) {
+    window._foodState.carrito = {};
+  }
+
+  // Guardar restaurante con flags derivados
+  window._foodState.restActual = _foodDeriveFlags(r);
+  window._foodRestSeleccionado = restId; // backward compat con el stub
+
+  // Poblar header
+  var g = function(id) { return document.getElementById(id); };
+  if (g('food-det-nombre')) g('food-det-nombre').textContent = r.nombreNegocio || r.nombre || '—';
+  if (g('food-det-desc'))   g('food-det-desc').textContent   = r.descripcion || '';
+  if (g('food-det-tiempo')) g('food-det-tiempo').textContent = '🍳 Preparación: por confirmar';
+  if (g('food-det-envio'))  g('food-det-envio').textContent  = _foodEntregaLabel(r.entrega || 'propia');
+
+  // Navegar
+  go('v-food-det', 'right');
+
+  // Cargar menú (async, después de navegar)
+  await window.dcFood_cargarMenu(restId);
+};
+
+// ════════════════════════════════════════════════════════════════
+// MÓDULO FOOD — v-carrito real
+// Lee window._foodState.carrito. No crea pedido todavía.
+// ════════════════════════════════════════════════════════════════
+
+window.dcFood_renderCarrito = function() {
+  var carrito  = (window._foodState && window._foodState.carrito) || {};
+  var rest     = (window._foodState && window._foodState.restActual) || null;
+  var items    = Object.entries(carrito).filter(function(e){ return e[1].cantidad > 0; });
+
+  // Nombre del restaurante en sub-header
+  var restNom = document.getElementById('carr-rest-nombre');
+  if (restNom) restNom.textContent = rest ? (rest.nombreNegocio || rest.nombre || '—') : '—';
+
+  var container = document.getElementById('carrito-items');
+  if (!container) return;
+
+  // ── Carrito vacío ────────────────────────────────────────────
+  if (!items.length) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:40px 20px;">' +
+      '<div style="font-size:40px;margin-bottom:10px;">🛒</div>' +
+      '<div style="font-size:13px;font-weight:700;color:var(--text-muted);">Tu carrito está vacío</div>' +
+      '<div style="font-size:11px;color:var(--text-hint);margin-top:4px;">Agrega productos desde el menú</div>' +
+      '</div>';
+    var btnC = document.getElementById('btn-confirmar-pedido');
+    if (btnC) btnC.style.display = 'none';
+    var tc = document.querySelector('#v-carrito .total-card');
+    if (tc) tc.style.display = 'none';
+    _foodUpdateCarritoTotales(0);
+    return;
+  }
+
+  // Mostrar total-card y botón si hay items
+  var btnC2 = document.getElementById('btn-confirmar-pedido');
+  if (btnC2) btnC2.style.display = 'block';
+  var tc2 = document.querySelector('#v-carrito .total-card');
+  if (tc2) tc2.style.display = 'block';
+
+  // ── Render items ─────────────────────────────────────────────
+  container.innerHTML = items.map(function(entry) {
+    var id  = entry[0];
+    var v   = entry[1];
+    var nEsc = (v.nombre || '').replace(/'/g, "&#39;");
+    var cEsc = (v.categoria || '').replace(/'/g, "&#39;");
+    return '<div class="carrito-item">' +
+      '<div style="font-size:24px;width:40px;text-align:center;flex-shrink:0;">🍽️</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">' + (v.nombre || '—') + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">' +
+          v.cantidad + ' × $' + v.precio +
+        '</div>' +
+      '</div>' +
+      '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-right:8px;">$' + (v.cantidad * v.precio) + '</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;">' +
+        '<button class="qty-btn" style="width:24px;height:24px;font-size:14px;" ' +
+          'onclick="dcFood_qtyChange('' + id + '',-1,' + v.precio + ','' + nEsc + '','' + cEsc + '');dcFood_renderCarrito();">−</button>' +
+        '<span style="font-size:13px;font-weight:700;min-width:16px;text-align:center;">' + v.cantidad + '</span>' +
+        '<button class="qty-btn" style="width:24px;height:24px;font-size:14px;" ' +
+          'onclick="dcFood_qtyChange('' + id + '',1,' + v.precio + ','' + nEsc + '','' + cEsc + '');dcFood_renderCarrito();">+</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  // ── Totales ──────────────────────────────────────────────────
+  var sub = items.reduce(function(a, e){ return a + e[1].cantidad * e[1].precio; }, 0);
+  _foodUpdateCarritoTotales(sub);
+};
+
+// Actualiza sub-txt, carr-envio, total-txt
+function _foodUpdateCarritoTotales(sub) {
+  var elSub   = document.getElementById('sub-txt');
+  var elEnvio = document.getElementById('carr-envio');
+  var elTotal = document.getElementById('total-txt');
+  if (elSub)   elSub.textContent   = '$' + sub;
+  if (elEnvio) elEnvio.textContent = 'Gratis';
+  if (elTotal) elTotal.textContent = '$' + sub;
+}
+
+// Botón confirmar — stub hasta integración de pedido
+window.dcFood_confirmarPedidoStub = function() {
+  var btnC = document.getElementById('btn-confirmar-pedido');
+  if (btnC) {
+    btnC.textContent = '⏳ Pendiente: integración de pedido';
+    btnC.disabled = true;
+    setTimeout(function() {
+      btnC.textContent = 'Confirmar y pedir →';
+      btnC.disabled = false;
+    }, 2500);
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// MÓDULO FOOD — v-food: filtros de categoría
+// ════════════════════════════════════════════════════════════════
+
+var _FOOD_EMOJIS = {
+  tacos:'🌮', mexicana:'🌮', pizzas:'🍕', sushi:'🍣',
+  hamburguesas:'🍔', cafeteria:'☕', mariscos:'🦞', pollo:'🍗',
+  postres:'🧁', desayunos:'🍳', bebidas:'🥤',
+  saludable:'🥗', restaurante:'🍽️', otro_rest:'🍽️', otro:'🍽️'
+};
+
+var _FOOD_CAT_BG = {
+  tacos:'#FFF3E0', mexicana:'#FFF3E0', pizzas:'#FBE9E7',
+  hamburguesas:'#FFF8E1', sushi:'#E3F2FD', cafeteria:'#EFEBE9',
+  mariscos:'#E0F7FA', pollo:'#FFF9C4', postres:'#FCE4EC',
+  desayunos:'#F9FBE7', bebidas:'#E8F5E9'
+};
+
+// Render lista de restaurantes en #food-lista usando clases CSS del index
+function _foodRenderLista(docs) {
+  var lista  = document.getElementById('food-lista');
+  var demo   = document.getElementById('food-demo');
+  var hdr    = document.getElementById('food-lista-header');
+  if (!lista) return;
+
+  var filtro = (window._foodState && window._foodState.filtro) || 'todos';
+  var filtered = filtro === 'todos'
+    ? docs
+    : docs.filter(function(r){ return (r.categoria||'').toLowerCase() === filtro; });
+
+  if (!filtered.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:32px 20px;">'
+      + '<div style="font-size:36px;margin-bottom:8px;">🍽️</div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--text-muted);">Sin restaurantes en esta categoría</div>'
+      + '</div>';
+    if (demo)  demo.style.display  = 'none';
+    if (hdr)   hdr.textContent     = 'Sin resultados';
+    return;
+  }
+
+  if (demo) demo.style.display = 'none';
+  if (hdr)  hdr.textContent    = filtered.length + ' disponible' + (filtered.length !== 1 ? 's' : '');
+
+  lista.innerHTML = filtered.map(function(r) {
+    var cat   = (r.categoria || 'otro').toLowerCase();
+    var emoji = _FOOD_EMOJIS[cat] || '🍽️';
+    var bg    = _FOOD_CAT_BG[cat] || '#FFF8E1';
+    var entr  = r.entrega || 'propia';
+    var envLbl = entr === 'recolecta' ? '🏪 Recoger en tienda'
+               : entr === 'propia'    ? '🚚 Repartidor tienda'
+               : entr === 'ride'      ? '🛵 Repartidor DC'
+               : entr === 'todas'     ? '🛵🚚 DC / Tienda'
+               : '🛵 Entrega disponible';
+    var badge = r.estado === 'aprobado_pendiente_pago' ? '⏳ Pend. pago' : '✅ Activo';
+    var id    = r._id;
+    return '<div class="rest-card" onclick="dcFood_abrirRest('' + id + '')">'
+      + '<div class="rest-banner" style="background:' + bg + ';">' + emoji
+      + '<span class="si32">' + badge + '</span>'
+      + '</div>'
+      + '<div class="rest-body">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+      + '<div class="rest-name">' + (r.nombreNegocio || r.nombre || '—') + '</div>'
+      + '<span class="si44">Abierto</span>'
+      + '</div>'
+      + '<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">'
+      + (r.descripcion || cat) + '</div>'
+      + '<div class="rest-footer">'
+      + '<span class="si01">' + envLbl + '</span>'
+      + '<span class="si16">Pedir →</span>'
+      + '</div>'
+      + '</div></div>';
+  }).join('');
+}
+
+// Filtrar por categoría — llamado desde los chips del header de v-food
+window._foodFiltrar = function(cat, btn) {
+  // Actualizar estado visual de chips
+  document.querySelectorAll('#v-food .filter-chip').forEach(function(b){
+    b.classList.remove('on');
+  });
+  if (btn) btn.classList.add('on');
+
+  // Guardar filtro en estado
+  if (!window._foodState) window._foodState = { historial: [], filtro: 'todos', carrito: {} };
+  window._foodState.filtro = cat;
+
+  // Re-render con el historial ya cargado
+  var docs = (window._foodState && window._foodState.historial) || [];
+  if (!docs.length) return; // cargarRestaurantes aún no terminó — se renderizará al llegar
+  _foodRenderLista(docs);
+};
+
+// ── FIN MÓDULO FOOD v-food-det ───────────────────────────────────
+</script>
 
 </body>
 </html>
