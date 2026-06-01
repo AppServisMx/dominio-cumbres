@@ -3556,6 +3556,93 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .chats-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;}
 .chats-skeleton{background:#f0f0f0;border-radius:10px;margin:0 14px 8px;height:70px;animation:skeleton-pulse 1.4s ease-in-out infinite;}
 @keyframes skeleton-pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+/* ═══════════════════════════════════════════════════════════════
+   MÓDULO FOOD — CSS extraído de restaurantes_modulo_v1_pre_integracion
+   Solo clases usadas por v-food (lista restaurantes).
+   Ninguna de estas clases existía en el index — cero colisiones.
+   NO incluye: reset, body, html, #dcf-shell, :root, .dcf-view,
+               .dcf-scroll, overlay, keyframes duplicados.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Variables alias — el index usa nombres distintos para los mismos
+   valores. Estas variables permiten que el CSS del módulo funcione
+   sin reescribir cada regla.                                       */
+:root {
+  --w12: rgba(255,255,255,.12);
+  --w30: rgba(255,255,255,.30);
+  --w40: rgba(255,255,255,.40);
+  --amber-dk: #6B4200;
+  --green-lt: #E8F5EE;
+  --green-dk: #0A4220;
+  --tx:  #111;
+  --tx2: #888;
+  --tx3: #AAA;
+  --tx4: #666;
+  --shadow: rgba(0,0,0,.06);
+  --red-lt: #FDECEA;
+  --blue-lt: #E8F0F8;
+}
+
+/* Headers Food */
+.dcf-hdr { padding: 12px 18px 14px; flex-shrink: 0; }
+.dcf-hdr-amber { background: linear-gradient(135deg, #6B4200, #c8940a); }
+.dcf-hdr-red   { background: linear-gradient(135deg, #7A1810, #D63A2A); }
+.dcf-hdr-blue  { background: linear-gradient(135deg, #0A3055, #1A7AB5); }
+.dcf-sbar { display: flex; justify-content: space-between; font-size: 10px;
+  font-weight: 600; color: var(--w40); padding: 4px 0; }
+.dcf-hdr-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.dcf-title { font-size: 18px; font-weight: 700; color: #fff; }
+.dcf-sub   { font-size: 11px; color: var(--w40); }
+.dcf-back-btn { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px;
+  background: var(--w12); border: 1px solid var(--w30); color: #fff; font-size: 22px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-family: inherit; }
+
+/* Pill row / chips */
+.pill-row { display: flex; gap: 6px; padding-top: 8px; flex-wrap: wrap; }
+.dcf-chip { background: var(--w12); color: rgba(255,255,255,.85);
+  border: 1px solid transparent; border-radius: 20px; padding: 6px 12px;
+  font-size: 11px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  font-family: inherit; }
+.dcf-chip.dcf-on { background: var(--yellow); color: var(--amber-dk);
+  border-color: rgba(0,0,0,.2); font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+
+/* Nav inferior Food */
+.dcf-nav { display: flex; justify-content: space-around; padding: 10px 0 16px;
+  background: #fff; border-top: .5px solid var(--border); flex-shrink: 0; }
+.dcf-ni  { display: flex; flex-direction: column; align-items: center;
+  gap: 3px; cursor: pointer; }
+.dcf-ni-ic { font-size: 20px; }
+.dcf-ni-lb { font-size: 9px; font-weight: 700; color: #C0C4BA; }
+.dcf-ni-lb.dcf-on { color: var(--red); }
+
+/* Cards restaurante */
+.dcf-rcard { background: #fff; border-radius: 18px; margin: 0 14px 10px;
+  overflow: hidden; cursor: pointer; border: .5px solid #f0e8d0;
+  box-shadow: 0 2px 8px var(--shadow); transition: transform .15s; }
+.dcf-rcard:active { transform: scale(.98); }
+.rbanner { height: 90px; display: flex; align-items: center;
+  justify-content: center; font-size: 52px; position: relative; }
+.rbadge  { position: absolute; bottom: 8px; left: 10px;
+  background: rgba(0,0,0,.55); color: #fff; font-size: 10px;
+  font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.rbody   { padding: 10px 12px 12px; }
+.rname   { font-size: 14px; font-weight: 700; color: var(--tx); }
+.rfooter { display: flex; justify-content: space-between; align-items: center;
+  margin-top: 8px; padding-top: 8px; border-top: .5px solid #f5f5f5; }
+.tag-open  { background: var(--green-lt); color: var(--green-dk);
+  font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+.link-green { font-size: 12px; font-weight: 700; color: var(--green); }
+
+/* Estado vacío Food */
+.dcf-empty-wrap { text-align: center; padding: 40px 20px; }
+.dcf-empty-ic  { font-size: 40px; margin-bottom: 10px; }
+.dcf-empty-tit { font-size: 13px; font-weight: 700; color: #888; }
+.dcf-empty-sub { font-size: 11px; color: #bbb; margin-top: 4px; line-height: 1.5; }
+
+/* ─── FIN CSS MÓDULO FOOD ────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -4817,75 +4904,36 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
 </div>
 <div class="view go-right" id="v-food">
-
-  <!-- Header Food — gradiente amber del módulo aprobado -->
-  <div class="food-hdr">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-
-    <!-- Título + botón Mis pedidos -->
-    <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-      <span style="font-size:26px;">🍽️</span>
-      <div style="flex:1;">
-        <div style="font-size:18px;font-weight:700;color:#fff;">Dominio Food</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);" id="food-lista-header">Cargando...</div>
+  <div class="dcf-hdr dcf-hdr-amber">
+    <div class="dcf-sbar"><span>9:41</span><span></span></div>
+    <div class="dcf-hdr-row">
+      <span style="font-size:22px;">🍽️</span>
+      <div style="flex:1">
+        <div class="dcf-title">Dominio Food</div>
+        <div class="dcf-sub" id="food-lista-header">Cargando...</div>
       </div>
-      <button onclick="go('v-home','left')"
-        style="background:var(--white-12);border:1px solid rgba(255,255,255,.3);color:#fff;
-               border-radius:10px;padding:6px 12px;font-size:11px;font-weight:700;
-               cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;">
-        ← Inicio
-      </button>
+      <button onclick="go('v-mis-pedidos-food','right')" style="background:var(--w12);border:1px solid var(--w30);color:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">🛒 Mis pedidos</button>
     </div>
-
-    <!-- Filtros por categoría -->
-    <div class="filter-scroll" style="margin-top:10px;padding-bottom:2px;">
-      <button class="filter-chip on" onclick="_foodFiltrar('todos',this)">Todos</button>
-      <button class="filter-chip" onclick="_foodFiltrar('tacos',this)">🌮 Tacos</button>
-      <button class="filter-chip" onclick="_foodFiltrar('mexicana',this)">🌮 Mexicana</button>
-      <button class="filter-chip" onclick="_foodFiltrar('pizzas',this)">🍕 Pizza</button>
-      <button class="filter-chip" onclick="_foodFiltrar('hamburguesas',this)">🍔 Burger</button>
-      <button class="filter-chip" onclick="_foodFiltrar('sushi',this)">🍣 Sushi</button>
-      <button class="filter-chip" onclick="_foodFiltrar('cafeteria',this)">☕ Café</button>
-      <button class="filter-chip" onclick="_foodFiltrar('mariscos',this)">🦞 Mariscos</button>
-      <button class="filter-chip" onclick="_foodFiltrar('desayunos',this)">🍳 Desayunos</button>
+    <div class="pill-row">
+      <button class="dcf-chip dcf-on" onclick="_foodFiltrar('todos',this)">Todos</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('tacos',this)">🌮 Tacos</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('mexicana',this)">🌮 Mexicana</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('pizzas',this)">🍕 Pizza</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('hamburguesas',this)">🍔 Burger</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('sushi',this)">🍣 Sushi</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('cafeteria',this)">☕ Café</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('mariscos',this)">🦞 Mariscos</button>
+      <button class="dcf-chip" onclick="_foodFiltrar('desayunos',this)">🍳 Desayunos</button>
     </div>
   </div>
-
-  <!-- Lista de restaurantes — poblada por cargarRestaurantes() / _foodFiltrar() -->
-  <div class="scroll" style="padding:10px 0;">
-    <div id="food-lista"></div>
-
-    <!-- Estado vacío / fallback — se muestra si Firebase no devuelve resultados -->
-    <div id="food-demo" style="display:none;">
-      <div style="padding:40px 20px;text-align:center;">
-        <div style="font-size:40px;margin-bottom:12px;">🍽️</div>
-        <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
-          No hay restaurantes disponibles
-        </div>
-        <div style="font-size:11px;color:var(--text-muted);line-height:1.6;">
-          Los restaurantes registrados y aprobados aparecerán aquí.
-        </div>
-      </div>
-    </div>
+  <div class="scroll" style="padding:10px 0;" id="food-lista"></div>
+  <div class="dcf-nav">
+    <div class="dcf-ni"><div class="dcf-ni-ic">🍽️</div><div class="dcf-ni-lb dcf-on">Food</div></div>
+    <div class="dcf-ni" onclick="go('v-mis-pedidos-food','right')"><div class="dcf-ni-ic">🛒</div><div class="dcf-ni-lb">Pedidos</div></div>
+    <div class="dcf-ni" onclick="go('v-home','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Inicio</div></div>
   </div>
-
-  <!-- Nav inferior -->
-  <div class="nav">
-    <div class="ni" onclick="go('v-home','left')">
-      <div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div>
-    </div>
-    <div class="ni">
-      <div class="ni-ic">🍽️</div><div class="ni-lb" style="color:#c8940a;">Food</div>
-    </div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);">
-      <div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div>
-    </div>
-    <div class="ni" onclick="go('v-mipanel','right')">
-      <div class="ni-ic">👤</div><div class="ni-lb">Perfil</div>
-    </div>
-  </div>
-
 </div>
+
 <div class="view go-right" id="v-food-det">
 
   <!-- Header con fondo amber, nombre y badges de entrega -->
@@ -9952,9 +10000,9 @@ function _foodRenderLista(docs) {
     : docs.filter(function(r){ return (r.categoria||'').toLowerCase() === filtro; });
 
   if (!filtered.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:32px 20px;">'
-      + '<div style="font-size:36px;margin-bottom:8px;">🍽️</div>'
-      + '<div style="font-size:13px;font-weight:700;color:var(--text-muted);">Sin restaurantes en esta categoría</div>'
+    lista.innerHTML = '<div class="dcf-empty-wrap">'
+      + '<div class="dcf-empty-ic">🍽️</div>'
+      + '<div class="dcf-empty-tit">Sin restaurantes en esta categoría</div>'
       + '</div>';
     if (demo)  demo.style.display  = 'none';
     if (hdr)   hdr.textContent     = 'Sin resultados';
@@ -9965,31 +10013,31 @@ function _foodRenderLista(docs) {
   if (hdr)  hdr.textContent    = filtered.length + ' disponible' + (filtered.length !== 1 ? 's' : '');
 
   lista.innerHTML = filtered.map(function(r) {
-    var cat   = (r.categoria || 'otro').toLowerCase();
+    var cat   = (r.categoria || 'otro_rest').toLowerCase();
     var emoji = _FOOD_EMOJIS[cat] || '🍽️';
     var bg    = _FOOD_CAT_BG[cat] || '#FFF8E1';
     var entr  = r.entrega || 'propia';
     var envLbl = entr === 'recolecta' ? '🏪 Recoger en tienda'
-               : entr === 'propia'    ? '🚚 Repartidor tienda'
+               : entr === 'propia'    ? '🚚 Repartidor Tienda'
                : entr === 'ride'      ? '🛵 Repartidor DC'
                : entr === 'todas'     ? '🛵🚚 DC / Tienda'
                : '🛵 Entrega disponible';
     var badge = r.estado === 'aprobado_pendiente_pago' ? '⏳ Pend. pago' : '✅ Activo';
     var id    = r._id;
-    return '<div class="rest-card" onclick="dcFood_abrirRest(&#39;' + id + '&#39;)">'
-      + '<div class="rest-banner" style="background:' + bg + ';">' + emoji
-      + '<span class="si32">' + badge + '</span>'
+    return '<div class="dcf-rcard" onclick="dcFood_abrirRest(&#39;' + id + '&#39;)">'
+      + '<div class="rbanner" style="background:' + bg + ';">' + emoji
+      + '<span class="rbadge">' + badge + '</span>'
       + '</div>'
-      + '<div class="rest-body">'
+      + '<div class="rbody">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-      + '<div class="rest-name">' + (r.nombreNegocio || r.nombre || '—') + '</div>'
-      + '<span class="si44">Abierto</span>'
+      + '<div class="rname">' + (r.nombreNegocio || r.nombre || '—') + '</div>'
+      + '<span class="tag-open">Abierto</span>'
       + '</div>'
-      + '<div style="font-size:11px;color:var(--text-muted);margin-top:3px;">'
+      + '<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'
       + (r.descripcion || cat) + '</div>'
-      + '<div class="rest-footer">'
-      + '<span class="si01">' + envLbl + '</span>'
-      + '<span class="si16">Pedir →</span>'
+      + '<div class="rfooter">'
+      + '<span style="font-size:11px;color:var(--tx2);">' + envLbl + '</span>'
+      + '<span class="link-green">Pedir →</span>'
       + '</div>'
       + '</div></div>';
   }).join('');
@@ -9998,10 +10046,10 @@ function _foodRenderLista(docs) {
 // Filtrar por categoría — llamado desde los chips del header de v-food
 window._foodFiltrar = function(cat, btn) {
   // Actualizar estado visual de chips
-  document.querySelectorAll('#v-food .filter-chip').forEach(function(b){
-    b.classList.remove('on');
+  document.querySelectorAll('#v-food .dcf-chip').forEach(function(b){
+    b.classList.remove('dcf-on');
   });
-  if (btn) btn.classList.add('on');
+  if (btn) btn.classList.add('dcf-on');
 
   // Guardar filtro en estado
   if (!window._foodState) window._foodState = { historial: [], filtro: 'todos', carrito: {} };
