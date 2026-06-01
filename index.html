@@ -1080,15 +1080,27 @@
   }
 
   window.cargarRestaurantes = async function() {
+    console.log('[Food] cargarRestaurantes v2: inicio');
     const lista = document.getElementById('food-lista');
     const demo  = document.getElementById('food-demo');
     const hdr   = document.getElementById('food-lista-header');
-    if (!lista) return;
+    console.log('[Food] elementos DOM:', '#food-lista=', !!lista, '#food-demo=', !!demo, '#food-lista-header=', !!hdr);
+    if (!lista) { console.warn('[Food] #food-lista no encontrado, abortando'); return; }
 
     // Categorías de negocio que se consideran food
-    const CATS_FOOD = ['mexicana','hamburguesas','pizzas','sushi','cafeteria',
-                       'postres','tacos','mariscos','pollo','desayunos',
-                       'bebidas','otro_rest','restaurante'];
+    const CATS_FOOD = [
+      'pizza','pizzas',
+      'taco','tacos','taqueria','taqueria',
+      'hamburguesa','hamburguesas','burger','burgers',
+      'cafe','cafe','cafeteria','cafeteria',
+      'sushi',
+      'mexicana','comida',
+      'mariscos','pollo',
+      'desayunos','desayuno',
+      'bebidas','bebida',
+      'postres','postre',
+      'restaurante','otro_rest','otro',
+    ];
     const ESTADOS_OK = ['activo', 'aprobado_pendiente_pago'];
 
     const EMOJIS = {
@@ -1128,6 +1140,7 @@
 
       // Guardar en estado para filtros futuros
       window._foodState.historial = docs;
+      console.log('[Food] docs.length total:', docs.length, '| categorias:', docs.map(function(r){return r.categoria||'sin-cat';}));
 
       if (docs.length === 0) {
         if (hdr) hdr.textContent = '🟢 Abiertos ahora';
@@ -1140,7 +1153,9 @@
       lista.innerHTML = '';
 
       // Render delegado a _foodRenderLista — usa CSS del index + filtro activo
+      console.log('[Food] antes de _foodRenderLista. docs:', docs.length, '_foodRenderLista tipo:', typeof window._foodRenderLista);
       window._foodRenderLista && window._foodRenderLista(docs);
+      console.log('[Food] _foodRenderLista llamado');
 
     } catch(e) {
       if (hdr) hdr.textContent = '🟢 Abiertos ahora';
@@ -9961,7 +9976,7 @@ function _foodRenderLista(docs) {
                : '🛵 Entrega disponible';
     var badge = r.estado === 'aprobado_pendiente_pago' ? '⏳ Pend. pago' : '✅ Activo';
     var id    = r._id;
-    return '<div class="rest-card" onclick="dcFood_abrirRest('' + id + '')">'
+    return '<div class="rest-card" onclick="dcFood_abrirRest('\'' + id + '\'')">'
       + '<div class="rest-banner" style="background:' + bg + ';">' + emoji
       + '<span class="si32">' + badge + '</span>'
       + '</div>'
