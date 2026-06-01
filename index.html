@@ -1058,108 +1058,48 @@
   };
 
   // ===== CARGAR RESTAURANTES (Food) con acceso directo a db =====
-  // v2 — consulta tipo:restaurante + tipo:negocio (categorías food)
-  //       acepta estado:activo y aprobado_pendiente_pago
-  //       guarda _S.historial para filtros del módulo Food
-  //       onclick pasa r._id a dcFood_abrirRest()
-
-  // ── STUB temporal: se reemplaza cuando v-food-det se integre ──
-  // Conserva la navegación actual (go v-food-det) hasta entonces.
-  if (!window.dcFood_abrirRest) {
-    window.dcFood_abrirRest = function(restId) {
-      // TODO: stub — reemplazar con implementación real en paso de v-food-det
-      window._foodRestSeleccionado = restId; // guarda para uso futuro
-      go('v-food-det', 'right');
-    };
-  }
-
-  // ── Estado mínimo necesario para historial/filtros ────────────
-  // Solo se declara si dcFood aún no lo inicializó.
-  if (!window._foodState) {
-    window._foodState = { historial: [], filtro: 'todos' };
-  }
-
   window.cargarRestaurantes = async function() {
-    console.log('[Food] cargarRestaurantes v2: inicio');
     const lista = document.getElementById('food-lista');
     const demo  = document.getElementById('food-demo');
     const hdr   = document.getElementById('food-lista-header');
-    console.log('[Food] elementos DOM:', '#food-lista=', !!lista, '#food-demo=', !!demo, '#food-lista-header=', !!hdr);
-    if (!lista) { console.warn('[Food] #food-lista no encontrado, abortando'); return; }
-
-    // Categorías de negocio que se consideran food
-    const CATS_FOOD = [
-      'pizza','pizzas',
-      'taco','tacos','taqueria','taqueria',
-      'hamburguesa','hamburguesas','burger','burgers',
-      'cafe','cafe','cafeteria','cafeteria',
-      'sushi',
-      'mexicana','comida',
-      'mariscos','pollo',
-      'desayunos','desayuno',
-      'bebidas','bebida',
-      'postres','postre',
-      'restaurante','otro_rest','otro',
-    ];
-    const ESTADOS_OK = ['activo', 'aprobado_pendiente_pago'];
-
-    const EMOJIS = {
-      'tacos':'🌮','mexicana':'🌮','pizzas':'🍕','sushi':'🍣',
-      'hamburguesas':'🍔','cafeteria':'☕','mariscos':'🦞','pollo':'🍗',
-      'postres':'🧁','desayunos':'🍳','bebidas':'🥤',
-      'saludable':'🥗','cafe':'☕','comida corrida':'🍱',
-      'otro_rest':'🍽️','otro':'🍽️','restaurante':'🍽️'
-    };
-
+    if(!lista) return;
     try {
-      const { getDocs, collection, query, where } =
-        await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-
-      // Dos queries en paralelo: tipo restaurante + tipo negocio
-      const [snapR, snapN] = await Promise.all([
-        getDocs(query(collection(db, 'usuarios'), where('tipo', '==', 'restaurante'))),
-        getDocs(query(collection(db, 'usuarios'), where('tipo', '==', 'negocio')))
-      ]);
-
+      const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+      const snap = await getDocs(query(collection(db,'usuarios'), where('tipo','==','negocio')));
       const docs = [];
-
-      // tipo:'restaurante' — incluir si estado OK
-      snapR.forEach(d => {
-        const r = d.data();
-        if (ESTADOS_OK.includes(r.estado)) docs.push({ _id: d.id, ...r });
-      });
-
-      // tipo:'negocio' — solo si categoría es food y estado OK
-      snapN.forEach(d => {
-        const r = d.data();
-        if (!ESTADOS_OK.includes(r.estado)) return;
-        const cat = (r.categoria || '').toLowerCase();
-        if (!CATS_FOOD.includes(cat)) return;
-        docs.push({ _id: d.id, ...r });
-      });
-
-      // Guardar en estado para filtros futuros
-      window._foodState.historial = docs;
-      console.log('[Food] docs.length total:', docs.length, '| categorias:', docs.map(function(r){return r.categoria||'sin-cat';}));
-
-      if (docs.length === 0) {
-        if (hdr) hdr.textContent = '🟢 Abiertos ahora';
-        if (demo) demo.style.display = 'block';
+      snap.forEach(d => { const r = d.data(); if(r.estado==='activo') docs.push({_id:d.id,...r}); });
+      if(docs.length === 0) {
+        if(hdr) hdr.innerHTML = '<div class="si09">🟢 Abiertos ahora</div>';
+        if(demo) demo.style.display='block'; // Mostrar demo si no hay reales
         return;
       }
-
-      if (demo) demo.style.display = 'none';
-      if (hdr) hdr.textContent = '🟢 Restaurantes activos';
+      if(demo) demo.style.display='none';
+      if(hdr) hdr.innerHTML = '<div class="si09">🟢 Restaurantes activos</div>';
       lista.innerHTML = '';
-
-      // Render delegado a _foodRenderLista — usa CSS del index + filtro activo
-      console.log('[Food] antes de _foodRenderLista. docs:', docs.length, '_foodRenderLista tipo:', typeof window._foodRenderLista);
-      window._foodRenderLista && window._foodRenderLista(docs);
-      console.log('[Food] _foodRenderLista llamado');
-
+      const EMOJIS = {'tacos':'🌮','pizza':'🍕','sushi':'🍣','saludable':'🥗','hamburguesas':'🍔','cafe':'☕','comida corrida':'🍱','otro':'🍽️'};
+      docs.forEach(r => {
+        const cat = (r.categoria||'otro').toLowerCase();
+        const emoji = EMOJIS[cat] || '🍽️';
+        const div = document.createElement('div');
+        div.className = 'rest-card';
+        div.innerHTML = `
+          <div class="si15 rest-banner">${emoji}
+            <span class="si32">⏰ ${r.horario||'Ver horario'}</span>
+          </div>
+          <div class="rest-body">
+            <div class="si05">
+              <div class="rest-name">${r.nombreNegocio||r.nombre||'—'}</div>
+              <span class="si44">Abierto</span>
+            </div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">⭐ Nuevo · ${r.descripcion||r.categoria||''}</div>
+            <div class="rest-footer"><span class="si01">Envío disponible</span><span class="si16">Pedir →</span></div>
+          </div>`;
+        div.onclick = () => go('v-food-det','right');
+        lista.appendChild(div);
+      });
     } catch(e) {
-      if (hdr) hdr.textContent = '🟢 Abiertos ahora';
-      console.log('Food cargarRestaurantes error:', e.message);
+      if(hdr) hdr.innerHTML = '<div class="si09">🟢 Abiertos ahora</div>';
+      console.log('Food error:',e.message);
     }
   };
 
@@ -3557,63 +3497,102 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .chats-skeleton{background:#f0f0f0;border-radius:10px;margin:0 14px 8px;height:70px;animation:skeleton-pulse 1.4s ease-in-out infinite;}
 @keyframes skeleton-pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
 
-/* ═══════════════════════════════════════════════════════════════
-   MÓDULO FOOD — CSS completo extraído de restaurantes_modulo_v1_pre_integracion
-   Excluye: *, body, html, #dcf-shell, :root, .dcf-view, keyframes ya existentes
-   ─────────────────────────────────────────────────────────────── */
+/* ══════════ MÓDULO FOOD DC ══════════ */
 
-/* Variables alias — mapeo de nombres del módulo a valores del index */
+/* ── Variables adicionales módulo Food ───────────────────── */
 :root {
-  --w12: rgba(255,255,255,.12); --w30: rgba(255,255,255,.30); --w40: rgba(255,255,255,.40);
-  --amber-dk:#6B4200; --green-lt:#E8F5EE; --green-dk:#0A4220;
-  --tx:#111; --tx2:#888; --tx3:#AAA; --tx4:#666;
-  --shadow:rgba(0,0,0,.06); --red-lt:#FDECEA; --blue-lt:#E8F0F8;
+  --green-dk:#0A4220;
+  --green-lt:#E8F5EE;
+  --red-lt:#FDECEA;
+  --tx:#111;
+  --tx2:#888;
+  --tx4:#666;
+  --w12:rgba(255,255,255,.12);
+  --w30:rgba(255,255,255,.30);
+  --w40:rgba(255,255,255,.40);
+  --amber-dk:#6B4200;
+  --shadow:rgba(0,0,0,.06);
 }
+/* ─────────────────────────────────────────────────────────── */
 
-/* ─── Loader keyframes (únicos, prefijados) ─────────────────── */
+
+/* ── Keyframes loader DC (self-contained) ─────────────── */
 @keyframes dcf-spin{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
 @keyframes dcf-led{0%,100%{opacity:1;filter:drop-shadow(0 0 6px #1FC26A);}50%{opacity:.5;filter:drop-shadow(0 0 2px #1FC26A);}}
-@keyframes dcf-fade-in{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
-@keyframes dcf-check-pop{0%{transform:scale(0);}60%{transform:scale(1.2);}100%{transform:scale(1);}}
 @media(prefers-reduced-motion:no-preference){
   .dcf-pg-load{animation:dcf-spin 1.4s linear infinite;transform-origin:53px 53px;}
   .dcf-lr-load{animation:dcf-led 2s ease-in-out infinite;}
 }
 
-/* ─── Overlay Final Feliz DC ────────────────────────────────── */
-.dc-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;
-  display:flex;align-items:center;justify-content:center;animation:dcf-fade-in .25s ease-out;}
-.dc-overlay-box{width:280px;border-radius:26px;padding:38px 30px 36px;text-align:center;animation:dcf-fade-in .3s ease-out;}
+/* ── Overlay confirmación pedido DC ─────────────────────── */
+@keyframes dcf-spin{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
+@keyframes dcf-led{0%,100%{opacity:1;filter:drop-shadow(0 0 6px #1FC26A);}50%{opacity:.5;filter:drop-shadow(0 0 2px #1FC26A);}}
+@keyframes dcf-spin-y{from{transform:rotate(0deg) translateZ(0);}to{transform:rotate(360deg) translateZ(0);}}
+@keyframes dcf-fade-in{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
+@keyframes dcf-check-pop{0%{transform:scale(0);}60%{transform:scale(1.2);}100%{transform:scale(1);}}
+.dc-overlay{position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:999;
+  display:flex;align-items:center;justify-content:center;
+  animation:dcf-fade-in .25s ease-out;}
+.dc-overlay-box{width:280px;border-radius:26px;padding:38px 30px 36px;text-align:center;
+  animation:dcf-fade-in .3s ease-out;}
 .dc-overlay-box.phase-send{background:#1C1400;border:2px solid rgba(245,197,24,.3);}
 .dc-overlay-box.phase-ok  {background:#0C1A10;border:2px solid rgba(31,194,106,.4);}
 .dc-logo-wrap{display:inline-block;filter:drop-shadow(0 0 24px rgba(31,194,106,.65));margin-bottom:22px;}
+.dc-logo-wrap .dcf-pg-load{animation:dcf-spin 1.4s linear infinite;transform-origin:53px 53px;}
+.dc-logo-wrap .dcf-lr-load{animation:dcf-led 2s ease-in-out infinite;}
 .dc-check{font-size:72px;animation:dcf-check-pop .45s cubic-bezier(.34,1.56,.64,1) forwards;display:inline-block;}
 .dc-ov-title{font-size:16px;font-weight:700;letter-spacing:.2px;}
 .dc-ov-sub{font-size:11px;margin-top:6px;opacity:.7;line-height:1.5;}
-.dc-ov-send .dc-ov-title{color:var(--yellow);} .dc-ov-send .dc-ov-sub{color:rgba(245,197,24,.75);}
-.dc-ov-ok   .dc-ov-title{color:var(--green);} .dc-ov-ok   .dc-ov-sub{color:rgba(31,194,106,.8);}
+.dc-ov-send .dc-ov-title{color:var(--yellow);}
+.dc-ov-send .dc-ov-sub{color:rgba(245,197,24,.75);}
+.dc-ov-ok   .dc-ov-title{color:var(--green);}
+.dc-ov-ok   .dc-ov-sub{color:rgba(31,194,106,.8);}
+/* ─── Variables DC ──────────────────────────────────────────── */
+:root{
+  --green:#1FC26A;--green-dk:#0A4220;--green-lt:#E8F5EE;
+  --red:#D63A2A;  --red-lt:#FDECEA;
+  --yellow:#F5C518;--amber-dk:#6B4200;
+  --blue:#1A7AB5; --blue-lt:#E8F0F8;
+  --tx:#111;--tx2:#888;--tx3:#AAA;--tx4:#666;
+  --border:#E8EAE0;--bg:#F5F6F0;
+  --w12:rgba(255,255,255,.12);--w30:rgba(255,255,255,.30);--w40:rgba(255,255,255,.40);
+  --shadow:rgba(0,0,0,.06);
+}
+
+/* ─── Vistas ────────────────────────────────────────────────── */
+.dcf-view{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  background:#F5F6F0;
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.dcf-view.active{transform:translateX(0);pointer-events:auto;}
+.dcf-view.prev{transform:translateX(-30%);}
+
+/* ─── Scroll ────────────────────────────────────────────────── */
+.dcf-scroll{flex:1;overflow-y:auto;-webkit-overflow-dcf-scrolling:touch;}
+#det-menu{padding-bottom:72px;}
+.dcf-scroll::-webkit-dcf-scrollbar{display:none;}
 
 /* ─── Headers ───────────────────────────────────────────────── */
 .dcf-hdr{padding:12px 18px 14px;flex-shrink:0;}
 .dcf-hdr-amber{background:linear-gradient(135deg,#6B4200,#c8940a);}
 .dcf-hdr-red  {background:linear-gradient(135deg,#7A1810,#D63A2A);}
 .dcf-hdr-blue {background:linear-gradient(135deg,#0A3055,#1A7AB5);}
-.dcf-sbar{display:flex;justify-content:space-between;font-size:10px;font-weight:600;color:var(--w40);padding:4px 0;}
+.dcf-sbar{display:flex;justify-content:space-between;font-size:10px;font-weight:600;
+  color:var(--w40);padding:4px 0 4px;}
 .dcf-hdr-row{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.dcf-title{font-size:18px;font-weight:700;color:#fff;}
-.dcf-sub  {font-size:11px;color:var(--w40);}
-.dcf-back-btn{width:36px;height:36px;flex-shrink:0;border-radius:10px;background:var(--w12);
-  border:1px solid var(--w30);color:#fff;font-size:22px;cursor:pointer;
+.title{font-size:18px;font-weight:700;color:#fff;}
+.sub{font-size:11px;color:var(--w40);}
+.dcf-back-btn{width:36px;height:36px;flex-shrink:0;border-radius:10px;
+  background:var(--w12);border:1px solid var(--w30);
+  color:#fff;font-size:22px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-family:inherit;}
-
-/* ─── Pill row / chips ──────────────────────────────────────── */
 .pill-row{display:flex;gap:6px;padding-top:8px;flex-wrap:wrap;}
-.dcf-chip{background:var(--w12);color:rgba(255,255,255,.85);border:1px solid transparent;
-  border-radius:20px;padding:6px 12px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;font-family:inherit;}
-.dcf-chip.dcf-on{background:var(--yellow);color:var(--amber-dk);border-color:rgba(0,0,0,.2);
-  font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.18);}
 
-/* ─── Nav inferior Food ─────────────────────────────────────── */
+/* ─── Nav inferior ──────────────────────────────────────────── */
 .dcf-nav{display:flex;justify-content:space-around;padding:10px 0 16px;
   background:#fff;border-top:.5px solid var(--border);flex-shrink:0;}
 .dcf-ni{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
@@ -3621,27 +3600,36 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .dcf-ni-lb{font-size:9px;font-weight:700;color:#C0C4BA;}
 .dcf-ni-lb.dcf-on{color:var(--red);}
 
+/* ─── Chips ─────────────────────────────────────────────────── */
+.dcf-chip{background:var(--w12);color:rgba(255,255,255,.85);border:1px solid transparent;
+  border-radius:20px;padding:6px 12px;font-size:11px;font-weight:600;
+  white-space:nowrap;cursor:pointer;font-family:inherit;}
+.dcf-chip.dcf-on{background:var(--yellow);color:var(--amber-dk);border-color:rgba(0,0,0,.2);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.18);}
+
 /* ─── Cards restaurante ─────────────────────────────────────── */
-.dcf-rcard{background:#fff;border-radius:18px;margin:0 14px 10px;overflow:hidden;cursor:pointer;
-  border:.5px solid #f0e8d0;box-shadow:0 2px 8px var(--shadow);transition:transform .15s;}
+.dcf-rcard{background:#fff;border-radius:18px;margin:0 14px 10px;overflow:hidden;
+  cursor:pointer;border:.5px solid #f0e8d0;
+  box-shadow:0 2px 8px var(--shadow);transition:transform .15s;}
 .dcf-rcard:active{transform:scale(.98);}
-.rbanner{height:90px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;}
-.rbadge{position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.55);color:#fff;
-  font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.rbanner{height:90px;display:flex;align-items:center;justify-content:center;
+  font-size:52px;position:relative;}
+.rbadge{position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.55);
+  color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
 .rbody{padding:10px 12px 12px;}
 .rname{font-size:14px;font-weight:700;color:var(--tx);}
-.rfooter{display:flex;justify-content:space-between;align-items:center;margin-top:8px;
-  padding-top:8px;border-top:.5px solid #f5f5f5;}
-.tag-open{background:var(--green-lt);color:var(--green-dk);font-size:10px;font-weight:700;
-  padding:3px 8px;border-radius:10px;}
+.rfooter{display:flex;justify-content:space-between;align-items:center;
+  margin-top:8px;padding-top:8px;border-top:.5px solid #f5f5f5;}
+.tag-open{background:var(--green-lt);color:var(--green-dk);
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;}
 .link-green{font-size:12px;font-weight:700;color:var(--green);}
 
-/* ─── Menú (food-det) ───────────────────────────────────────── */
+/* ─── Menú ──────────────────────────────────────────────────── */
 .msec{font-size:11px;font-weight:700;color:#999;letter-spacing:.8px;
   text-transform:uppercase;margin:14px 16px 8px;}
 .mitem{background:#fff;border-radius:16px;margin:0 14px 8px;padding:12px;
   display:flex;gap:12px;align-items:center;border:.5px solid #f0f0f0;}
 .mitem.agotado{opacity:.4;pointer-events:none;}
+.mitem.agotado .qbtn{background:#e0e0e0;color:#aaa;cursor:not-allowed;}
 .mic{width:40px;height:40px;border-radius:10px;background:#F5F5F5;
   display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
 .minfo{flex:1;}
@@ -3649,8 +3637,8 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .mdesc{font-size:11px;color:var(--tx2);margin-top:2px;line-height:1.4;}
 .mprice{font-size:13px;font-weight:700;color:var(--green);margin-top:4px;}
 .qwrap{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}
-.qbtn{width:28px;height:28px;border-radius:8px;background:var(--yellow);border:none;
-  color:var(--amber-dk);font-size:18px;cursor:pointer;font-weight:700;
+.qbtn{width:28px;height:28px;border-radius:8px;background:var(--yellow);
+  border:none;color:var(--amber-dk);font-size:18px;cursor:pointer;font-weight:700;
   display:flex;align-items:center;justify-content:center;font-family:inherit;}
 .qnum{font-size:14px;font-weight:700;color:var(--tx);min-width:18px;text-align:center;}
 
@@ -3658,32 +3646,43 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .dcf-cart-bar{background:var(--amber-dk);border-radius:16px;margin:0 14px 10px;
   padding:12px 16px;display:flex;align-items:center;cursor:pointer;flex-shrink:0;}
 .dcf-cart-badge{background:var(--yellow);color:var(--amber-dk);width:28px;height:28px;
-  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;}
 
-/* ─── Carrito ───────────────────────────────────────────────── */
+/* ─── Carrito items ─────────────────────────────────────────── */
 .citem{background:#fff;border-radius:14px;margin:0 14px 8px;padding:12px 14px;
   display:flex;align-items:center;gap:10px;border:.5px solid #f0e8d0;}
 .dcf-del-btn{width:26px;height:26px;border-radius:8px;background:var(--red-lt);
   border:none;color:var(--red);font-size:14px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;margin-left:auto;}
-.tcard{background:#fff;border-radius:14px;margin:0 14px 12px;padding:14px;border:.5px solid #f0e8d0;}
-.trow{display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:6px;}
-.tfinal{display:flex;justify-content:space-between;font-size:15px;font-weight:700;
-  color:var(--tx);margin-top:8px;padding-top:8px;border-top:.5px solid #f0f0f0;}
 
-/* ─── Formas de pago ────────────────────────────────────────── */
+/* ─── Total card ────────────────────────────────────────────── */
+.tcard{background:#fff;border-radius:14px;margin:0 14px 12px;
+  padding:14px;border:.5px solid #f0e8d0;}
+.trow{display:flex;justify-content:space-between;font-size:12px;
+  color:var(--tx2);margin-bottom:6px;}
+.tfinal{display:flex;justify-content:space-between;font-size:15px;
+  font-weight:700;color:var(--tx);margin-top:8px;padding-top:8px;
+  border-top:.5px solid #f0f0f0;}
+
+/* ─── Pago opciones ─────────────────────────────────────────── */
 .dcf-pago-opt{background:#fff;border-radius:12px;padding:12px 14px;
-  display:flex;align-items:center;gap:10px;margin-bottom:8px;border:.5px solid var(--border);cursor:pointer;}
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  border:.5px solid var(--border);cursor:pointer;}
 .dcf-pago-opt.dcf-on{border-color:var(--green);background:var(--green-lt);}
 .dcf-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);
   display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;}
 .dcf-pago-opt.dcf-on .dcf-radio{border-color:var(--green);}
-.dcf-pago-opt.dcf-on .dcf-radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--green);display:block;}
+.dcf-pago-opt.dcf-on .dcf-radio::after{content:'';width:10px;height:10px;
+  border-radius:50%;background:var(--green);display:block;}
 
-/* ─── Nota / inputs ─────────────────────────────────────────── */
+/* ─── Textarea ──────────────────────────────────────────────── */
 .nota{background:var(--bg);border:.5px solid var(--border);border-radius:12px;
-  padding:10px 14px;font-size:12px;color:var(--tx4);width:100%;outline:none;font-family:inherit;resize:none;}
+  padding:10px 14px;font-size:12px;color:var(--tx4);width:100%;
+  outline:none;font-family:inherit;resize:none;}
 .nota:focus{border-color:var(--green);}
+
+/* ─── Input ─────────────────────────────────────────────────── */
 .dcf-inp{width:100%;background:#fff;border:.5px solid var(--border);border-radius:12px;
   padding:12px 14px;font-size:13px;color:var(--tx);outline:none;font-family:inherit;}
 .dcf-inp:focus{border-color:var(--green);}
@@ -3692,23 +3691,25 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 /* ─── Tracking ──────────────────────────────────────────────── */
 .trk-banner{background:#fff;border-radius:16px;padding:20px;text-align:center;
   margin-bottom:16px;border:.5px solid #e8e8e8;}
-.trk-pasos{background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:.5px solid #e8e8e8;}
+.trk-pasos{background:#fff;border-radius:16px;padding:16px;
+  margin-bottom:16px;border:.5px solid #e8e8e8;}
 .tstep{display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;}
 .tstep:last-child{margin-bottom:0;}
-.tline{position:absolute;left:14px;top:30px;width:2px;height:calc(100% + 2px);background:#f0f0f0;}
+.tline{position:absolute;left:14px;top:30px;width:2px;
+  height:calc(100% + 2px);background:#f0f0f0;}
 .tline.done{background:var(--green);}
-.tdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:14px;flex-shrink:0;position:relative;z-index:1;background:#f0f0f0;color:#aaa;}
+.tdot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;
+  position:relative;z-index:1;background:#f0f0f0;color:#aaa;}
 .tdot.done{background:var(--green);color:#fff;}
 
-/* ─── Stars ─────────────────────────────────────────────────── */
-.stars{display:flex;gap:8px;margin-top:4px;}
-.stars span{font-size:26px;cursor:pointer;}
-
-/* ─── Cards genéricos / badges ──────────────────────────────── */
+/* ─── Cards genéricos ───────────────────────────────────────── */
 .card{background:#fff;border-radius:18px;margin:0 14px 10px;padding:14px;
-  border:.5px solid #d8f0e0;cursor:pointer;box-shadow:0 2px 8px var(--shadow);transition:transform .15s;}
+  border:.5px solid #d8f0e0;cursor:pointer;
+  box-shadow:0 2px 8px var(--shadow);transition:transform .15s;}
 .card:active{transform:scale(.98);}
+
+/* ─── Badges de estado ──────────────────────────────────────── */
 .badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block;}
 .b-nuevo{background:#FFF8E1;color:#7a5000;}
 .b-aceptado{background:var(--green-lt);color:var(--green-dk);}
@@ -3717,7 +3718,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .b-preparando,.b-listo{background:#FFF8E1;color:#7a5000;}
 .b-en_camino{background:var(--blue-lt);color:#0A3055;}
 
-/* ─── Botones food ──────────────────────────────────────────── */
+/* ─── Botones ───────────────────────────────────────────────── */
 .dcf-btn{border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;
   width:100%;cursor:pointer;font-family:inherit;transition:transform .15s;}
 .dcf-btn:active{transform:scale(.98);}
@@ -3726,19 +3727,6 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .dcf-btn-red   {background:var(--red);color:#fff;}
 .dcf-btn-blue  {background:var(--blue);color:#fff;}
 
-/* ─── Panel restaurante ─────────────────────────────────────── */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:16px;}
-.stat-box{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;border:.5px solid #e8e8e8;}
-.stat-val{font-size:20px;font-weight:700;color:var(--red);}
-.stat-lbl{font-size:9px;color:#999;margin-top:2px;}
-.sec-lbl{font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;
-  text-transform:uppercase;padding:16px 18px 8px;}
-.action-list{background:#fff;border-radius:16px;border:.5px solid #e8e8e8;margin:0 14px 16px;overflow:hidden;}
-.action-row{padding:13px 16px;display:flex;justify-content:space-between;
-  align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;}
-.action-row:last-child{border-bottom:none;}
-.action-lbl{font-size:13px;font-weight:600;color:#111;}
-
 /* ─── Estados vacíos ────────────────────────────────────────── */
 .empty{text-align:center;padding:40px 20px;}
 .empty-ic{font-size:40px;margin-bottom:10px;}
@@ -3746,7 +3734,25 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .empty-sub{font-size:11px;color:#bbb;margin-top:4px;line-height:1.5;}
 .loading{text-align:center;padding:30px;color:#999;font-size:13px;}
 
-/* ─── FIN CSS MÓDULO FOOD ────────────────────────────────────── */
+/* ─── Panel stats ───────────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:16px;}
+.stat-box{background:#fff;border-radius:12px;padding:12px 8px;text-align:center;border:.5px solid #e8e8e8;}
+.stat-val{font-size:20px;font-weight:700;color:var(--red);}
+.stat-lbl{font-size:9px;color:#999;margin-top:2px;}
+.sec-lbl{font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;
+  text-transform:uppercase;padding:16px 18px 8px;}
+.action-list{background:#fff;border-radius:16px;border:.5px solid #e8e8e8;
+  margin:0 14px 16px;overflow:hidden;}
+.action-row{padding:13px 16px;display:flex;justify-content:space-between;
+  align-items:center;border-bottom:.5px solid #f5f5f5;cursor:pointer;}
+.action-row:last-child{border-bottom:none;}
+.action-lbl{font-size:13px;font-weight:600;color:#111;}
+
+/* ─── Stars ─────────────────────────────────────────────────── */
+.stars{display:flex;gap:8px;margin-top:4px;}
+.stars span{font-size:26px;cursor:pointer;}
+
+/* ══════════ FIN MÓDULO FOOD DC ══════════ */
 </style>
 </head>
 <body>
@@ -5013,10 +5019,10 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     <div class="dcf-hdr-row">
       <span style="font-size:22px;">🍽️</span>
       <div style="flex:1">
-        <div class="dcf-title">Dominio Food</div>
-        <div class="dcf-sub" id="food-lista-header">Cargando...</div>
+        <div class="title">Dominio Food</div>
+        <div class="sub" id="lista-sub">Cargando...</div>
       </div>
-      <button onclick="dcfNav('v-mispedidos')" style="background:var(--w12);border:1px solid var(--w30);color:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">🛒 Mis pedidos</button>
+      <button onclick="go('v-mis-pedidos-food','right')" style="background:var(--w12);border:1px solid var(--w30);color:#fff;border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">🛒 Mis pedidos</button>
     </div>
     <div class="pill-row">
       <button class="dcf-chip dcf-on" onclick="_dcfFiltrar('todos',this)">Todos</button>
@@ -5030,24 +5036,21 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <button class="dcf-chip" onclick="_dcfFiltrar('desayunos',this)">🍳 Desayunos</button>
     </div>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="food-lista"></div>
+  <div class="dcf-scroll" style="padding:10px 0;" id="lista-cont"></div>
   <div class="dcf-nav">
     <div class="dcf-ni"><div class="dcf-ni-ic">🍽️</div><div class="dcf-ni-lb dcf-on">Food</div></div>
-    <div class="dcf-ni" onclick="dcfNav('v-mispedidos')"><div class="dcf-ni-ic">🛒</div><div class="dcf-ni-lb">Pedidos</div></div>
+    <div class="dcf-ni" onclick="go('v-mis-pedidos-food','right')"><div class="dcf-ni-ic">🛒</div><div class="dcf-ni-lb">Pedidos</div></div>
     <div class="dcf-ni" onclick="go('v-home','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Inicio</div></div>
   </div>
 </div>
-
-<!-- ══ VISTA 2: DETALLE RESTAURANTE ════════════════════════ -->
-
 <div class="view go-right" id="v-food-det">
   <div class="dcf-hdr dcf-hdr-amber">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNav('v-lista')">‹</button>
+      <button class="dcf-back-btn" onclick="go('v-food','left')">‹</button>
       <div style="flex:1">
-        <div class="dcf-title" id="dcf-det-nombre">—</div>
-        <div class="dcf-sub" id="dcf-det-desc"></div>
+        <div class="title" id="dcf-det-nombre">—</div>
+        <div class="sub" id="dcf-det-desc"></div>
       </div>
     </div>
     <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
@@ -5055,25 +5058,22 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <span style="background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="det-envio">🛵 --</span>
     </div>
   </div>
-  <div class="scroll" id="det-menu" style="padding-bottom:72px;"></div>
+  <div class="dcf-scroll" id="det-menu"></div>
   <div class="dcf-cart-bar" id="dcf-cart-bar" style="display:none;" onclick="go('v-carrito','right')">
     <div class="dcf-cart-badge" id="dcf-cart-count">0</div>
     <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver carrito</div>
     <div style="font-size:13px;font-weight:700;color:var(--yellow);" id="dcf-cart-total">$0</div>
   </div>
 </div>
-
-<!-- ══ VISTA 3: CARRITO ════════════════════════════════════ -->
-
 <div class="view go-right" id="v-carrito">
   <div class="dcf-hdr dcf-hdr-amber">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNav('v-detalle')">‹</button>
-      <div><div class="dcf-title">🛒 Mi pedido</div><div class="dcf-sub" id="carr-rest">—</div></div>
+      <button class="dcf-back-btn" onclick="go('v-food-det','left')">‹</button>
+      <div><div class="title">🛒 Mi pedido</div><div class="sub" id="carr-rest">—</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding-top:12px;">
+  <div class="dcf-scroll" style="padding-top:12px;">
     <div id="carr-items"></div>
     <div id="carr-recepcion-section" style="padding:0 14px 12px;display:none;">
       <label class="lbl" style="margin-bottom:8px;">📦 ¿Cómo deseas recibir tu pedido?</label>
@@ -5115,18 +5115,15 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     </div>
   </div>
 </div>
-
-<!-- ══ VISTA 4: TRACKING ═══════════════════════════════════ -->
-
 <div class="view go-right" id="v-tracking">
   <div class="dcf-hdr dcf-hdr-amber">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
       <button class="dcf-back-btn" onclick="go('v-mis-pedidos-food','right')">‹</button>
-      <div><div class="dcf-title">📦 Seguimiento</div><div class="dcf-sub" id="trk-rest">—</div></div>
+      <div><div class="title">📦 Seguimiento</div><div class="sub" id="trk-rest">—</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding:16px 14px;">
+  <div class="dcf-scroll" style="padding:16px 14px;">
 
     <div class="trk-banner">
       <div style="font-size:40px;margin-bottom:8px;" id="trk-ic">📦</div>
@@ -5184,44 +5181,34 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     <button class="dcf-btn dcf-btn-yellow" id="trk-volver" style="display:none;margin-top:8px;" onclick="go('v-mis-pedidos-food','right')">Ver mis pedidos →</button>
   </div>
 </div>
-
-<!-- ══ VISTA 5: MIS PEDIDOS VECINO ═════════════════════════ -->
-
-
-
-<!-- ══ v-mis-pedidos-food ══ -->
 <div class="view go-right" id="v-mis-pedidos-food">
   <div class="dcf-hdr dcf-hdr-amber">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
       <button class="dcf-back-btn" onclick="go('v-food','left')">‹</button>
-      <div><div class="dcf-title">🛒 Mis pedidos</div><div class="dcf-sub" id="mispedidos-sub">—</div></div>
+      <div><div class="title">🛒 Mis pedidos</div><div class="sub" id="mispedidos-sub">—</div></div>
     </div>
     <div class="pill-row">
       <button class="dcf-chip dcf-on" onclick="_mpTab('encurso',this)">🔴 En curso</button>
       <button class="dcf-chip" onclick="_mpTab('anteriores',this)">📬 Anteriores</button>
     </div>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="mispedidos-cont"></div>
+  <div class="dcf-scroll" style="padding:10px 0;" id="mispedidos-cont"></div>
   <div class="dcf-nav">
     <div class="dcf-ni" onclick="go('v-food','left')"><div class="dcf-ni-ic">🍽️</div><div class="dcf-ni-lb">Food</div></div>
     <div class="dcf-ni"><div class="dcf-ni-ic">🛒</div><div class="dcf-ni-lb dcf-on">Pedidos</div></div>
     <div class="dcf-ni" onclick="go('v-home','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Inicio</div></div>
   </div>
 </div>
-
-<!-- ══ VISTA 6: PANEL RESTAURANTE ══════════════════════════ -->
-
-<!-- ══ v-panel-rest ══ -->
 <div class="view go-right" id="v-panel-rest">
   <div class="dcf-hdr dcf-hdr-red">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
       <button class="dcf-back-btn" onclick="go('v-home','left')">‹</button>
-      <div><div class="dcf-title">🍽️ Mi Restaurante</div><div class="dcf-sub" id="panel-sub">—</div></div>
+      <div><div class="title">🍽️ Mi Restaurante</div><div class="sub" id="panel-sub">—</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding-bottom:14px;">
+  <div class="dcf-scroll" style="padding-bottom:14px;">
     <div class="sec-lbl">Hoy</div>
     <div class="stat-grid">
       <div class="stat-box"><div class="stat-val" id="st-pedidos">0</div><div class="stat-lbl">Pedidos</div></div>
@@ -5230,11 +5217,11 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     </div>
     <div class="sec-lbl">Acciones</div>
     <div class="action-list">
-      <div class="action-row" onclick="dcfNavRest('v-pedidos-rest')">
+      <div class="action-row" onclick="go('v-pedidos-rest','right')">
         <span class="action-lbl">📦 Ver pedidos <span id="badge-act" style="display:none;background:var(--red);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;margin-left:6px;"></span></span>
         <span style="color:#ccc;font-size:16px;">›</span>
       </div>
-      <div class="action-row" onclick="dcfNavRest('v-menu-admin')">
+      <div class="action-row" onclick="go('v-menu-admin','right')">
         <span class="action-lbl">✏️ Editar menú</span>
         <span style="color:#ccc;font-size:16px;">›</span>
       </div>
@@ -5242,20 +5229,16 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   </div>
   <div class="dcf-nav">
     <div class="dcf-ni" onclick="go('v-home','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Inicio</div></div>
-    <div class="dcf-ni" onclick="dcfNavRest('v-pedidos-rest')"><div class="dcf-ni-ic">📦</div><div class="dcf-ni-lb">Pedidos</div></div>
-    <div class="dcf-ni" onclick="dcfNavRest('v-menu-admin')"><div class="dcf-ni-ic">✏️</div><div class="dcf-ni-lb">Menú</div></div>
+    <div class="dcf-ni" onclick="go('v-pedidos-rest','right')"><div class="dcf-ni-ic">📦</div><div class="dcf-ni-lb">Pedidos</div></div>
+    <div class="dcf-ni" onclick="go('v-menu-admin','right')"><div class="dcf-ni-ic">✏️</div><div class="dcf-ni-lb">Menú</div></div>
   </div>
 </div>
-
-<!-- ══ VISTA 7: PEDIDOS RESTAURANTE ════════════════════════ -->
-
-<!-- ══ v-pedidos-rest ══ -->
 <div class="view go-right" id="v-pedidos-rest">
   <div class="dcf-hdr dcf-hdr-red">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNavRest('v-panel-rest')">‹</button>
-      <div><div class="dcf-title">📦 Pedidos</div><div class="dcf-sub" id="pedrest-sub">—</div></div>
+      <button class="dcf-back-btn" onclick="go('v-panel-rest','left')">‹</button>
+      <div><div class="title">📦 Pedidos</div><div class="sub" id="pedrest-sub">—</div></div>
     </div>
     <div class="pill-row">
       <button class="dcf-chip dcf-on" onclick="_tabRest('activos',this)">🔴 Activos</button>
@@ -5263,55 +5246,43 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       <button class="dcf-chip" onclick="_tabRest('historial',this)">📬 Historial</button>
     </div>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="pedrest-cont"></div>
+  <div class="dcf-scroll" style="padding:10px 0;" id="pedrest-cont"></div>
   <div class="dcf-nav">
-    <div class="dcf-ni" onclick="dcfNavRest('v-panel-rest')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Panel</div></div>
+    <div class="dcf-ni" onclick="go('v-panel-rest','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Panel</div></div>
     <div class="dcf-ni"><div class="dcf-ni-ic">📦</div><div class="dcf-ni-lb dcf-on">Pedidos</div></div>
-    <div class="dcf-ni" onclick="dcfNavRest('v-menu-admin')"><div class="dcf-ni-ic">✏️</div><div class="dcf-ni-lb">Menú</div></div>
+    <div class="dcf-ni" onclick="go('v-menu-admin','right')"><div class="dcf-ni-ic">✏️</div><div class="dcf-ni-lb">Menú</div></div>
   </div>
 </div>
-
-<!-- ══ VISTA 8: DETALLE PEDIDO RESTAURANTE ═════════════════ -->
-
-<!-- ══ v-pedido-det-rest ══ -->
-<div class="view go-right" id="v-pedido-det-rest">
+<div class="view go-right" id="v-pedido-det">
   <div class="dcf-hdr dcf-hdr-red">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNavRest('v-pedidos-rest')">‹</button>
-      <div><div class="dcf-title">📦 Detalle</div><div class="dcf-sub" id="pdet-sub">—</div></div>
+      <button class="dcf-back-btn" onclick="go('v-pedidos-rest','right')">‹</button>
+      <div><div class="title">📦 Detalle</div><div class="sub" id="pdet-sub">—</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding:14px;" id="pdet-cont"></div>
+  <div class="dcf-scroll" style="padding:14px;" id="pdet-cont"></div>
 </div>
-
-<!-- ══ VISTA 9: MENÚ ADMIN ═════════════════════════════════ -->
-
-<!-- ══ v-menu-admin ══ -->
 <div class="view go-right" id="v-menu-admin">
   <div class="dcf-hdr dcf-hdr-red">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNavRest('v-panel-rest')">‹</button>
-      <div><div class="dcf-title">✏️ Mi Menú</div><div class="dcf-sub">Productos</div></div>
+      <button class="dcf-back-btn" onclick="go('v-panel-rest','left')">‹</button>
+      <div><div class="title">✏️ Mi Menú</div><div class="sub">Productos</div></div>
     </div>
     <button onclick="dcFood_abrirFormProducto(null)" style="margin-top:8px;width:100%;background:var(--w12);border:1px solid var(--w30);color:#fff;border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar producto</button>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="menuadmin-cont"></div>
+  <div class="dcf-scroll" style="padding:10px 0;" id="menuadmin-cont"></div>
 </div>
-
-<!-- ══ VISTA 10: FORM PRODUCTO ═════════════════════════════ -->
-
-<!-- ══ v-prod-form ══ -->
 <div class="view go-right" id="v-prod-form">
   <div class="dcf-hdr dcf-hdr-red">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
-      <button class="dcf-back-btn" onclick="dcfNavRest('v-menu-admin')">‹</button>
-      <div><div class="dcf-title" id="pform-titulo">Nuevo producto</div><div class="dcf-sub">Datos</div></div>
+      <button class="dcf-back-btn" onclick="go('v-menu-admin','right')">‹</button>
+      <div><div class="title" id="pform-titulo">Nuevo producto</div><div class="sub">Datos</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding:16px;">
+  <div class="dcf-scroll" style="padding:16px;">
     <input type="hidden" id="pform-id">
     <div style="margin-bottom:12px;"><label class="lbl">Nombre *</label><input id="pform-nombre" class="dcf-inp" placeholder="Taco de Bistec"></div>
     <div style="margin-bottom:12px;"><label class="lbl">Categoría *</label><input id="pform-cat" class="dcf-inp" placeholder="Tacos, Bebidas..."></div>
@@ -5325,37 +5296,29 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     <button class="dcf-btn dcf-btn-green" onclick="dcFood_guardarProducto()">Guardar producto →</button>
   </div>
 </div>
-
-<!-- ══ VISTA 11: REPARTIDOR DC ═════════════════════════════ -->
-
-<!-- ══ v-repartidor-dc ══ -->
-<div class="view go-right" id="v-repartidor-dc">
+<div class="view go-right" id="v-repartidor">
   <div class="dcf-hdr dcf-hdr-blue">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
       <button class="dcf-back-btn" onclick="go('v-home','left')">‹</button>
-      <div><div class="dcf-title">🏍️ Pedidos disponibles</div><div class="dcf-sub" id="rep-sub">—</div></div>
+      <div><div class="title">🏍️ Pedidos disponibles</div><div class="sub" id="rep-sub">—</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding:10px 0;" id="rep-cont"></div>
+  <div class="dcf-scroll" style="padding:10px 0;" id="rep-cont"></div>
   <div class="dcf-nav">
     <div class="dcf-ni" onclick="go('v-home','left')"><div class="dcf-ni-ic">🏠</div><div class="dcf-ni-lb">Inicio</div></div>
     <div class="dcf-ni"><div class="dcf-ni-ic">🏍️</div><div class="dcf-ni-lb dcf-on">Pedidos DC</div></div>
   </div>
 </div>
-
-<!-- ══ VISTA 12: TRANSFERENCIA ════════════════════════════ -->
-
-<!-- ══ v-transferencia-food ══ -->
-<div class="view go-right" id="v-transferencia-food">
+<div class="view go-right" id="v-transferencia">
   <div class="dcf-hdr dcf-hdr-amber">
     <div class="dcf-sbar"><span>9:41</span><span></span></div>
     <div class="dcf-hdr-row">
       <button class="dcf-back-btn" onclick="go('v-carrito','left')">‹</button>
-      <div><div class="dcf-title">📱 Transferencia</div><div class="dcf-sub" id="transf-sub">Confirma el pago</div></div>
+      <div><div class="title">📱 Transferencia</div><div class="sub" id="transf-sub">Confirma el pago</div></div>
     </div>
   </div>
-  <div class="scroll" style="padding:16px 14px;">
+  <div class="dcf-scroll" style="padding:16px 14px;">
     <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:.5px solid #e8e8e8;">
       <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Resumen</div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -5374,12 +5337,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     <button class="dcf-btn dcf-btn-yellow" id="btn-ya-transferi" onclick="dcFood_confirmarTransferencia()">✅ Ya transferí — Confirmar pedido →</button>
   </div>
 </div>
-
-
-<!-- ── Overlay confirmación de pedido ───────────────────── -->
-
-<!-- ══ dc-pedido-overlay ══ -->
-<div id="dc-pedido-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;align-items:center;justify-content:center;">
+<div id="dc-pedido-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.72);z-index:999;align-items:center;justify-content:center;">
   <div id="dc-pedido-box" class="dc-overlay-box phase-send">
     <div id="dc-ov-body">
       <div class="dc-logo-wrap"><svg width="72" height="72" viewBox="0 0 106 106" fill="none">
@@ -5406,10 +5364,6 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     </div>
   </div>
 </div>
-
-</div><!-- /shell -->
-
-
 <div class="view go-right" id="v-mipanel">
   <div style="background:#fff;flex-shrink:0;border-bottom:.5px solid #eee;">
     <div class="sbar dk" style="background:#fff;padding:10px 18px 0;display:flex;justify-content:space-between;"><span style="color:#111;font-size:11px;font-weight:600;">9:41</span><span style="color:#111;font-size:11px;">▲ ■ ■</span></div>
@@ -8650,23 +8604,10 @@ function _goCore(id,dir){
       setTimeout(()=>intentarCargar(0),200);
       window.actualizarBtnSolicitudRol && window.actualizarBtnSolicitudRol();
     }
-    if(id==='v-food'){
-      // Detección de rol: restaurante → panel, repartidor → vista DC, vecino → lista
-      var _tipo=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
-      if(_tipo==='restaurante'||_tipo==='negocio'){
-        setTimeout(function(){ go('v-panel-rest','right'); window.dcFood_cargarPanelRest&&window.dcFood_cargarPanelRest(); },100);
-      } else if(_tipo==='repartidor'||_tipo==='transporte'||_tipo==='ambos'){
-        setTimeout(function(){ go('v-repartidor-dc','right'); window.dcFood_cargarPedidosRep&&window.dcFood_cargarPedidosRep(); },100);
-      } else {
-        setTimeout(()=>window.cargarRestaurantes&&window.cargarRestaurantes(),200);
-      }
-    }
-    if(id==='v-carrito')          setTimeout(()=>window.dcFood_renderCarrito&&window.dcFood_renderCarrito(),50);
-    if(id==='v-mis-pedidos-food') setTimeout(()=>window.dcFood_cargarMisPedidos&&window.dcFood_cargarMisPedidos(),200);
-    if(id==='v-panel-rest')       setTimeout(()=>window.dcFood_cargarPanelRest&&window.dcFood_cargarPanelRest(),200);
-    if(id==='v-pedidos-rest')     setTimeout(()=>window.dcFood_cargarPedidosRest&&window.dcFood_cargarPedidosRest(),200);
-    if(id==='v-menu-admin')       setTimeout(()=>window.dcFood_cargarMenuAdmin&&window.dcFood_cargarMenuAdmin(),200);
-    if(id==='v-repartidor-dc')    setTimeout(()=>window.dcFood_cargarPedidosRep&&window.dcFood_cargarPedidosRep(),200);
+    if(id==='v-food')setTimeout(()=>window.dcFood_init&&window.dcFood_init(),200);
+    if(id==='v-panel-rest')setTimeout(()=>window.dcFood_cargarPanelRest&&window.dcFood_cargarPanelRest(),200);
+    if(id==='v-repartidor')setTimeout(()=>window.dcFood_cargarPedidosRep&&window.dcFood_cargarPedidosRep(),200);
+    if(id==='v-mis-pedidos-food')setTimeout(()=>window.dcFood_cargarMisPedidos&&window.dcFood_cargarMisPedidos(),200);
     if(id==='v-plaza')setTimeout(()=>window.cargarPlaza&&window.cargarPlaza(),200);
     if(id==='v-ride')setTimeout(()=>window.cargarRepartidores&&window.cargarRepartidores(),200);
     if(id==='v-admin-solicitudes')setTimeout(()=>window.cargarSolicitudes&&window.cargarSolicitudes(),300);
@@ -8684,7 +8625,7 @@ function _goCore(id,dir){
     if(id==='v-favoritos')setTimeout(cargarFavoritos,400);
     if(id==='v-mi-agenda')setTimeout(()=>window._initMiAgenda&&window._initMiAgenda(),200);
     if(id==='v-mis-chats')setTimeout(()=>window.cargarMisChats&&window.cargarMisChats(),300);
-
+    if(id==='v-carrito')setTimeout(()=>window.dcFood_renderCarrito&&window.dcFood_renderCarrito(),50);
     // Al entrar a cualquier vista de registro, limpiar checkboxes y formulario
     if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
       ['v-chk1','v-chk2',
@@ -9372,9 +9313,9 @@ function renderCarrito(){
   if(!active.length){
     // demo por defecto
     items.bistec.q=2;items.pastor.q=1;items.agua.q=1;
-    var _qb=document.getElementById('q-bistec'); if(_qb)_qb.textContent=2;
-    var _qp=document.getElementById('q-pastor'); if(_qp)_qp.textContent=1;
-    var _qa=document.getElementById('q-agua'); if(_qa)_qa.textContent=1;
+    document.getElementById('q-bistec').textContent=2;
+    document.getElementById('q-pastor').textContent=1;
+    document.getElementById('q-agua').textContent=1;
     updateCartBar();
     return renderCarrito();
   }
@@ -10066,20 +10007,11 @@ function showAdminTab(i,btn){
   Acceso: Mi Panel → Mi Agenda
 ════════════════════════════════════════════════════════════ -->
 
+
 <script>
-// ════════════════════════════════════════════════════════════════
-// MÓDULO FOOD — JS completo desde restaurantes_modulo_v1_pre_integracion
-// Adaptaciones aplicadas:
-//   A1: DOMContentLoaded eliminado (lógica de rol en _goCore)
-//   A2: var _isDemo eliminado (_isD() recalcula on-demand)
-//   A3: _db()/_uid()/_uname() usan window._fbDb / window._fbAuth
-//   A4: _dcfNav()/_dcfNavRest() envuelven go() del index
-//   A5: window.cargarRestaurantes = alias de dcFood_cargarRestaurantes
-// Dead code que permanece en index (sin llamadores activos):
-//   renderCarrito, updateCartBar, changeQty, removeItem,
-//   setPago, setFilter, setCat (en script regular del index)
-//   cargarRestaurantes v1 (línea 120) y v2 (línea 1082) — superadas por alias
-// ════════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════
+   MÓDULO FOOD DC — integrado desde restaurantes_modulo_v1
+   ════════════════════════════════════════════════════════ */
 'use strict';
 // ════════════════════════════════════════════════════════
 // MÓDULO RESTAURANTES — Dominio Cumbres
@@ -10095,7 +10027,7 @@ var _S = {
   restTab:'activos',
   historial:[], filtro:'todos'
 };
-// _isDemo removed — _isD() recalculates on each call
+var _isDemo = !(window._fbAuth && window._fbDb);
 
 /* ── Demo data ───────────────────────────────────────── */
 var _DR = [
@@ -10160,63 +10092,53 @@ async function _fb() {
   return await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
 }
 function _db() { return window._fbDb; }
-function _uid() { return (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : null; }
+function _uid() { return window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid; }
 function _uname() { return localStorage.getItem('dcuser') || 'Usuario'; }
 function _isD() { return !(_uid() && _db()); }
 
 /* ── Navegación ─────────────────────────────────────── */
 function _dcfNav(to) {
-  var _MAP = {
-    'v-lista':         ['v-food',               'left'],
-    'v-detalle':       ['v-food-det',            'right'],
-    'dcf-carrito':     ['v-carrito',             'right'],
-    'dcf-tracking':    ['v-tracking',            'right'],
-    'v-mispedidos':    ['v-mis-pedidos-food',    'right'],
-    'v-transferencia': ['v-transferencia-food',  'right'],
-    'v-panel-rest':    ['v-panel-rest',          'right'],
-    'v-pedidos-rest':  ['v-pedidos-rest',        'right'],
-    'v-pedido-det':    ['v-pedido-det-rest',     'right'],
-    'v-menu-admin':    ['v-menu-admin',          'right'],
-    'v-prod-form':     ['v-prod-form',           'right'],
-    'v-repartidor':    ['v-repartidor-dc',       'right'],
+  // Mapa de IDs internos del módulo → IDs reales del index + dirección
+  var MAP = {
+    'v-lista':              ['v-food',             'left'],
+    'v-detalle':            ['v-food-det',          'right'],
+    'v-food-det':           ['v-food-det',          'right'],
+    'dcf-carrito':          ['v-carrito',           'right'],
+    'v-carrito':            ['v-carrito',           'right'],
+    'dcf-tracking':         ['v-tracking',          'right'],
+    'v-tracking':           ['v-tracking',          'right'],
+    'v-mispedidos':         ['v-mis-pedidos-food',  'right'],
+    'v-mis-pedidos-food':   ['v-mis-pedidos-food',  'right'],
+    'v-transferencia':      ['v-transferencia',     'right'],
+    'v-transferencia-food': ['v-transferencia',     'right'],
   };
-  var entry = _MAP[to];
-  if (!entry) { console.warn('[dcfNav] vista no mapeada:', to); return; }
-  go(entry[0], entry[1]);
-  if (to === 'v-mispedidos')   setTimeout(function(){ window.dcFood_cargarMisPedidos && window.dcFood_cargarMisPedidos(); }, 200);
-  if (to === 'dcf-carrito')    setTimeout(function(){ window.dcFood_renderCarrito && window.dcFood_renderCarrito(); }, 50);
-  if (to === 'dcf-tracking' && _S.pedidoId) setTimeout(function(){ window.dcFood_iniciarTracking && window.dcFood_iniciarTracking(_S.pedidoId); }, 200);
+  var resolved = MAP[to] || [to, 'right'];
+  go(resolved[0], resolved[1]);
 }
-window.dcfNav = _dcfNav;
 function _dcfNavRest(to) {
-  var _MAPR = {
-    'v-panel-rest':   ['v-panel-rest',      'right'],
-    'v-pedidos-rest': ['v-pedidos-rest',     'right'],
-    'v-pedido-det':   ['v-pedido-det-rest',  'right'],
-    'v-menu-admin':   ['v-menu-admin',       'right'],
-    'v-prod-form':    ['v-prod-form',        'right'],
-  };
-  var entry = _MAPR[to];
-  if (!entry) { console.warn('[dcfNavRest] vista no mapeada:', to); return; }
-  go(entry[0], entry[1]);
-  if (to === 'v-pedidos-rest') setTimeout(function(){ window.dcFood_cargarPedidosRest && window.dcFood_cargarPedidosRest(); }, 200);
-  if (to === 'v-menu-admin')   setTimeout(function(){ window.dcFood_cargarMenuAdmin && window.dcFood_cargarMenuAdmin(); }, 200);
-  if (to === 'v-panel-rest')   setTimeout(function(){ window.dcFood_cargarPanelRest && window.dcFood_cargarPanelRest(); }, 200);
+  var cur = document.querySelector('.dcf-view.active');
+  var nxt = document.getElementById(to);
+  if (!cur || !nxt || cur === nxt) return;
+  cur.classList.remove('active'); cur.classList.add('prev');
+  nxt.classList.add('active');
+  setTimeout(function(){ cur.classList.remove('prev'); }, 320);
+  if (to === 'v-pedidos-rest') dcFood_cargarPedidosRest();
+  if (to === 'v-menu-admin') dcFood_cargarMenuAdmin();
+  if (to === 'v-panel-rest') dcFood_cargarPanelRest();
 }
-window.dcfNavRest = _dcfNavRest;
 
 /* ── Filtrar lista ──────────────────────────────────── */
 function _dcfFiltrar(cat, btn) {
-  document.querySelectorAll('#v-food .dcf-chip').forEach(function(b){b.classList.remove('on');});
-  btn.classList.add('on');
+  document.querySelectorAll('#v-food .dcf-chip').forEach(function(b){b.classList.remove('dcf-on');});
+  btn.classList.add('dcf-on');
   _S.filtro = cat;
   _dcfRenderLista(_S.historial);
 }
 
 /* ── Cargar restaurantes ────────────────────────────── */
 window.dcFood_cargarRestaurantes = async function() {
-  var cont = document.getElementById('food-lista');
-  var subEl = document.getElementById('food-lista-header');
+  var cont = document.getElementById('lista-cont');
+  var subEl = document.getElementById('lista-sub');
   if (!cont) return;
   cont.innerHTML = '<div class="loading">Buscando...</div>';
   if (_isD()) {
@@ -10288,7 +10210,7 @@ function _calcRecepcion(entr){
 
 var _EMOJIS={tacos:'🌮',mexicana:'🌮',pizzas:'🍕',sushi:'🍣',hamburguesas:'🍔',cafeteria:'☕',mariscos:'🦞',pollo:'🍗',postres:'🧁',desayunos:'🍳',bebidas:'🥤',otro_rest:'🍽️',otro:'🍽️'};
 function _dcfRenderLista(docs) {
-  var cont = document.getElementById('food-lista');
+  var cont = document.getElementById('lista-cont');
   if (!cont) return;
   var f = _S.filtro;
   var lista = f==='todos' ? docs : docs.filter(function(r){return (r.categoria||'').toLowerCase()===f;});
@@ -10317,6 +10239,7 @@ function _dcfRenderLista(docs) {
 
 /* ── Abrir restaurante ───────────────────────────────── */
 window.dcFood_abrirRest = async function(restId) {
+  dcFood_scrollReset('v-food-det');
   var r = _S.historial.find(function(x){return x._id===restId;});
   if (!r) return;
   if (_S.rest && _S.rest._id !== restId) _S.carrito = {};
@@ -10328,7 +10251,7 @@ window.dcFood_abrirRest = async function(restId) {
   if(g('det-tiempo'))g('det-tiempo').textContent='🍳 Preparación: por confirmar';
   var _entr=r.entrega||'propia';
   if(g('det-envio'))g('det-envio').textContent=_entregaLabel(_entr);
-  _dcfNav('v-detalle');
+  _dcfNav('v-food-det');
   await dcFood_cargarMenu(restId);
 };
 
@@ -10408,7 +10331,7 @@ window.dcFood_qtyChange = function(id,delta,precio,nombre,cat) {
   if(el) el.textContent=(_S.carrito[id]&&_S.carrito[id].cantidad)||0;
   _updateCartBar();
   // If carrito view is active, re-render immediately
-  var carritoView = document.getElementById('dcf-carrito');
+  var carritoView = document.getElementById('v-carrito');
   if(carritoView && carritoView.classList.contains('active')) {
     dcFood_renderCarrito();
   }
@@ -10428,6 +10351,7 @@ function _updateCartBar() {
   }else{bar.style.display='none';var dm2=document.getElementById('det-menu');if(dm2)dm2.style.paddingBottom='0';}
 }
 window.dcFood_renderCarrito = function() {
+  dcFood_scrollReset('v-carrito');
   var cont=document.getElementById('carr-items');
   var g=function(id){return document.getElementById(id);};
   if(g('carr-rest')&&_S.rest)g('carr-rest').textContent=_S.rest.nombreNegocio||_S.rest.nombre||'—';
@@ -10502,8 +10426,8 @@ window.dcFood_renderCarrito = function() {
   if(dcAviso) dcAviso.style.display = usaDC ? 'block' : 'none';
 };
 function _setPago(el) {
-  document.querySelectorAll('.dcf-pago-opt').forEach(function(p){p.classList.remove('on');});
-  el.classList.add('on');
+  document.querySelectorAll('.dcf-pago-opt').forEach(function(p){p.classList.remove('dcf-on');});
+  el.classList.add('dcf-on');
   _S.metodoPago=el.getAttribute('data-pago')||'efectivo';
 }
 
@@ -10535,6 +10459,7 @@ window.dcFood_iniciarConfirmacion = function() {
   }
 };
 window.dcFood_confirmarTransferencia = function() {
+  dcFood_scrollReset('v-transferencia');
   var refEl=document.getElementById('transf-referencia');
   var ref=refEl?refEl.value.trim():'';
   if(!ref){
@@ -10587,7 +10512,7 @@ window.dcFood_confirmarPedido = async function() {
     _S.carrito={};_S.pedidoId=_demoId;
     if(_nota)_nota.value='';
     _showPedidoOverlay(function(){
-      _dcfNav('dcf-tracking');
+      _dcfNav('v-tracking');
       dcFood_iniciarTracking(_demoId);
     });
     if(btnC){btnC.disabled=false;btnC.textContent='Confirmar y pedir →';}
@@ -10605,13 +10530,14 @@ window.dcFood_confirmarPedido = async function() {
     try{await f.addDoc(f.collection(db,'notificaciones'),{uid:pedido.restauranteId,tipo:'pedido',modulo:'pedidos',titulo:'Nuevo pedido',mensaje:pedido.vecinoNombre+' realizó un pedido de $'+pedido.total,leida:false,eliminada:false,prioridad:'alta',pedidoId:ref.id,fecha:f.serverTimestamp()});}catch(ne){}
     try{await f.addDoc(f.collection(db,'notificaciones'),{uid:uid,tipo:'pedido',modulo:'pedidos',titulo:'Pedido enviado',mensaje:'Tu pedido en '+pedido.restauranteNombre+' fue recibido.',leida:false,eliminada:false,prioridad:'normal',pedidoId:ref.id,fecha:f.serverTimestamp()});}catch(ne2){}
     _S.carrito={};_S.pedidoId=ref.id;if(nota)nota.value='';
-    _showPedidoOverlay(function(){ _dcfNav('dcf-tracking');dcFood_iniciarTracking(ref.id); });
+    _showPedidoOverlay(function(){ _dcfNav('v-tracking');dcFood_iniciarTracking(ref.id); });
   }catch(e){alert('Error: '+e.message);}
   finally{if(btnC){btnC.disabled=false;btnC.textContent='Confirmar y pedir →';}}
 };
 
 /* ── Tracking ────────────────────────────────────────── */
 window.dcFood_iniciarTracking = async function(pid) {
+  dcFood_scrollReset('v-tracking');
   if(_S.trackUnsub){_S.trackUnsub();_S.trackUnsub=null;}
   _S.pedidoId=pid;
   if(_isD()){
@@ -10738,10 +10664,10 @@ window.dcFood_cancelarPedido = async function() {
 
   function _irAnteriores(){
     _mpTabActual='anteriores';
-    document.querySelectorAll('#v-mispedidos .dcf-chip').forEach(function(b){b.classList.remove('on');});
-    var chipAnt=document.querySelector('#v-mispedidos .dcf-chip:nth-child(2)');
+    document.querySelectorAll('#v-mis-pedidos-food .dcf-chip').forEach(function(b){b.classList.remove('on');});
+    var chipAnt=document.querySelector('#v-mis-pedidos-food .dcf-chip:nth-child(2)');
     if(chipAnt) chipAnt.classList.add('on');
-    _dcfNav('v-mispedidos');
+    _dcfNav('v-mis-pedidos-food');
     dcFood_cargarMisPedidos();
   }
 
@@ -10795,8 +10721,8 @@ var _ANTERIORES = ['entregado','rechazado','cancelado'];
 
 function _mpTab(tab, btn) {
   _mpTabActual = tab;
-  document.querySelectorAll('#v-mispedidos .dcf-chip').forEach(function(b){b.classList.remove('on');});
-  if(btn) btn.classList.add('on');
+  document.querySelectorAll('#v-mis-pedidos-food .dcf-chip').forEach(function(b){b.classList.remove('dcf-on');});
+  if(btn) btn.classList.add('dcf-on');
   _renderMisPedidos(window._mpDocsCache || []);
 }
 
@@ -10840,6 +10766,12 @@ function _renderMisPedidos(docs) {
 window.dcFood_cargarMisPedidos=async function(){
   var cont=document.getElementById('mispedidos-cont');
   if(!cont)return;
+  // Reset tab "En curso" al entrar a v-mis-pedidos-food
+  _mpTabActual = 'encurso';
+  document.querySelectorAll('#v-mis-pedidos-food .dcf-chip').forEach(function(b){ b.classList.remove('dcf-on'); });
+  var encursoChip = document.querySelector('#v-mis-pedidos-food .dcf-chip');
+  if (encursoChip) encursoChip.classList.add('dcf-on');
+  dcFood_scrollReset('v-mis-pedidos-food');
   cont.innerHTML='<div class="loading">Cargando...</div>';
   var docs=_isD()?_DPvec:null;
   if(!_isD()){
@@ -10851,12 +10783,13 @@ window.dcFood_cargarMisPedidos=async function(){
   _renderMisPedidos(docs);
 };
 window.dcFood_verTracking=function(pid){
-  _dcfNav('dcf-tracking');
+  _dcfNav('v-tracking');
   dcFood_iniciarTracking(pid);
 };
 
 /* ── Panel restaurante ───────────────────────────────── */
 window.dcFood_cargarPanelRest=async function(){
+  dcFood_scrollReset('v-panel-rest');
   var g=function(id){return document.getElementById(id);};
   if(_isD()){
     if(g('st-pedidos'))g('st-pedidos').textContent=_DPrest.length;
@@ -10885,6 +10818,7 @@ window.dcFood_cargarPanelRest=async function(){
 
 /* ── Pedidos restaurante ─────────────────────────────── */
 window.dcFood_cargarPedidosRest=async function(){
+  dcFood_scrollReset('v-pedidos-rest');
   var cont=document.getElementById('pedrest-cont');
   var subEl=document.getElementById('pedrest-sub');
   if(!cont)return;
@@ -10919,13 +10853,14 @@ window.dcFood_cargarPedidosRest=async function(){
 };
 function _tabRest(tab,btn){
   _S.restTab=tab;
-  document.querySelectorAll('#v-pedidos-rest .dcf-chip').forEach(function(b){b.classList.remove('on');});
-  if(btn)btn.classList.add('on');
+  document.querySelectorAll('#v-pedidos-rest .dcf-chip').forEach(function(b){b.classList.remove('dcf-on');});
+  if(btn)btn.classList.add('dcf-on');
   dcFood_cargarPedidosRest();
 }
 
 /* ── Detalle pedido restaurante ──────────────────────── */
 window.dcFood_abrirDetallePedido=async function(pid){
+  dcFood_scrollReset('v-pedido-det');
   window._foodPedActivo=pid;
   var cont=document.getElementById('pdet-cont');
   var sub=document.getElementById('pdet-sub');
@@ -10993,6 +10928,7 @@ window.dcFood_cambiarEstado=async function(estado){
 
 /* ── Menú admin ──────────────────────────────────────── */
 window.dcFood_cargarMenuAdmin=async function(){
+  dcFood_scrollReset('v-menu-admin');
   var cont=document.getElementById('menuadmin-cont');if(!cont)return;
   cont.innerHTML='<div class="loading">Cargando...</div>';
   var uid=_isD()?'rest1':_uid();
@@ -11018,6 +10954,7 @@ window.dcFood_cargarMenuAdmin=async function(){
   });
 };
 window.dcFood_abrirFormProducto=async function(pid){
+  dcFood_scrollReset('v-prod-form');
   var t=document.getElementById('pform-titulo');
   if(t)t.textContent=pid?'Editar producto':'Nuevo producto';
   document.getElementById('pform-id').value=pid||'';
@@ -11053,6 +10990,7 @@ window.dcFood_guardarProducto=async function(){
 
 /* ── Repartidor DC ───────────────────────────────────── */
 window.dcFood_cargarPedidosRep=async function(){
+  dcFood_scrollReset('v-repartidor');
   var cont=document.getElementById('rep-cont');
   var sub=document.getElementById('rep-sub');
   if(!cont)return;
@@ -11114,11 +11052,11 @@ window.dcFood_avanzarRep=async function(pid,estado){
 /* ── Seguir comprando ──────────────────────────────────── */
 window.dcFood_seguirComprando = function() {
   _S.filtro = 'todos';
-  document.querySelectorAll('#v-food .dcf-chip').forEach(function(b){ b.classList.remove('on'); });
-  var todosChip = document.querySelector('#v-food .dcf-chip');
+  document.querySelectorAll('#v-lista .dcf-chip').forEach(function(b){ b.classList.remove('on'); });
+  var todosChip = document.querySelector('#v-lista .dcf-chip');
   if(todosChip) todosChip.classList.add('on');
   _dcfRenderLista(_S.historial);
-  _dcfNav('v-lista');
+  _dcfNav('v-food');
 };
 
 
@@ -11159,19 +11097,38 @@ function _hideOverlay(){
   if(ov) ov.style.display='none';
 }
 
-/* ── Init ────────────────────────────────────────────── */
-// DOMContentLoaded removed — rol detection moved to _goCore
+/* ── Init (llamado desde _goCore al navegar a v-food) ── */
+window.dcFood_init = function() {
+  _isDemo = _isD();
+  var tipo = localStorage.getItem('dcuserTipo') || 'vecino';
+  if (tipo === 'restaurante' || tipo === 'negocio') {
+    setTimeout(window.dcFood_cargarPanelRest, 200);
+  } else if (tipo === 'repartidor' || tipo === 'transporte' || tipo === 'ambos') {
+    setTimeout(window.dcFood_cargarPedidosRep, 200);
+  } else {
+    // Reset filtro y chip "Todos" al entrar a v-food
+    _S.filtro = 'todos';
+    document.querySelectorAll('#v-food .dcf-chip').forEach(function(b){ b.classList.remove('dcf-on'); });
+    var todosChip = document.querySelector('#v-food .dcf-chip');
+    if (todosChip) todosChip.classList.add('dcf-on');
+    dcFood_scrollReset('v-food');
+    window.dcFood_cargarRestaurantes();
+  }
+};
 
-// ── Alias para _goCore — window.cargarRestaurantes sigue funcionando ──
-// Las versiones v1 (línea 120) y v2 (línea 1082) permanecen en el index
-// pero este alias las supera por orden de ejecución (este script va al fondo del body).
+/* ── Scroll reset helper ─────────────────────────────────── */
+function dcFood_scrollReset(viewId) {
+  var view = document.getElementById(viewId);
+  if (!view) return;
+  var sc = view.querySelector('.dcf-scroll');
+  if (sc) sc.scrollTop = 0;
+}
+
+/* ── Alias y exposes al final del script Food ─────────── */
+// Alias: mantiene compatibilidad con _goCore existente y cargarRestaurantes v1/v2
 window.cargarRestaurantes = window.dcFood_cargarRestaurantes;
 
-// ── Globals accesibles desde HTML onclick ────────────────────────
-window.dcfNav     = _dcfNav;
-window.dcfNavRest = _dcfNavRest;
 
 </script>
-
 </body>
 </html>
