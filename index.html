@@ -1841,7 +1841,56 @@
   };
   // ── FIN DIRECCIÓN DEL NEGOCIO ────────────────────────────────
 
-  // ── M2-E: SISTEMA DE PROMOCIONES ────────────────────────────
+  // ── CONTADORES REALES HOME VECINO ────────────────────────────
+  // Usa los mismos filtros que Food, Plaza y Servicios respectivamente.
+  // No toca los listados reales. Solo actualiza los textos de los contadores.
+  window._actualizarContadoresHome = async function() {
+    var _db2 = window._fbDb;
+    if (!_db2) return; // sin Firebase — mantener fallback estático
+    try {
+      var f = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var CATS_FOOD = ['mexicana','hamburguesas','pizzas','sushi','cafeteria','postres','tacos','mariscos','pollo','desayunos','bebidas','otro_rest'];
+      var ESTADOS_OK = ['activo','aprobado_pendiente_pago'];
+
+      // Consultas paralelas — igual que los listados reales
+      var results = await Promise.all([
+        f.getDocs(f.query(f.collection(_db2,'usuarios'), f.where('tipo','==','restaurante'))),
+        f.getDocs(f.query(f.collection(_db2,'usuarios'), f.where('tipo','==','negocio'))),
+        f.getDocs(f.query(f.collection(_db2,'usuarios'), f.where('tipo','==','proveedor')))
+      ]);
+
+      // Food: tipo=restaurante con ESTADOS_OK + tipo=negocio con CATS_FOOD y ESTADOS_OK
+      var cntFood = 0;
+      results[0].forEach(function(d){ var r=d.data(); if(ESTADOS_OK.indexOf(r.estado)!==-1) cntFood++; });
+      results[1].forEach(function(d){ var r=d.data(); if(ESTADOS_OK.indexOf(r.estado)===-1) return; var cat=(r.categoria||'').toLowerCase(); if(CATS_FOOD.indexOf(cat)!==-1) cntFood++; });
+
+      // Plaza: tipo=negocio + estado=activo + tipoNegocio=plaza
+      var cntPlaza = 0;
+      results[1].forEach(function(d){ var r=d.data(); if(r.estado==='activo' && r.tipoNegocio==='plaza') cntPlaza++; });
+
+      // Servicios: tipo=proveedor + estado=activo
+      var cntServ = 0;
+      results[2].forEach(function(d){ var r=d.data(); if(r.estado==='activo') cntServ++; });
+
+      // Actualizar módulos en "¿Qué necesitas hoy?"
+      var mFood  = document.getElementById('hm-mod-food');
+      var mPlaza = document.getElementById('hm-mod-plaza');
+      var mServ  = document.getElementById('hm-mod-serv');
+      if (mFood)  mFood.textContent  = cntFood  > 0 ? cntFood  + ' restaurante' + (cntFood  !== 1 ? 's' : '') : 'Ver menú';
+      if (mPlaza) mPlaza.textContent = cntPlaza > 0 ? cntPlaza + ' comercio'   + (cntPlaza !== 1 ? 's' : '') : 'Ver plaza';
+      if (mServ)  mServ.textContent  = cntServ  > 0 ? cntServ  + ' verificado' + (cntServ  !== 1 ? 's' : '') : 'Ver servicios';
+
+      // Actualizar banners del carrusel
+      var bFood  = document.getElementById('hm-cnt-food');
+      var bPlaza = document.getElementById('hm-cnt-plaza');
+      var bServ  = document.getElementById('hm-cnt-serv');
+      if (bFood)  bFood.textContent  = cntFood  > 0 ? cntFood  + ' restaurante' + (cntFood  !== 1 ? 's' : '') + ' disponibles' : 'Descubre restaurantes';
+      if (bPlaza) bPlaza.textContent = cntPlaza > 0 ? cntPlaza + ' comercio'   + (cntPlaza !== 1 ? 's' : '') + ' · ofertas esta semana' : 'Comercios de tu zona';
+      if (bServ)  bServ.textContent  = cntServ  > 0 ? cntServ  + ' proveedor'  + (cntServ  !== 1 ? 'es' : '') + ' verificados' : 'Encuentra un servicio';
+
+    } catch(e) { /* falla silenciosa — fallback estático queda visible */ }
+  };
+  // ── FIN CONTADORES HOME VECINO ───────────────────────────────
   // localStorage keys: dcPromoDraft | dcPromoCarrito | dcPromoActivas
   // Sin pagos reales. Flujo: crear → preview → carrito → activar mock.
 
@@ -2554,10 +2603,10 @@
     if (tipo === 'vecino') {
       html += secLabel('¿Qué necesitas hoy?');
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:12px;">'
-        + modulo('🍽️','#FFF3E0','Pedir Comida','14 restaurantes',"go('v-food','right')")
-        + modulo('🔧','#e8f5e1','Servicios','52 verificados',"go('v-servicios','right')")
+        + modulo('🍽️','#FFF3E0','Pedir Comida','<span id="hm-mod-food">...</span>',"go('v-food','right')")
+        + modulo('🔧','#e8f5e1','Servicios','<span id="hm-mod-serv">...</span>',"go('v-servicios','right')")
         + modulo('🚗','#E8F0F8','Ride','6 disp. · ~4 min',"go('v-ride','right')")
-        + modulo('🏪','#F0EBF8','Plaza','18 comercios',"go('v-plaza','right')")
+        + modulo('🏪','#F0EBF8','Plaza','<span id="hm-mod-plaza">...</span>',"go('v-plaza','right')")
         + '</div>';
 
       html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px;margin-bottom:18px;">'
@@ -2575,6 +2624,8 @@
         + '<div style="font-size:12px;font-weight:700;color:#222;margin-bottom:4px;">Sin actividad aún</div>'
         + '<div style="font-size:11px;color:#999;">Tus pedidos y servicios aparecerán aquí</div>'
         + '</div></div>';
+      // Actualizar contadores reales en diferido (no bloquea render)
+      setTimeout(function(){ _actualizarContadoresHome(); }, 300);
     }
 
     // ── PROVEEDOR ─────────────────────────────────────────────
@@ -5756,7 +5807,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🍽️</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">Dominio Food</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;">14 restaurantes abiertos ahora</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;" id="hm-cnt-food">14 restaurantes abiertos ahora</div>
           </div>
         </div>
         <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(255,255,255,.35);font-weight:500;letter-spacing:.3px;">Patrocinado</div>
@@ -5782,7 +5833,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🔧</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">Dominio Servicios</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;">52 proveedores verificados</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;" id="hm-cnt-serv">52 proveedores verificados</div>
           </div>
         </div>
         <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(255,255,255,.35);font-weight:500;letter-spacing:.3px;">Patrocinado</div>
@@ -5795,7 +5846,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🏪</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:15px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">Plaza Digital</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;">18 comercios · ofertas esta semana</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;" id="hm-cnt-plaza">18 comercios · ofertas esta semana</div>
           </div>
         </div>
         <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(255,255,255,.35);font-weight:500;letter-spacing:.3px;">Patrocinado</div>
@@ -11806,32 +11857,22 @@ function _dcfRenderLista(docs) {
     var catBg={tacos:'#FFF3E0',mexicana:'#FFF3E0',pizzas:'#FBE9E7',hamburguesas:'#FFF8E1',sushi:'#E3F2FD',cafeteria:'#EFEBE9',mariscos:'#E0F7FA',pollo:'#FFF9C4',postres:'#FCE4EC',desayunos:'#F9FBE7',bebidas:'#E8F5E9'};
     var bg=catBg[cat]||'#FFF8E1';
 
-    // Estado efectivo con prioridad: manual especial > horario automático > fallback
-    var manualOp = r.estadoOp || 'activo';
+    // Estado efectivo — usa el helper canónico window._calcEstadoHorario
+    // Misma fuente que "Cómo me ve el cliente" (cmvRenderPreview → _estadoEfectivo → _calcEstadoHorario)
+    // Recibe r.horarios del DOC de este restaurante — no variables globales, no localStorage
+    var manualOp = r.estadoOp; // undefined si nunca se guardó en Firestore
     var estOp;
     if (manualOp === 'ocupado' || manualOp === 'pausado' || manualOp === 'cerrado') {
-      // Estado manual especial — respetar siempre
-      estOp = manualOp;
-    } else if (r.horarios && r.horarios.length) {
-      // Calcular por horario del restaurante usando hora local del vecino
-      var _DIAS = ['dom','lun','mar','mie','jue','vie','sab'];
-      var _ahora = new Date();
-      var _diaKey = _DIAS[_ahora.getDay()];
-      var _hoy = null;
-      for (var _i=0; _i<r.horarios.length; _i++) { if (r.horarios[_i].id===_diaKey) { _hoy=r.horarios[_i]; break; } }
-      if (_hoy && !_hoy.abierto) {
-        estOp = 'cerrado';
-      } else if (_hoy) {
-        var _hhmm = function(s){ var p=(s||'').split(':'); return parseInt(p[0]||0)*60+parseInt(p[1]||0); };
-        var _aMin = _ahora.getHours()*60 + _ahora.getMinutes();
-        var _abre = _hhmm(_hoy.abre), _cierra = _hhmm(_hoy.cierra);
-        if (_cierra <= _abre) _cierra += 24*60;
-        estOp = (_aMin >= _abre && _aMin < _cierra) ? 'activo' : 'cerrado';
-      } else {
-        estOp = manualOp; // sin datos del día → fallback al manual
-      }
+      estOp = manualOp; // estado manual especial — máxima prioridad
     } else {
-      estOp = manualOp; // sin horarios configurados → usar estado manual
+      var _porHorario = (typeof window._calcEstadoHorario === 'function')
+        ? window._calcEstadoHorario(r.horarios && r.horarios.length ? r.horarios : null)
+        : null;
+      if (_porHorario !== null) {
+        estOp = _porHorario; // 'activo' o 'cerrado' calculado por horario de este restaurante
+      } else {
+        estOp = manualOp || 'activo'; // sin horarios → estado manual o fallback activo
+      }
     }
 
     var estLabel, estStyle;
@@ -11873,25 +11914,17 @@ window.dcFood_abrirRest = async function(restId) {
   var r = _S.historial.find(function(x){return x._id===restId;});
   if (!r) return;
 
-  // ── Calcular estado efectivo del restaurante (misma lógica que _dcfRenderLista)
-  var manualOp = r.estadoOp || 'activo';
+  // ── Calcular estado efectivo — mismo helper canónico que cmvRenderPreview
+  var manualOp = r.estadoOp;
   var estEfect;
   if (manualOp === 'ocupado' || manualOp === 'pausado' || manualOp === 'cerrado') {
     estEfect = manualOp;
-  } else if (r.horarios && r.horarios.length) {
-    var _DIAS2 = ['dom','lun','mar','mie','jue','vie','sab'];
-    var _ah2 = new Date(); var _dk2 = _DIAS2[_ah2.getDay()]; var _hoy2 = null;
-    for (var _j=0; _j<r.horarios.length; _j++) { if (r.horarios[_j].id===_dk2) { _hoy2=r.horarios[_j]; break; } }
-    if (_hoy2 && !_hoy2.abierto) {
-      estEfect = 'cerrado';
-    } else if (_hoy2) {
-      var _hm2 = function(s){ var p=(s||'').split(':'); return parseInt(p[0]||0)*60+parseInt(p[1]||0); };
-      var _am2 = _ah2.getHours()*60+_ah2.getMinutes();
-      var _ab2=_hm2(_hoy2.abre), _ci2=_hm2(_hoy2.cierra);
-      if (_ci2<=_ab2) _ci2+=24*60;
-      estEfect = (_am2>=_ab2 && _am2<_ci2) ? 'activo' : 'cerrado';
-    } else { estEfect = manualOp; }
-  } else { estEfect = manualOp; }
+  } else {
+    var _ph2 = (typeof window._calcEstadoHorario === 'function')
+      ? window._calcEstadoHorario(r.horarios && r.horarios.length ? r.horarios : null)
+      : null;
+    estEfect = (_ph2 !== null) ? _ph2 : (manualOp || 'activo');
+  }
 
   // ── Bloquear entrada si cerrado — mostrar modal propio
   if (estEfect === 'cerrado') {
@@ -12976,7 +13009,11 @@ var DC_ESTADOS = {
    Retorna 'activo' o 'cerrado'.
    ──────────────────────────────────────────────────────────── */
 function _calcEstadoHorario(horariosArr) {
-  var arr = horariosArr || (typeof HORARIOS !== 'undefined' ? HORARIOS : null);
+  // Si se pasa null explícito (Food vecino sin horarios): no usar HORARIOS global
+  // Si no se pasa argumento (undefined, CO restaurante): usar HORARIOS global como fallback
+  var arr = (horariosArr !== undefined && horariosArr !== null)
+    ? horariosArr
+    : (horariosArr === undefined && typeof HORARIOS !== 'undefined' ? HORARIOS : null);
   if (!arr || !arr.length) return null; // sin horario → sin cálculo
   var DIAS = ['dom','lun','mar','mie','jue','vie','sab'];
   var ahora = new Date();
@@ -14747,6 +14784,12 @@ window.dcRest_init = function() {
           if(nombre){ var hdBiz=document.getElementById('hdr-biz-name'); if(hdBiz) hdBiz.textContent=nombre; }
           // Cargar estado operativo guardado
           if(d.estadoOp){ _rEstadoOp=d.estadoOp; localStorage.setItem('dcRestOpV2',d.estadoOp); }
+          else if(_rEstadoOp && _rEstadoOp !== 'activo') {
+            // El doc no tiene estadoOp pero localmente hay uno — sincronizar a Firestore
+            (async function(_uid,_db,_est){
+              try { var _f=await _vrFb(); await _f.setDoc(_f.doc(_db,'usuarios',_uid),{estadoOp:_est},{merge:true}); } catch(e){}
+            })(uid,db,_rEstadoOp);
+          }
           // Cargar horarios guardados en HORARIOS array (para cálculo automático)
           if(d.horarios && d.horarios.length){
             d.horarios.forEach(function(dh){
