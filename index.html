@@ -7,11 +7,11 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>
-  window.VERSION_APP = "UNIV12-descartar-de-verdad-20260610";
+  window.VERSION_APP = "UNIV95-toast-abajo-frente-20260611";
   console.log("%cDOMINIO CUMBRES VERSION: " + window.VERSION_APP, "background:#0f2b14;color:#1FC26A;padding:4px 10px;border-radius:4px;font-weight:700;");
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>✅ UNIV12 — Dominio Cumbres</title>
+<title>✅ UNIV95 — Dominio Cumbres</title>
 
 <!-- ====== EMAILJS ====== -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -633,7 +633,7 @@
 
     // Mostrar estado operativo en badge del header inmediatamente (no esperar Firebase)
     if (tipo !== 'vecino' && estadoBadge) {
-      var _estNow = window.getEstadoOperativo();
+      var _estNow = window.getEstadoEfectivoActual ? window.getEstadoEfectivoActual() : window.getEstadoOperativo();
       var _cfgNow = DC_ESTADOS[_estNow] || DC_ESTADOS.activo;
       estadoBadge.textContent = _cfgNow.ic + ' ' + _cfgNow.lbl;
       estadoBadge.style.background = _cfgNow.bg;
@@ -838,7 +838,7 @@
       };
       if (u.estado && estadoBadge) {
         // mp2-estado-badge muestra el ESTADO OPERATIVO (no el estado de cuenta)
-        var estOp = window.getEstadoOperativo();
+        var estOp = window.getEstadoEfectivoActual ? window.getEstadoEfectivoActual() : window.getEstadoOperativo();
         var cfgOp = DC_ESTADOS[estOp] || DC_ESTADOS.activo;
         estadoBadge.textContent = cfgOp.ic + ' ' + cfgOp.lbl;
         estadoBadge.style.background = cfgOp.bg;
@@ -863,7 +863,7 @@
         if (inpDir && u.direccionNegocio) inpDir.value = u.direccionNegocio;
         // Re-aplicar estado operativo ahora que el uid está disponible
         // (la primera pasada puede haber usado el fallback por tipo)
-        var estReal = window.getEstadoOperativo();
+        var estReal = window.getEstadoEfectivoActual ? window.getEstadoEfectivoActual() : window.getEstadoOperativo();
         var cfgReal = DC_ESTADOS[estReal] || DC_ESTADOS.activo;
         var elTitle = document.getElementById('mp2-estado-lbl-title');
         if (elTitle) elTitle.textContent = cfgReal.ic + ' ' + cfgReal.lbl;
@@ -1982,12 +1982,190 @@
     if(sub) sub.textContent = s.categoria || 'Plaza Digital';
   };
 
+  // estilo tarjetas home NEGOCIO (LED morado on/off)
+  if (!document.getElementById('vnhome-card-style')) {
+    var _vnc = document.createElement('style'); _vnc.id = 'vnhome-card-style';
+    _vnc.textContent = '.vnhome-card{border:1px solid #ececec;transition:box-shadow .25s,border-color .25s;}.vnhome-card.led-on{border:1.5px solid #7B3FA0;box-shadow:0 0 10px rgba(123,63,160,.45),inset 0 0 6px rgba(123,63,160,.12);}';
+    document.head.appendChild(_vnc);
+  }
+  // estilo tarjetas home restaurante (LED on/off)
+  if (!document.getElementById('rhome-card-style')) {
+    var _rc = document.createElement('style'); _rc.id = 'rhome-card-style';
+    _rc.textContent = '.rhome-card{border:1px solid #ececec;transition:box-shadow .25s,border-color .25s;}.rhome-card.led-on{border:1.5px solid #D63A2A;box-shadow:0 0 10px rgba(214,58,42,.45),inset 0 0 6px rgba(214,58,42,.12);}.rhome-card.led-on #rhome-poraceptar,.rhome-card.led-on #rhome-enproceso{color:#D63A2A;}.rhome-card:not(.led-on) .rhome-num{color:#bbb;}';
+    document.head.appendChild(_rc);
+  }
+  // estilo de pestañas Top (inyectado una vez)
+  if (!document.getElementById('vrv-top-style')) {
+    var _st = document.createElement('style'); _st.id = 'vrv-top-style';
+    _st.textContent = '.vrv-top-tab{background:#fff;color:#999;box-shadow:0 1px 3px rgba(0,0,0,.05);}.vrv-top-tab.on{background:#D63A2A;color:#fff;}';
+    document.head.appendChild(_st);
+  }
+  // ── Ventas por mes del Centro Operativo (vr-ventas) ──
+  window._vrvMesOffset = 0;
+  window._vrvMesCambiar = function(dir){
+    var n = window._vrvMesOffset + dir; if (n > 0) n = 0;
+    window._vrvMesOffset = n; window._vrvCalc && window._vrvCalc();
+  };
+  window._vrvCalc = async function(){
+    var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var hoy = new Date();
+    var ref = new Date(hoy.getFullYear(), hoy.getMonth() + window._vrvMesOffset, 1);
+    var ini = ref.getTime(); var fin = new Date(ref.getFullYear(), ref.getMonth()+1, 1).getTime();
+    setTxt('vrv-mes-label', MESES[ref.getMonth()] + ' ' + ref.getFullYear());
+    var bn = document.getElementById('vrv-mes-next'); if (bn) bn.style.opacity = window._vrvMesOffset >= 0 ? '.35' : '1';
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var nPed=0, venta=0, acum=0; var prod={};
+      snap.forEach(function(d){
+        var p = d.data(); if (p.estado !== 'entregado') return;
+        acum += (p.total||0); var fch = p.fecha||0;
+        if (fch >= ini && fch < fin) {
+          nPed++; venta += (p.total||0);
+          (p.items||[]).forEach(function(it){
+            var key = it.nombre || 'Producto';
+            if (!prod[key]) prod[key] = { nombre:key, cant:0, dinero:0 };
+            var c = it.cantidad||1;
+            prod[key].cant += c;
+            prod[key].dinero += (it.precio||0) * c;
+          });
+        }
+      });
+      setTxt('vrv-pedidos', nPed); setTxt('vrv-ventas', '$'+venta); setTxt('vrv-acumulado', '$'+acum);
+      window._vrvProd = Object.keys(prod).map(function(k){ return prod[k]; });
+      window._vrvRenderTop && window._vrvRenderTop();
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      setTxt('vrv-rating', cr>0 ? (tr/cr).toFixed(1)+'\u2605' : '—');
+    } catch(e){ console.warn('[_vrvCalc]', e.message); }
+  };
+
+  // Top 3 productos: pestañas dinero/cantidad + render
+  window._vrvTopModo = 'dinero';
+  window._vrvProd = [];
+  window._vrvTopTab = function(modo, btn){
+    window._vrvTopModo = modo;
+    document.querySelectorAll('.vrv-top-tab').forEach(function(b){ b.classList.remove('on'); });
+    if (btn) btn.classList.add('on');
+    window._vrvRenderTop && window._vrvRenderTop();
+  };
+  window._vrvRenderTop = function(){
+    var cont = document.getElementById('vrv-top-lista'); if (!cont) return;
+    var modo = window._vrvTopModo || 'dinero';
+    var arr = (window._vrvProd||[]).slice().sort(function(a,b){
+      return modo==='dinero' ? (b.dinero-a.dinero) : (b.cant-a.cant);
+    }).slice(0,3);
+    if (!arr.length) {
+      cont.innerHTML = '<div style="background:#fff;border-radius:12px;padding:20px;text-align:center;color:#aaa;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);">Sin ventas este mes todav\u00eda</div>';
+      return;
+    }
+    var medallas = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
+    cont.innerHTML = arr.map(function(p,i){
+      var dato = modo==='dinero' ? ('$'+p.dinero) : (p.cant+' u');
+      var sub  = modo==='dinero' ? (p.cant+' unidades') : ('$'+p.dinero);
+      return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);">'
+        + '<span style="font-size:20px;">'+medallas[i]+'</span>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#2a2a2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.nombre+'</div><div style="font-size:10px;color:#aaa;">'+sub+'</div></div>'
+        + '<div style="font-size:15px;font-weight:800;color:#D63A2A;">'+dato+'</div></div>';
+    }).join('');
+  };
+
+  // offset 0 = mes actual, -1 = mes anterior, etc.
+  window._vmrMesOffset = 0;
   window._cargarRestStats = function() {
-    var s = {}; try { s = JSON.parse(localStorage.getItem('dcRestStats')||'{}'); } catch(e) {}
-    var set = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
-    set('vmr-pedidos', s.pedidos||0);
-    set('vmr-ventas',  '$'+(s.ventas||0));
-    set('vmr-visitas', s.visitas||0);
+    window._vmrMesOffset = 0;
+    window._calcMetricasMes && window._calcMetricasMes();
+  };
+  window._vmrMesCambiar = function(dir) {
+    var nuevo = window._vmrMesOffset + dir;
+    if (nuevo > 0) nuevo = 0;               // no hay futuro
+    window._vmrMesOffset = nuevo;
+    window._calcMetricasMes && window._calcMetricasMes();
+  };
+  // Métricas del MES seleccionado + acumulado total. Todo Firestore real.
+  window._calcMetricasMes = async function() {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var hoy = new Date();
+    var ref = new Date(hoy.getFullYear(), hoy.getMonth() + window._vmrMesOffset, 1);
+    var ini = ref.getTime();
+    var fin = new Date(ref.getFullYear(), ref.getMonth() + 1, 1).getTime();
+    setTxt('vmr-mes-label', MESES[ref.getMonth()] + ' ' + ref.getFullYear());
+    var btnNext = document.getElementById('vmr-mes-next');
+    if (btnNext) btnNext.style.opacity = window._vmrMesOffset >= 0 ? '.35' : '1';
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var nPed=0, venta=0, acum=0;
+      snap.forEach(function(d){
+        var p = d.data();
+        if (p.estado !== 'entregado') return;
+        acum += (p.total||0);                          // acumulado de siempre
+        var fch = p.fecha||0;
+        if (fch >= ini && fch < fin) { nPed++; venta += (p.total||0); } // del mes
+      });
+      setTxt('vmr-pedidos', nPed);
+      setTxt('vmr-ventas', '$'+venta);
+      setTxt('vmr-acumulado', '$'+acum);
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      setTxt('vmr-rating', cr>0 ? (tr/cr).toFixed(1)+'\u2605' : '—');
+    } catch(e) { console.warn('[_calcMetricasMes]', e.message); }
+  };
+
+  // Métricas reales del restaurante desde Firestore. modo: 'hoy' | 'acumulado'
+  window._calcMetricasRest = async function(modo) {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var hoy0 = new Date(); hoy0.setHours(0,0,0,0); var hoyMs = hoy0.getTime();
+      var nPed = 0, venta = 0;
+      snap.forEach(function(d){
+        var p = d.data();
+        if (p.estado !== 'entregado') return;            // solo entregados cuentan
+        if (modo === 'hoy' && (p.fecha||0) < hoyMs) return; // solo de hoy
+        nPed++; venta += (p.total||0);
+      });
+      // Rating: promedio acumulado real (mismo en ambos modos)
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      var rating = cr>0 ? (tr/cr).toFixed(1) : '—';
+      if (modo === 'hoy') {
+        setTxt('rhome-pedidos', nPed);  // entregados hoy (lo ya vendido)
+        // Por aceptar y En proceso: mismos grupos que Mis Pedidos (coinciden exacto)
+        var GP_NUEVO = ['nuevo'];
+        var GP_PROC  = ['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'];
+        var nAcep=0, nProc=0;
+        snap.forEach(function(d){
+          var e = (d.data().estado)||'';
+          if (GP_NUEVO.indexOf(e)!==-1) nAcep++;
+          else if (GP_PROC.indexOf(e)!==-1) nProc++;
+        });
+        setTxt('rhome-poraceptar', nAcep);
+        setTxt('rhome-enproceso', nProc);
+        var ledSet = function(cardId, on){ var c=document.getElementById(cardId); if(c){ c.classList.toggle('led-on', !!on); } };
+        ledSet('card-poraceptar', nAcep>0);
+        ledSet('card-pedidoshoy', nPed>0);
+        ledSet('card-enproceso', nProc>0);
+      } else {
+        setTxt('vmr-pedidos', nPed);
+        setTxt('vmr-ventas', '$'+venta);
+        setTxt('vmr-rating', rating==='—'?'—':rating+'\u2605');
+      }
+    } catch(e) { console.warn('[_calcMetricasRest]', e.message); }
   };
   // ── FIN M2-F helpers ─────────────────────────────────────────
 
@@ -2150,6 +2328,62 @@
     } catch(e){ console.error('[NOTIF]',e.message); }
   };
 
+  // FIX B: los puntitos se refrescan solos cada 45 seg sin navegar
+  if (!window._badgeTimer) {
+    window._badgeTimer = setInterval(function() {
+      if (window._fbAuth && window._fbAuth.currentUser) {
+        window.actualizarBadgesReales && window.actualizarBadgesReales();
+        // Si el restaurante está en su home, recalcular sus tarjetas sin refresh
+        var _hv = document.getElementById('v-home');
+        var _t = (localStorage.getItem('dcuserTipo')||'').toLowerCase();
+        if (_t==='restaurante' && _hv && _hv.classList.contains('active')) {
+          window._calcMetricasRest && window._calcMetricasRest('hoy');
+        }
+        // Si el negocio está en su Centro Operativo, refrescar su estado/badge sin refresh
+        var _vnh = document.getElementById('vn-home');
+        if (_vnh && _vnh.classList.contains('active')) {
+          window._vnegSyncHomeBadge && window._vnegSyncHomeBadge();
+        }
+        // Si el negocio está en su home principal, recalcular métricas
+        var _vh = document.getElementById('v-home');
+        if (_t==='negocio' && _vh && _vh.classList.contains('active')) {
+          window._calcMetricasNeg && window._calcMetricasNeg();
+        }
+        // REGLA #3: si el vecino está en Dominio Food, refrescar estados de la lista sin salir
+        var _fv = document.getElementById('v-food');
+        if (_fv && _fv.classList.contains('active')) {
+          window.dcFood_cargarRestaurantes && window.dcFood_cargarRestaurantes();
+        }
+        // Si restaurante O negocio está viendo su pantalla de Ventas, recalcular en vivo
+        var _vv = document.getElementById('vr-ventas');
+        if (_vv && _vv.classList.contains('active')) {
+          window._vrvCalc && window._vrvCalc();
+        }
+      }
+    }, 45000);
+  }
+
+  window._marcarPedidosLeidos = async function() {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var q = _fb.query(
+        _fb.collection(_db, 'notificaciones'),
+        _fb.where('uid', '==', user.uid),
+        _fb.where('leida', '==', false),
+        _fb.where('modulo', '==', 'pedidos')
+      );
+      var snap = await _fb.getDocs(q);
+      if (snap.empty) return;
+      var batch = _fb.writeBatch(_db);
+      snap.forEach(function(d) { batch.update(d.ref, { leida: true }); });
+      await batch.commit();
+      window.actualizarBadgesReales && window.actualizarBadgesReales();
+    } catch(e) { console.warn('[_marcarPedidosLeidos]', e.message); }
+  };
+
   window.marcarTodasLeidas = async function() {
     var user = window._fbAuth && window._fbAuth.currentUser;
     var _db = window._fbDb;
@@ -2188,8 +2422,14 @@
       }
     });
     // Actualizar notif-dot en nav: mostrar si hay cualquier no leída
-    var total = notifs.filter(function(n){ return !n.leida; }).length;
-    document.querySelectorAll('.notif-dot').forEach(function(el) {
+    var total = notifs.filter(function(n){ return !n.leida && (n.modulo||'') !== 'pedidos'; }).length;
+    window._lastBadgeCheck = Date.now();
+    var totPed = notifs.filter(function(n){ return !n.leida && (n.modulo||'') === 'pedidos'; }).length;
+    document.querySelectorAll('.nav-ped-dot').forEach(function(el) {
+      el.style.display = totPed > 0 ? 'inline-block' : 'none';
+      el.textContent = totPed > 99 ? '99+' : (totPed || '');
+    });
+    document.querySelectorAll('.notif-dot:not(.nav-ped-dot)').forEach(function(el) {
       el.style.display = total > 0 ? 'inline-block' : 'none';
     });
     return notifs;
@@ -2201,12 +2441,12 @@
     if (m === 'chat')               return function(){ go('v-mis-chats','right'); setTimeout(cargarMisChats,200); };
     if (m === 'solicitud')          return function(){ go('v-reportes-disponibles','right'); };
     if (m === 'solicitudes_vecino') return function(){ go('v-mis-reportes','right'); setTimeout(function(){ window.cargarMisReportes&&window.cargarMisReportes(); },300); };
-    if (m === 'pedido')             return function(){
+    if (m === 'pedido' || m === 'pedidos') return function(){
       // Si el usuario es restaurante (tiene vr-home), ir a sus pedidos
       // Si es vecino, ir a sus pedidos de Food
       var esRest = document.getElementById('vr-home') && typeof navTo === 'function';
       if (esRest && window._fbAuth && window._fbAuth.currentUser) {
-        var tipo = localStorage.getItem('dcTipoUsuario') || '';
+        var tipo = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
         if (tipo === 'restaurante' || tipo === 'negocio') { navTo('vr-pedidos'); return; }
       }
       go('v-mis-pedidos-food','right');
@@ -2441,7 +2681,7 @@
     // Solo para no-vecino. Vecino no tiene estado de operación.
     var elEst = document.getElementById('home-estado-op');
     if (tipo !== 'vecino') {
-      var estKey = window.getEstadoOperativo();
+      var estKey = window.getEstadoEfectivoActual ? window.getEstadoEfectivoActual() : window.getEstadoOperativo();
       var estCfg = DC_ESTADOS[estKey] || DC_ESTADOS.activo;
       if (!elEst) {
         // Crear el label si no existe (primera carga)
@@ -2512,13 +2752,13 @@
     (function limpiarBadgesExpirados() {
       // Módulos válidos por rol
       var modulosPorRol = {
-        vecino:      ['informa', 'solicitudes_vecino'],
+        vecino:      ['informa', 'solicitudes_vecino', 'pedidos'],
         proveedor:   ['solicitudes','chats'],
         transporte:  ['solicitudes','chats'],
         repartidor:  ['solicitudes','chats'],
         ambos:       ['solicitudes','chats'],
         restaurante: ['pedidos','chats'],
-        negocio:     ['solicitudes','chats'],
+        negocio:     ['solicitudes','chats','pedidos'],
       };
       var validos = modulosPorRol[tipo] || [];
       var all = window.getBadges();
@@ -2600,7 +2840,7 @@
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:12px;">'
         + modulo('🍽️','#FFF3E0','Pedir Comida','<span id="hm-mod-food">...</span>',"go('v-food','right')")
         + modulo('🔧','#e8f5e1','Servicios','<span id="hm-mod-serv">...</span>',"go('v-servicios','right')")
-        + modulo('🚗','#E8F0F8','Ride','6 disp. · ~4 min',"go('v-ride','right')")
+        + modulo('🚗','#E8F0F8','Ride','Proximamente',"alert('Ride estara disponible proximamente.')")
         + modulo('🏪','#F0EBF8','Plaza','<span id="hm-mod-plaza">...</span>',"go('v-plaza','right')")
         + '</div>';
 
@@ -2651,7 +2891,7 @@
     else if (['transporte','repartidor','ambos'].includes(tipo)) {
       html += secLabel('Mi operación');
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:18px;">'
-        + modulo('🗺️','#E8F0F8','Mi Cobertura','Zona activa',"go('v-ride','right')")
+        + modulo('🗺️','#E8F0F8','Mi Cobertura','Modulo en pausa',"alert('El modulo Ride esta temporalmente en pausa.')")
         + modulo('💬','#E8F0F8','Mis Chats','Mensajes',
             "window.marcarModuloVisto('chats');go('v-mis-chats','right');setTimeout(cargarMisChats,200)",
             'chats')
@@ -2688,12 +2928,11 @@
         + '<div style="font-size:11px;color:'+estCfg2.col+';opacity:.7;">Toca para cambiar ›</div>'
         + '</div>';
 
-      // Métricas: Pedidos · Ventas · Visitas
-      var _rst = (function(){ try{ return JSON.parse(localStorage.getItem('dcRestStats')||'{}'); }catch(e){ return {}; } })();
+      // Métricas HOY reales: Pedidos · Ventas · Calificación (se llenan tras render)
       html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:18px;">'
-        + '<div style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:.5px solid #ececec;"><div style="font-size:20px;font-weight:700;color:#D63A2A;">'+(_rst.pedidos||0)+'</div><div style="font-size:9px;color:#999;">Pedidos</div></div>'
-        + '<div style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:.5px solid #ececec;"><div style="font-size:16px;font-weight:700;color:#D63A2A;">$'+(_rst.ventas||0)+'</div><div style="font-size:9px;color:#999;">Ventas</div></div>'
-        + '<div style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;border:.5px solid #ececec;"><div style="font-size:20px;font-weight:700;color:#D63A2A;">'+(_rst.visitas||0)+'</div><div style="font-size:9px;color:#999;">Visitas</div></div>'
+        + '<div id="card-poraceptar" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'pedidos\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-poraceptar" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">🔴 Por aceptar</div></div>'
+        + '<div id="card-pedidoshoy" class="rhome-card" style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-pedidos" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">Pedidos hoy</div></div>'
+        + '<div id="card-enproceso" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'en_proceso\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-enproceso" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">👨‍🍳 En proceso</div></div>'
         + '</div>';
 
       // Botón principal CENTRO OPERATIVO
@@ -2714,39 +2953,45 @@
         + '</div></div>';
     }
 
-    // ── NEGOCIO / PLAZA DIGITAL ───────────────────────────────
-    else if (tipo === 'negocio') {
-      html += secLabel('Mi negocio');
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:18px;">'
-        + modulo('🏪','#F0EBF8','Mi Tienda','Gestionar',"go('v-mipanel','right')")
-        + modulo('💬','#F0EBF8','Chats','Mensajes',
-            "window.marcarModuloVisto('chats');go('v-mis-chats','right');setTimeout(cargarMisChats,200)",
-            'chats')
-        + modulo('📋','#F0EBF8','Solicitudes','Pedidos',
-            "window.marcarModuloVisto('solicitudes');window.irASolicitudes&&window.irASolicitudes()",
-            'solicitudes')
-        + modulo('📊','#F0EBF8','Estadísticas','Esta semana',"go('v-mipanel','right')")
-        + '</div>';
-
-      var _biz = (function(){ try{ return JSON.parse(localStorage.getItem('dcBizStats')||'{}'); }catch(e){ return {}; } })();
-      html += '<div onclick="go(\'v-mi-negocio\',\'right\')" style="margin:0 14px 18px;background:linear-gradient(120deg,#4A1A70,#7B3FA0);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;" ontouchstart="this.style.opacity=\'.85\'" ontouchend="this.style.opacity=\'1\'">'
-        + '<div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏪</div>'
-        + '<div style="flex:1;">'
-        +   '<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">'+nombre+'</div>'
-        +   '<div style="font-size:10px;color:rgba(255,255,255,.65);">'+(_biz.visitas||0)+' visitas · '+(_biz.categoria||'Plaza Digital')+'</div>'
-        + '</div>'
-        + '<div style="font-size:18px;color:rgba(255,255,255,.5);">›</div>'
-        + '</div>';
-
-      html += descubrimiento(tieneActividad);
-      html += secLabel('Actividad reciente');
-      html += '<div id="home-actividad" style="padding:0 14px;">'
-        + '<div style="background:#F8F5FC;border-radius:14px;padding:14px;text-align:center;border:.5px solid #d0b8e8;">'
-        + '<div style="font-size:22px;margin-bottom:6px;">🛍️</div>'
-        + '<div style="font-size:12px;font-weight:700;color:#4A1A70;margin-bottom:4px;">Sin ventas hoy</div>'
-        + '<div style="font-size:11px;color:#999;">Las ventas y solicitudes aparecerán aquí</div>'
-        + '</div></div>';
+    // ── NEGOCIO ─────────────────────────
+  else if (tipo === 'negocio') {
+    var estManN = (window.getEstadoOperativo ? window.getEstadoOperativo() : 'activo') || 'activo';
+    if (window._normEstadoOp) estManN = window._normEstadoOp(estManN);
+    // El horario del negocio manda: calcular efectivo con VNEG_HORARIOS
+    var estKeyN = estManN;
+    if (window._estadoEfectivoDe && typeof VNEG_HORARIOS !== 'undefined') {
+      try { estKeyN = window._estadoEfectivoDe(estManN, Date.now(), VNEG_HORARIOS); } catch(e){}
     }
+    var estCfgN = DC_ESTADOS[estKeyN] || DC_ESTADOS.activo;
+    html += '<div onclick="go(\'vn-config\',\'right\')" style="margin:0 14px 14px;background:'+(estCfgN.bg||'#F0EBF8')+';border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;">'
+      + '<div style="width:10px;height:10px;border-radius:50%;background:'+estCfgN.col+';flex-shrink:0;"></div>'
+      + '<div style="flex:1;font-size:13px;font-weight:700;color:'+estCfgN.col+';">'+estCfgN.ic+' '+estCfgN.lbl+'</div>'
+      + '<div style="font-size:11px;color:'+estCfgN.col+';opacity:.7;">Toca para cambiar ›</div>'
+      + '</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:16px;">'
+      + '<div id="vncard-poraceptar" onclick="window._irPedidosNegTab&&window._irPedidosNegTab(\'pedidos\')" class="vnhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="vnhome-poraceptar" style="font-size:20px;font-weight:800;color:#7B3FA0;">0</div><div style="font-size:9px;color:#999;">\ud83d\udfe3 Por aceptar</div></div>'
+      + '<div id="vncard-pedidoshoy" class="vnhome-card" style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="vnhome-pedidos" style="font-size:20px;font-weight:800;color:#7B3FA0;">0</div><div style="font-size:9px;color:#999;">Pedidos hoy</div></div>'
+      + '<div id="vncard-enproceso" onclick="window._irPedidosNegTab&&window._irPedidosNegTab(\'en_proceso\')" class="vnhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="vnhome-enproceso" style="font-size:20px;font-weight:800;color:#7B3FA0;">0</div><div style="font-size:9px;color:#999;">\ud83d\udce6 En proceso</div></div>'
+      + '</div>';
+    html += '<div style="padding:0 14px;margin-bottom:16px;">'
+      + '<button onclick="go(\'vn-home\',\'right\')" style="width:100%;background:linear-gradient(135deg,#4A1A70,#7B3FA0);border:none;border-radius:16px;padding:16px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;">'
+      + '<span style="font-size:22px;">\ud83d\ude80</span> CENTRO OPERATIVO'
+      + '</button>'
+      + '</div>';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:18px;">'
+      + modulo('\ud83d\udcac','#F0EBF8','Chats','Mensajes',"window.marcarModuloVisto('chats');go('v-mis-chats','right');setTimeout(cargarMisChats,200)",'chats')
+      + modulo('\ud83d\udccb','#F0EBF8','Solicitudes','Pedidos',"window.marcarModuloVisto('solicitudes');window.irASolicitudes&&window.irASolicitudes()",'solicitudes')
+      + modulo('\ud83d\udcca','#F0EBF8','Ventas','Resumen',"go('vn-ventas','right')")
+      + '</div>';
+    html += descubrimiento(tieneActividad);
+    html += secLabel('Actividad reciente');
+    html += '<div id="home-actividad" style="padding:0 14px;">'
+      + '<div style="background:#F8F5FC;border-radius:14px;padding:14px;text-align:center;border:.5px solid #EADDF5;">'
+      + '<div style="font-size:22px;margin-bottom:6px;">\ud83d\udecd\ufe0f</div>'
+      + '<div style="font-size:12px;font-weight:700;color:#4A1A70;margin-bottom:4px;">Sin ventas hoy</div>'
+      + '<div style="font-size:11px;color:#999;">Las ventas y solicitudes aparecerán aquí</div>'
+      + '</div></div>';
+  }
 
     else {
       html += '<div id="home-actividad" style="padding:0 14px;"></div>';
@@ -3139,6 +3384,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 .ni-ic{font-size:20px;}
 .ni-lb{font-size:9px;font-weight:700;color:#C0C4BA;}
 .notif-w{position:relative;display:inline-block;}
+.notif-dot.nav-ped-dot{width:auto;height:auto;min-width:15px;padding:1px 4px;font-size:9px;font-weight:800;color:#fff;text-align:center;line-height:1.3;border-radius:10px;top:-5px;right:-8px;}
 .notif-dot{width:10px;height:10px;min-width:10px;background:#E53935;border-radius:50%;position:absolute;top:-3px;right:-3px;border:2px solid #fff;z-index:10;}
 .demo-note{color:var(--white-30);font-size:11px;text-align:center;margin-top:12px;}
 
@@ -3886,7 +4132,26 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   pointer-events: auto;
   z-index: 2;
   transition: none;
-}#vr-shell .view.anim-in {
+}
+#vn-shell .view, #vn-shell .view.active { min-height: inherit; }
+#vn-shell .view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  pointer-events: none;
+  transform: translateX(100%);
+  opacity: 0;
+  z-index: 1;
+}
+#vn-shell .view.active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 2;
+  transition: none;
+}
+#vn-shell .view.anim-in { transition: transform .30s cubic-bezier(.32,0,.18,1), opacity .28s ease; }
+#vn-shell .view.anim-out { transition: transform .28s cubic-bezier(.32,0,.18,1), opacity .24s ease; }#vr-shell .view.anim-in {
   transition: transform .30s cubic-bezier(.32,0,.18,1),
               opacity   .28s ease;
 }#vr-shell .view.anim-out {
@@ -4544,14 +4809,14 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 }
 
 /* ═══ TOAST ═══ */#vr-shell #toast {
-  position: absolute; bottom: 78px; left: 50%;
+  position: fixed; bottom: 90px; left: 50%;
   transform: translateX(-50%) translateY(14px);
   background: #111; color: #fff;
   border-radius: 24px; padding: 9px 18px;
   font-size: 12px; font-weight: 600;
   white-space: nowrap; opacity: 0;
-  transition: all .28s cubic-bezier(.32,0,.18,1);
-  pointer-events: none; z-index: 99;
+  transition: opacity .28s, transform .28s;
+  pointer-events: none; z-index: 999999;
   box-shadow: 0 4px 16px rgba(0,0,0,.3);
 }#vr-shell #toast.show {
   opacity: 1;
@@ -4684,7 +4949,802 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
 
 /* ══════════ FIN MÓDULO RESTAURANTE DC ══════════ */
-</style>
+
+/* ══ ESTILOS CLONADOS PARA #vn-shell (Centro Operativo Negocio) ══ */
+
+
+/* ══════════ FIN MÓDULO FOOD DC ══════════ */
+/* ══════════ MÓDULO RESTAURANTE DC ══════════ */
+#vn-shell .view,
+#vn-shell .view.active { min-height: inherit; }
+
+/* ═══════════════════════════════════════════════════════
+   VIEW SYSTEM
+   navTo() / navBack() — 100% independiente del index
+═══════════════════════════════════════════════════════ */#vn-shell .view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  pointer-events: none;
+  transform: translateX(100%);
+  opacity: 0;
+  z-index: 1;
+  will-change: transform, opacity;
+}#vn-shell .view.active {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 2;
+  transition: none;
+}#vn-shell .view.anim-in {
+  transition: transform .30s cubic-bezier(.32,0,.18,1),
+              opacity   .28s ease;
+}#vn-shell .view.anim-out {
+  transition: transform .28s cubic-bezier(.32,0,.18,1),
+              opacity   .24s ease;
+}
+
+/* ═══ SCROLL — reset garantizado ═══ */#vn-shell .scr {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}#vn-shell .scr::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════════════
+   STATUS BAR
+═══════════════════════════════════════════════════════ */#vn-shell .sbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 18px 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.5);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER RESTAURANTE — base para todas las sub-vistas
+═══════════════════════════════════════════════════════ */#vn-shell .hdr {
+  background: var(--rest-hdr);
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+/* textura sutil */#vn-shell .hdr::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Ccircle cx='20' cy='20' r='1.5'/%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}#vn-shell .hdr-inner { padding: 6px 16px 14px; position: relative; z-index: 1; }
+
+/* Fila de back + título (sub-vistas) */#vn-shell .hdr-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 4px;
+}#vn-shell .btn-back {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: var(--w15); border: 1px solid var(--w25);
+  color: #fff; font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 0; font-family: inherit;
+  transition: background .15s;
+}#vn-shell .btn-back:active { background: var(--w25); }#vn-shell .hdr-title { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.2; }#vn-shell .hdr-sub { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 1px; }
+
+/* HOME header ampliado */#vn-shell .hdr-home { padding: 10px 16px 20px; position: relative; z-index: 1; }#vn-shell .hdr-brand {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 8px; margin-bottom: 14px;
+}#vn-shell .hdr-logo {
+  width: 52px; height: 52px; border-radius: 16px;
+  background: rgba(255,255,255,.18); border: 1.5px solid rgba(255,255,255,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+}#vn-shell .hdr-biz-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -.4px; line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.3); }#vn-shell .hdr-biz-sub { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px; letter-spacing: .6px; text-transform: uppercase; }
+/* Indicador de turno activo en el header */#vn-shell .hdr-turno-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(31,194,106,.22); border: 1px solid rgba(31,194,106,.4);
+  border-radius: 10px; padding: 3px 10px; margin-top: 5px;
+  font-size: 9px; font-weight: 800; color: rgba(255,255,255,.9);
+  letter-spacing: .4px; text-shadow: none;
+  box-shadow: 0 2px 8px rgba(31,194,106,.2);
+}
+
+/* Estado operativo en header */#vn-shell .hdr-estado-row {
+  display: flex; align-items: center; gap: 8px;
+}#vn-shell .estado-toggle-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,.22);
+  border: 1px solid var(--w15);
+  border-radius: 24px;
+  padding: 5px 12px 5px 8px;
+  cursor: pointer;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}#vn-shell .estado-toggle-wrap:active { background: rgba(0,0,0,.35); }#vn-shell .estado-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+  transition: background .3s;
+}#vn-shell .estado-dot.verde { background: var(--green); box-shadow: 0 0 6px rgba(31,194,106,.7); }#vn-shell .estado-dot.amarillo { background: var(--yellow);}#vn-shell .estado-dot.gris { background: #aaa; }#vn-shell .estado-dot.rojo { background: var(--red); }#vn-shell .estado-lbl {
+  font-size: 12px; font-weight: 700; color: #fff;
+  font-family: 'DM Mono', monospace;
+}#vn-shell .estado-chevron { font-size: 10px; color: rgba(255,255,255,.5); margin-left: 2px; }#vn-shell .hdr-hora {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px; font-weight: 500;
+  color: rgba(255,255,255,.75);
+  letter-spacing: .5px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════════════════════════════ */#vn-shell .nav {
+  background: #fff;
+  border-top: .5px solid #e4e4e0;
+  display: flex;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}#vn-shell .ni {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 8px 0 7px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}#vn-shell .ni-ic { font-size: 19px; }#vn-shell .ni-lb { font-size: 9px; font-weight: 600; color: #aaa; margin-top: 2px; letter-spacing: .1px; }#vn-shell .ni-lb.on { color: var(--red); }#vn-shell .ni-badge {
+  position: absolute; top: 5px; left: 50%; margin-left: 4px;
+  background: var(--red); color: #fff;
+  font-size: 8px; font-weight: 800;
+  min-width: 14px; height: 14px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid #fff;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ZONA URGENCIA — corazón del home
+═══════════════════════════════════════════════════════ */#vn-shell .urgencia-card {
+  margin: 14px 14px 0;
+  border-radius: 20px;
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  position: relative;
+  overflow: hidden;
+}#vn-shell .urgencia-card:active { transform: scale(.975); }#vn-shell .urgencia-card.hay-pedidos {
+  background: linear-gradient(130deg, #6B0F08, #B52518, #D63A2A);
+  box-shadow: 0 8px 30px rgba(180,30,20,.5), 0 2px 8px rgba(0,0,0,.2);
+}#vn-shell .urgencia-card.sin-pedidos {
+  background: linear-gradient(130deg, #0a3818, #136635, #1a9450);
+  box-shadow: 0 6px 22px rgba(10,80,40,.35), 0 2px 8px rgba(0,0,0,.15);
+}#vn-shell .urgencia-card::before {
+  content: '';
+  position: absolute; top: -30px; right: -30px;
+  width: 110px; height: 110px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  pointer-events: none;
+}#vn-shell .urgencia-card::after {
+  content: '';
+  position: absolute; bottom: -40px; right: 50px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  pointer-events: none;
+}#vn-shell .urg-ic { font-size: 34px; flex-shrink: 0; filter: drop-shadow(0 2px 6px rgba(0,0,0,.3)); }#vn-shell .urg-body { flex: 1; min-width: 0; }#vn-shell .urg-title {
+  font-size: 16px; font-weight: 800; color: #fff;
+  line-height: 1.2; text-shadow: 0 1px 4px rgba(0,0,0,.25);
+}#vn-shell .urg-sub {
+  font-size: 11px; color: rgba(255,255,255,.8);
+  margin-top: 4px;
+}#vn-shell .urg-arrow {
+  font-size: 24px; color: rgba(255,255,255,.6);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ACCESOS RÁPIDOS — grid de iconos
+═══════════════════════════════════════════════════════ */#vn-shell .sec-lbl {
+  font-size: 10px; font-weight: 800; color: var(--tx4);
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 16px 16px 9px;
+}#vn-shell .quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 0 10px;
+  margin-bottom: 4px;
+}#vn-shell .qi {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 5px;
+  padding: 12px 6px 10px;
+  cursor: pointer;
+  border-radius: 14px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .12s, transform .12s;
+  position: relative;
+}#vn-shell .qi:active { background: rgba(0,0,0,.06); transform: scale(.94); }#vn-shell .qi-icon {
+  width: 56px; height: 56px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.13), 0 1px 3px rgba(0,0,0,.08);
+  transition: box-shadow .12s, transform .12s;
+}#vn-shell .qi:active .qi-icon { box-shadow: 0 2px 6px rgba(0,0,0,.1); transform: scale(.96); }#vn-shell .qi-lbl { font-size: 10px; font-weight: 700; color: var(--tx2); margin-top: 2px; letter-spacing: .1px; }#vn-shell .qi-badge {
+  position: absolute; top: 7px; right: calc(50% - 32px);
+  background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 800;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 4px; border: 2px solid var(--bg);
+  box-shadow: 0 2px 6px rgba(214,58,42,.4);
+}
+
+/* ═══════════════════════════════════════════════════════
+   JORNADA RESUMEN
+═══════════════════════════════════════════════════════ */#vn-shell .jornada-row {
+  display: flex; gap: 8px;
+  padding: 0 14px;
+  margin-bottom: 4px;
+}#vn-shell .jornada-box {
+  flex: 1;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 10px 12px;
+  border: .5px solid var(--border);
+  text-align: center;
+  position: relative; overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}#vn-shell .jornada-box::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg,var(--red),#f97316,rgba(198,43,26,.1));
+  border-radius: 16px 16px 0 0;
+}#vn-shell .jornada-box::after {
+  content: ''; position: absolute; bottom: 0; right: 0;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(214,58,42,.07) 0%, transparent 70%);
+  pointer-events: none;
+}#vn-shell .jornada-val {
+  font-size: 22px; font-weight: 800;
+  color: var(--tx); line-height: 1;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -.5px;
+}#vn-shell .jornada-lbl { font-size: 9px; color: var(--tx4); margin-top: 5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+
+/* ═══════════════════════════════════════════════════════
+   BANNERS DC — carrusel
+═══════════════════════════════════════════════════════ */#vn-shell .banners-wrap {
+  padding: 0 14px;
+  margin-bottom: 4px;
+}#vn-shell .banners-track-outer {
+  overflow: hidden;
+  border-radius: 16px;
+  position: relative;
+}#vn-shell .banners-track {
+  display: flex;
+  transition: transform .38s cubic-bezier(.32,0,.18,1);
+}#vn-shell .banner-slide {
+  min-width: 100%;
+  height: 88px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+}#vn-shell .banner-slide:active { opacity: .93; }#vn-shell .banner-inner {
+  position: absolute; inset: 0;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}#vn-shell .banner-ico {
+  width: 50px; height: 50px; border-radius: 12px;
+  background: rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}#vn-shell .banner-txt { flex: 1; min-width: 0; }#vn-shell .banner-title { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.25; }#vn-shell .banner-sub { font-size: 11px; color: rgba(255,255,255,.75); margin-top: 2px; line-height: 1.3; }#vn-shell .banner-pat {
+  position: absolute; bottom: 6px; right: 10px;
+  font-size: 8px; color: rgba(255,255,255,.4);
+  letter-spacing: .3px;
+}#vn-shell .banner-cta {
+  position: absolute; bottom: 6px; right: 10px;
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,.8);
+  background: rgba(0,0,0,.25);
+  border-radius: 8px; padding: 2px 8px;
+}
+/* dots */#vn-shell .banner-dots {
+  display: flex; justify-content: center; gap: 5px;
+  margin-top: 8px;
+}#vn-shell .bd {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #ccc; transition: background .25s, width .25s;
+}#vn-shell .bd.on { background: var(--red); width: 14px; border-radius: 3px; }
+
+/* ═══════════════════════════════════════════════════════
+   DC CUMBRES — Comunidad (sección de pertenencia)
+═══════════════════════════════════════════════════════ */#vn-shell .comunidad-strip {
+  margin: 0 14px;
+  background: linear-gradient(120deg, #071210 0%, #0C1E16 50%, #0F2318 100%);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 4px;
+  border: 1px solid rgba(31,194,106,.12);
+  box-shadow: 0 4px 18px rgba(0,0,0,.18), inset 0 1px 0 rgba(31,194,106,.08);
+  position: relative; overflow: hidden;
+}#vn-shell .comunidad-strip::after {
+  content: ''; position: absolute; top: -20px; right: -20px;
+  width: 80px; height: 80px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(31,194,106,.12) 0%, transparent 70%);
+  pointer-events: none;
+}#vn-shell .comunidad-ic { font-size: 22px; flex-shrink: 0; }#vn-shell .comunidad-body { flex: 1; min-width: 0; }#vn-shell .comunidad-title {
+  font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 2px;
+}#vn-shell .comunidad-sub { font-size: 10px; color: rgba(255,255,255,.5); line-height: 1.4; }#vn-shell .comunidad-tag {
+  font-size: 9px; font-weight: 700;
+  padding: 3px 8px; border-radius: 8px;
+  white-space: nowrap; flex-shrink: 0;
+}
+/* Nota: en producción estos datos vienen de Firebase
+   Por ahora muestran estado estático de la plataforma */
+
+/* ═══════════════════════════════════════════════════════
+   OPORTUNIDAD DE VENTA — tarjeta contextual
+═══════════════════════════════════════════════════════ */#vn-shell .oportunidad-card {
+  margin: 0 14px;
+  background: linear-gradient(120deg, #fff 0%, #fafaf7 100%);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: .5px solid rgba(214,58,42,.15);
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  transition: transform .14s, box-shadow .14s;
+  margin-bottom: 4px;
+  box-shadow: 0 3px 14px rgba(0,0,0,.07);
+}#vn-shell .oportunidad-card:active { transform: scale(.98); box-shadow: 0 1px 6px rgba(0,0,0,.06); }#vn-shell .op-ic { font-size: 24px; flex-shrink: 0; }#vn-shell .op-body { flex: 1; min-width: 0; }#vn-shell .op-title { font-size: 13px; font-weight: 700; color: var(--tx); }#vn-shell .op-sub { font-size: 11px; color: var(--tx3); margin-top: 2px; line-height: 1.4; }#vn-shell .op-cta {
+  font-size: 11px; font-weight: 800;
+  color: var(--red); white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(214,58,42,.08);
+  border-radius: 8px; padding: 4px 10px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   VISIBILIDAD — una línea, sin drama
+═══════════════════════════════════════════════════════ */#vn-shell .visibilidad-row {
+  display: flex; gap: 8px;
+  padding: 0 14px;
+  margin-bottom: 4px;
+}#vn-shell .vis-item {
+  flex: 1; background: var(--card-bg);
+  border-radius: 12px; padding: 10px 10px 9px;
+  border: .5px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}#vn-shell .vis-val {
+  font-size: 16px; font-weight: 800; color: var(--tx);
+  font-family: 'DM Mono', monospace;
+}#vn-shell .vis-lbl { font-size: 9px; color: var(--tx4); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+/* Nota: estos datos se conectarán con Firebase en la integración */
+
+/* ═══════════════════════════════════════════════════════
+   SEMANA COLAPSADA
+═══════════════════════════════════════════════════════ */#vn-shell .semana-row {
+  margin: 0 14px 14px;
+  background: var(--card-bg);
+  border-radius: 14px; padding: 12px 16px;
+  border: .5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  transition: transform .12s;
+}#vn-shell .semana-row:active { transform: scale(.99); }#vn-shell .semana-txt { font-size: 11px; color: var(--tx3); font-weight: 600; }#vn-shell .semana-val { font-size: 11px; font-weight: 700; color: var(--tx2); font-family: 'DM Mono', monospace; }#vn-shell .semana-expand { font-size: 16px; color: #ccc; }
+
+/* ═══════════════════════════════════════════════════════
+   CHIPS / TABS
+═══════════════════════════════════════════════════════ */#vn-shell .pill-row {
+  display: flex; gap: 6px;
+  padding: 8px 14px 4px;
+  overflow-x: auto; flex-shrink: 0;
+}#vn-shell .pill-row::-webkit-scrollbar { display: none; }#vn-shell .chip {
+  background: rgba(0,0,0,.07); color: var(--tx2);
+  border: 1px solid transparent;
+  border-radius: 20px; padding: 6px 14px;
+  font-size: 11px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}#vn-shell .chip.on {
+  background: var(--yellow); color: var(--amber-dk);
+  border-color: rgba(0,0,0,.08); font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARDS PEDIDOS / MENÚ
+═══════════════════════════════════════════════════════ */#vn-shell .card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  margin: 0 14px 8px;
+  padding: 13px 14px;
+  border: .5px solid var(--border);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform .13s;
+}#vn-shell .card:active { transform: scale(.985); }#vn-shell .card.no-tap { cursor: default; }
+
+/* ═══ BADGES ═══ */#vn-shell .badge {
+  font-size: 10px; font-weight: 700;
+  padding: 3px 9px; border-radius: 20px;
+  display: inline-block;
+}#vn-shell .b-nuevo { background: #FFF8E1; color: #7a5000; }#vn-shell .b-aceptado { background: var(--green-lt); color: var(--green-dk); }#vn-shell .b-preparando,
+#vn-shell .b-listo { background: #FFF8E1; color: #7a5000; }#vn-shell .b-en_camino { background: var(--blue-lt); color: #0A3055; }#vn-shell .b-entregado { background: var(--green-lt); color: var(--green-dk); }#vn-shell .b-rechazado,
+#vn-shell .b-cancelado { background: var(--red-lt); color: var(--red); }#vn-shell .b-buscando_repartidor { background: var(--blue-lt); color: #0A3055; }#vn-shell .b-disponible { background: var(--green-lt); color: var(--green-dk); }#vn-shell .b-agotado { background: #f0f0f0; color: #999; }
+
+/* ═══ BUTTONS ═══ */#vn-shell .btn {
+  border: none; border-radius: 14px;
+  padding: 13px 16px;
+  font-size: 14px; font-weight: 700;
+  width: 100%; cursor: pointer;
+  font-family: inherit;
+  transition: transform .12s, opacity .12s;
+}#vn-shell .btn:active { transform: scale(.98); opacity: .92; }#vn-shell .btn-red { background: var(--red);    color: #fff; }#vn-shell .btn-green { background: var(--green);  color: #fff; }#vn-shell .btn-yellow { background: var(--yellow); color: var(--amber-dk); }#vn-shell .btn-blue { background: var(--blue);   color: #fff; }#vn-shell .btn-ghost { background: #f0f0f0;       color: #555; }#vn-shell .btn-sm {
+  border: none; border-radius: 9px; padding: 6px 12px;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: transform .12s;
+}#vn-shell .btn-sm:active { transform: scale(.97); }
+
+/* ═══ INPUTS ═══ */#vn-shell .inp {
+  width: 100%; background: var(--card-bg);
+  border: .5px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; font-size: 13px; color: var(--tx);
+  outline: none; font-family: inherit;
+  transition: border-color .2s;
+}#vn-shell .inp:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(214,58,42,.08); }#vn-shell .inp-ta {
+  width: 100%; background: var(--bg);
+  border: .5px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; font-size: 12px; color: var(--tx);
+  outline: none; font-family: inherit; resize: none;
+}#vn-shell .inp-ta:focus { border-color: var(--red); }#vn-shell .inp-sel {
+  width: 100%; background: var(--card-bg);
+  border: .5px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; font-size: 13px; color: var(--tx);
+  outline: none; font-family: inherit;
+  appearance: none; -webkit-appearance: none;
+}#vn-shell .inp-sel:focus { border-color: var(--red); }#vn-shell .lbl {
+  font-size: 10px; font-weight: 700; color: #777;
+  display: block; margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .4px;
+}#vn-shell .form-g { margin-bottom: 14px; }#vn-shell .err-msg { color: var(--red); font-size: 12px; margin-bottom: 8px; display: none; padding: 8px 12px; background: var(--red-lt); border-radius: 8px; }
+
+/* ═══ TOGGLE ═══ */#vn-shell .toggle {
+  width: 44px; height: 26px; border-radius: 13px;
+  background: #ddd; position: relative; cursor: pointer;
+  flex-shrink: 0; transition: background .2s;
+}#vn-shell .toggle.on { background: var(--green); }#vn-shell .toggle::after {
+  content: '';
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+  transition: transform .2s;
+}#vn-shell .toggle.on::after { transform: translateX(18px); }
+
+/* ═══ PAGO OPTION ═══ */#vn-shell .pago-opt {
+  background: var(--card-bg); border-radius: 12px;
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px; border: 1.5px solid var(--border);
+  cursor: pointer; transition: border-color .15s, background .15s;
+}#vn-shell .pago-opt.on { border-color: var(--green); background: var(--green-lt); }#vn-shell .pago-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--border); margin-left: auto;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s;
+}#vn-shell .pago-opt.on .pago-radio { border-color: var(--green); }#vn-shell .pago-opt.on .pago-radio::after {
+  content: ''; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--green); display: block;
+}
+
+/* ═══ COMANDA — Detalle de pedido rediseñado ═══ */#vn-shell .comanda-cliente {
+  background: var(--card-bg); border-radius: 14px;
+  margin: 0 14px 8px; padding: 11px 14px;
+  border: .5px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}#vn-shell .comanda-cliente-ic { font-size: 18px; flex-shrink: 0; }#vn-shell .comanda-cliente-info { flex: 1; min-width: 0; }#vn-shell .comanda-cliente-nombre { font-size: 13px; font-weight: 700; color: var(--tx); }#vn-shell .comanda-cliente-meta { font-size: 11px; color: var(--tx3); margin-top: 1px; }#vn-shell .comanda-estado-badge { flex-shrink: 0; }#vn-shell .comanda-items {
+  background: var(--card-bg); border-radius: 16px;
+  margin: 0 14px 8px; padding: 14px 16px;
+  border: .5px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}#vn-shell .comanda-items-title {
+  font-size: 10px; font-weight: 700; color: var(--tx4);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 10px;
+}#vn-shell .comanda-item {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 8px 0;
+  border-bottom: .5px solid #f0f0f0;
+}#vn-shell .comanda-item:last-child { border-bottom: none; padding-bottom: 2px; }#vn-shell .comanda-item-qty {
+  font-size: 20px; font-weight: 800; color: var(--red);
+  font-family: 'DM Mono', monospace;
+  min-width: 28px; flex-shrink: 0; line-height: 1;
+}#vn-shell .comanda-item-nombre {
+  font-size: 15px; font-weight: 700; color: var(--tx);
+  flex: 1; line-height: 1.3;
+}#vn-shell .comanda-item-precio {
+  font-size: 12px; color: var(--tx3); font-weight: 600;
+  font-family: 'DM Mono', monospace; flex-shrink: 0;
+}#vn-shell .comanda-total {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1.5px solid var(--border);
+}#vn-shell .comanda-total-lbl { font-size: 13px; font-weight: 700; color: var(--tx2); }#vn-shell .comanda-total-val {
+  font-size: 20px; font-weight: 800; color: var(--red);
+  font-family: 'DM Mono', monospace;
+}#vn-shell .comanda-nota {
+  margin-top: 10px; padding: 8px 10px;
+  background: var(--yellow-lt); border-radius: 8px;
+  font-size: 11px; color: var(--amber-dk); line-height: 1.5;
+}
+
+/* Tiempo estimado — control [-5] TIEMPO [+5] */#vn-shell .tiempo-wrap {
+  background: var(--card-bg); border-radius: 14px;
+  margin: 0 14px 8px; padding: 13px 14px;
+  border: .5px solid var(--border);
+}#vn-shell .tiempo-title {
+  font-size: 10px; font-weight: 700; color: var(--tx4);
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px;
+}#vn-shell .tiempo-ctrl {
+  display: flex; align-items: center; gap: 0;
+  background: #f5f5f2; border-radius: 14px; overflow: hidden;
+  border: .5px solid var(--border);
+}#vn-shell .tiempo-step-btn {
+  flex: 0 0 60px; height: 58px;
+  background: #eeeeed; border: none; color: var(--tx2);
+  font-size: 15px; font-weight: 800; cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  transition: background .12s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}#vn-shell .tiempo-step-btn:active { background: var(--yellow); color: var(--amber-dk); transform: scale(.96); }#vn-shell .tiempo-display {
+  flex: 1; text-align: center; padding: 6px 0;
+  border-left: .5px solid var(--border);
+  border-right: .5px solid var(--border);
+}#vn-shell .tiempo-val {
+  font-size: 34px; font-weight: 800; color: var(--tx);
+  font-family: 'DM Mono', monospace; line-height: 1;
+}#vn-shell .tiempo-unit { font-size: 10px; color: var(--tx4); margin-top: 2px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; }#vn-shell .tiempo-reset {
+  font-size: 10px; color: var(--tx4); text-align: center;
+  margin-top: 7px; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* Bloque de entrega / dirección */#vn-shell .comanda-entrega {
+  background: var(--card-bg); border-radius: 13px;
+  margin: 0 14px 8px; padding: 11px 14px;
+  border: .5px solid var(--border);
+}#vn-shell .comanda-entrega-tipo {
+  font-size: 12px; font-weight: 700; color: var(--tx);
+  margin-bottom: 4px;
+}#vn-shell .comanda-entrega-dir {
+  font-size: 12px; color: var(--tx2); font-weight: 500;
+  line-height: 1.4;
+}#vn-shell .comanda-entrega-ref {
+  font-size: 11px; color: var(--tx4); margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Acciones pedido — grandes y claras */#vn-shell .det-acciones {
+  padding: 0 14px 8px;
+}#vn-shell .det-accion-aceptar {
+  background: var(--red); color: #fff;
+  border: none; border-radius: 14px;
+  padding: 15px; font-size: 15px; font-weight: 800;
+  width: 100%; cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+  transition: transform .12s, opacity .12s;
+  letter-spacing: -.1px;
+}#vn-shell .det-accion-aceptar:active { transform: scale(.98); opacity: .92; }#vn-shell .det-accion-rechazar {
+  background: #f0f0f0; color: #666;
+  border: none; border-radius: 14px;
+  padding: 12px; font-size: 13px; font-weight: 700;
+  width: 100%; cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+  transition: transform .12s;
+}#vn-shell .det-accion-rechazar:active { transform: scale(.98); }#vn-shell .det-accion-std {
+  border: none; border-radius: 14px;
+  padding: 14px; font-size: 14px; font-weight: 700;
+  width: 100%; cursor: pointer; font-family: inherit;
+  margin-bottom: 8px;
+  transition: transform .12s, opacity .12s;
+}#vn-shell .det-accion-std:active { transform: scale(.98); opacity: .92; }
+
+/* Progreso compacto — al fondo */#vn-shell .comanda-progreso {
+  background: var(--card-bg); border-radius: 14px;
+  margin: 0 14px 10px; padding: 12px 14px 8px;
+  border: .5px solid var(--border);
+}#vn-shell .comanda-progreso-title {
+  font-size: 10px; font-weight: 700; color: var(--tx4);
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
+}#vn-shell .paso-mini {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+}#vn-shell .paso-mini-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ddd; flex-shrink: 0;
+}#vn-shell .paso-mini-dot.done { background: var(--green); }#vn-shell .paso-mini-dot.active { background: var(--yellow); box-shadow: 0 0 0 3px rgba(245,197,24,.25); }#vn-shell .paso-mini-lbl {
+  font-size: 11px; color: #bbb; font-weight: 600;
+}#vn-shell .paso-mini-lbl.done { color: var(--green); }#vn-shell .paso-mini-lbl.active { color: var(--amber-dk); font-weight: 700; }
+
+/* ═══ MENÚ — Cards de producto con foto ═══ */#vn-shell .menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 14px;
+  margin-bottom: 4px;
+}#vn-shell .menu-pcard {
+  background: var(--card-bg);
+  border-radius: 14px;
+  border: .5px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform .13s;
+}#vn-shell .menu-pcard:active { transform: scale(.97); }#vn-shell .menu-pcard.agotado { opacity: .6; }#vn-shell .menu-pcard-img {
+  width: 100%; height: 90px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px;
+  position: relative;
+  overflow: hidden;
+}#vn-shell .menu-pcard-img-inner {
+  /* Marco sutil sobre la imagen */
+  position: absolute; inset: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+}#vn-shell .menu-pcard-body { padding: 8px 10px 10px; }#vn-shell .menu-pcard-nombre {
+  font-size: 12px; font-weight: 700; color: var(--tx);
+  line-height: 1.3; margin-bottom: 2px;
+}#vn-shell .menu-pcard-precio {
+  font-size: 14px; font-weight: 800; color: var(--red);
+  font-family: 'DM Mono', monospace;
+}#vn-shell .menu-pcard-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 6px; gap: 4px;
+}#vn-shell .menu-pcard-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+}
+
+/* Zona de foto en el form — más prominente */#vn-shell .prod-img-ph {
+  width: 100%; height: 130px; border-radius: 14px;
+  background: linear-gradient(135deg, #f5f5f5, #ebebeb);
+  border: 1.5px dashed #d0d0d0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 36px; cursor: pointer; margin-bottom: 14px; gap: 6px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.04);
+  transition: border-color .2s, background .2s;
+}#vn-shell .prod-img-ph:active { background: #ededec; border-color: var(--red); }#vn-shell .prod-img-ph span { font-size: 11px; color: #bbb; font-weight: 600; }#vn-shell .empty { text-align: center; padding: 36px 20px; }#vn-shell .empty-ic { font-size: 38px; margin-bottom: 10px; }#vn-shell .empty-tit { font-size: 13px; font-weight: 700; color: #888; }#vn-shell .empty-sub { font-size: 11px; color: #bbb; margin-top: 4px; line-height: 1.5; }
+
+/* ═══ PROMO CARDS ═══ */#vn-shell .promo-card {
+  border-radius: 16px; margin-bottom: 10px;
+  padding: 16px; cursor: pointer;
+  display: flex; align-items: center; gap: 12px;
+  transition: transform .14s;
+}#vn-shell .promo-card:active { transform: scale(.98); }#vn-shell .promo-ic { font-size: 28px; flex-shrink: 0; }#vn-shell .promo-body .pt { font-size: 14px; font-weight: 700; color: #fff; }#vn-shell .promo-body .ps { font-size: 11px; color: rgba(255,255,255,.72); margin-top: 2px; line-height: 1.4; }
+
+/* ═══ NOTIF ITEM ═══ */#vn-shell .notif-item {
+  background: var(--card-bg); border-radius: 14px;
+  margin: 0 14px 8px; padding: 12px 14px;
+  display: flex; gap: 10px; border: .5px solid var(--border);
+}#vn-shell .notif-ic { font-size: 20px; flex-shrink: 0; margin-top: 2px; }#vn-shell .notif-tit { font-size: 13px; font-weight: 700; color: var(--tx); }#vn-shell .notif-msg { font-size: 11px; color: var(--tx3); margin-top: 2px; line-height: 1.4; }#vn-shell .notif-time { font-size: 10px; color: #bbb; margin-top: 4px; }#vn-shell .notif-unread {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--red); flex-shrink: 0; margin-top: 5px;
+}
+
+/* ═══ TOAST ═══ */#vn-shell #toast {
+  position: fixed; bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(14px);
+  background: #111; color: #fff;
+  border-radius: 24px; padding: 9px 18px;
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap; opacity: 0;
+  transition: opacity .28s, transform .28s;
+  pointer-events: none; z-index: 999999;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}#vn-shell #toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ═══ EVOLUCIÓN FUTURA LABEL ═══ */#vn-shell .futura {
+  margin: 0 14px 10px;
+  background: var(--yellow-lt);
+  border: .5px solid rgba(245,197,24,.4);
+  border-radius: 10px; padding: 8px 12px;
+  font-size: 10px; color: var(--amber-dk);
+  line-height: 1.5;
+}#vn-shell .futura strong { font-weight: 700; }
+
+/* ═══ ESTADO CONFIG ═══ */#vn-shell .estado-cfg-preview {
+  background: var(--card-bg); border-radius: 16px;
+  border: .5px solid var(--border); margin: 0 14px 10px;
+  overflow: hidden;
+}#vn-shell .estado-cfg-top {
+  padding: 13px 16px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: .5px solid #f0f0f0;
+}#vn-shell .estado-cfg-body { padding: 12px 16px; }
+
+/* ═══ HORARIO ROW ═══ */#vn-shell .hor-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: .5px solid #f5f5f5;
+}#vn-shell .hor-row:last-child { border-bottom: none; }#vn-shell .hor-dia { font-size: 12px; font-weight: 600; color: var(--tx); width: 72px; flex-shrink: 0; }#vn-shell .hor-time { font-size: 11px; color: var(--tx3); flex: 1; text-align: center; font-family: 'DM Mono', monospace; }
+
+/* ═══ TOGGLE FILA CONFIG ═══ */#vn-shell .toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0; border-bottom: .5px solid #f5f5f5;
+}#vn-shell .toggle-row:last-child { border-bottom: none; }#vn-shell .toggle-info { flex: 1; padding-right: 12px; }#vn-shell .toggle-info-tit { font-size: 13px; font-weight: 600; color: var(--tx); }#vn-shell .toggle-info-sub { font-size: 10px; color: var(--tx4); margin-top: 1px; }
+
+/* ═══ IMAGEN PRODUCTO PLACEHOLDER ═══ */#vn-shell .prod-img-ph {
+  width: 100%; height: 72px; border-radius: 12px;
+  background: #f5f5f5; border: 1.5px dashed #ddd;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer; margin-bottom: 14px; gap: 4px;
+}#vn-shell .prod-img-ph span { font-size: 10px; color: #bbb; }
+
+/* ═══ CONFIRMACIÓN CONFIG — banner auto-dismiss ═══ */#vn-shell .cfg-confirm {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(120deg, #0d4220, #1a7a46);
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
+  transform: translateY(100%);
+  transition: transform .32s cubic-bezier(.32,0,.18,1);
+  z-index: 20;
+  pointer-events: none;
+}#vn-shell .cfg-confirm.show { transform: translateY(0); pointer-events: auto; }#vn-shell .cfg-confirm-ic { font-size: 20px; flex-shrink: 0; }#vn-shell .cfg-confirm-txt .t { font-size: 13px; font-weight: 700; color: #fff; }#vn-shell .cfg-confirm-txt .s { font-size: 11px; color: rgba(255,255,255,.7); margin-top: 1px; }#vn-shell .stagger > * {
+  opacity: 0;
+  animation: fadeUp .35s ease forwards;
+}#vn-shell .stagger > *:nth-child(1) { animation-delay: .04s; }#vn-shell .stagger > *:nth-child(2) { animation-delay: .08s; }#vn-shell .stagger > *:nth-child(3) { animation-delay: .12s; }#vn-shell .stagger > *:nth-child(4) { animation-delay: .16s; }#vn-shell .stagger > *:nth-child(5) { animation-delay: .20s; }#vn-shell .stagger > *:nth-child(6) { animation-delay: .24s; }#vn-shell .stagger > *:nth-child(7) { animation-delay: .28s; }#vn-shell .stagger > *:nth-child(8) { animation-delay: .32s; }
+
+/* El overlay cubre toda la pantalla por encima de las vistas */#vn-shell #vneg-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 999;
+  align-items: center; justify-content: center;
+  animation: dcr-fade-in .22s ease-out;
+}#vn-shell #vneg-overlay.visible { display: flex; }#vn-shell .ro-box {
+  width: 270px; border-radius: 24px;
+  padding: 36px 28px 34px; text-align: center;
+  animation: dcr-fade-in .28s ease-out;
+}#vn-shell .ro-box.phase-send {
+  background: #1C1400;
+  border: 2px solid rgba(245,197,24,.3);
+}#vn-shell .ro-box.phase-ok {
+  background: #0C1A10;
+  border: 2px solid rgba(31,194,106,.4);
+}
+
+/* Logo animado — Fase 1 */#vn-shell .ro-logo-wrap {
+  display: inline-block;
+  filter: drop-shadow(0 0 20px rgba(31,194,106,.6));
+  margin-bottom: 20px;
+}#vn-shell .ro-logo-wrap .ro-ring {
+  animation: dcr-led 2s ease-in-out infinite;
+}#vn-shell .ro-logo-wrap .ro-gear {
+  animation: dcr-spin 1.4s linear infinite;
+  transform-origin: 53px 53px;
+}
+
+/* Check animado — Fase 2 */#vn-shell .ro-check {
+  font-size: 68px;
+  display: inline-block;
+  animation: dcr-check-pop .42s cubic-bezier(.34,1.56,.64,1) forwards;
+  margin-bottom: 12px;
+}
+
+/* Textos */#vn-shell .ro-title {
+  font-size: 18px; font-weight: 800;
+  letter-spacing: -.1px; margin-top: 4px;
+  font-family: 'Inter', system-ui, sans-serif;
+}#vn-shell .ro-sub {
+  font-size: 12px; margin-top: 7px;
+  line-height: 1.6; opacity: .75;
+  font-family: 'Inter', system-ui, sans-serif;
+}#vn-shell .ro-box.phase-send .ro-title { color: var(--yellow); }#vn-shell .ro-box.phase-send .ro-sub { color: rgba(245,197,24,.85); }#vn-shell .ro-box.phase-ok   .ro-title { color: var(--green); }#vn-shell .ro-box.phase-ok   .ro-sub { color: rgba(31,194,106,.9); }</style>
 </head>
 <body>
 <div class="phone">
@@ -4743,8 +5803,8 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         <div style="font-size:9px;color:var(--white-30);letter-spacing:2px;text-transform:uppercase;margin-top:4px;">García · Nuevo León</div>
         <div class="brand-appserv">AppServis</div>
         <div class="splash-btns">
-          <button class="btn btn-green" onclick="go('v-role','right')">Quiero registrarme</button>
-          <button class="btn btn-yellow-ol" onclick="go('v-login','right')">Ya tengo cuenta → Entrar</button>
+          <button class="btn btn-green" onclick="go('v-login','right')">Ya tengo cuenta → Entrar</button>
+          <button class="btn btn-yellow-ol" onclick="go('v-role','right')">Quiero registrarme</button>
         </div>
         <div class="splash-foot">Exclusivo para residentes y negocios de Dominio Cumbres</div>
         <div style="text-align:center;margin-top:10px;">
@@ -4819,14 +5879,14 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <div><p style="font-size:14px;font-weight:700;color:var(--amber-dark);margin:0 0 2px;">Proveedor de servicios</p><p style="font-size:11px;color:var(--yellow-text);margin:0;">Ofrezco servicios a la comunidad</p></div>
           <span class="si65">›</span>
         </div>
-        <div class="si52 rcard" onclick="go('v-reg-ride','right')">
-          <div class="ric" style="background:#D63A2A;">🏍️</div>
-          <div><p style="font-size:14px;font-weight:700;color:var(--red-dark);margin:0 0 2px;">Transporte / Repartidor</p><p style="font-size:11px;color:#A02018;margin:0;">Entregas y viajes en la zona</p></div>
-          <span class="si65">›</span>
-        </div>
         <div class="si26 rcard" onclick="go('v-reg-biz','right')">
           <div class="ric" style="background:#1A7AB5;">🏪</div>
           <div><p style="font-size:14px;font-weight:700;color:var(--navy-text);margin:0 0 2px;">Restaurante / Negocio</p><p style="font-size:11px;color:#1A5280;margin:0;">Publico mi negocio y recibo pedidos</p></div>
+          <span class="si65">›</span>
+        </div>
+        <div class="si52 rcard" style="opacity:.5;filter:grayscale(.6);" onclick="alert('El registro como Transporte / Repartidor estara disponible proximamente.')">
+          <div class="ric" style="background:#D63A2A;">🏍️</div>
+          <div><p style="font-size:14px;font-weight:700;color:var(--red-dark);margin:0 0 2px;">Transporte / Repartidor</p><p style="font-size:11px;color:#A02018;margin:0;">Entregas y viajes en la zona</p></div>
           <span class="si65">›</span>
         </div>
         <p style="font-size:11px;color:var(--white-30);text-align:center;margin-top:8px;">Puedes agregar más roles desde tu perfil después</p>
@@ -5938,7 +6998,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   <!-- ── BOTTOM NAV ── -->
   <div class="nav">
     <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
-    <div class="ni" onclick="go('vr-pedidos','right')"><div class="ni-ic">📦</div><div class="ni-lb">Pedidos</div></div>
+    <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">📦</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -5985,6 +7045,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       </div>
     </div>
     <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
+      <span style="background:#fff;color:#1FC26A;font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px;" id="dcf-det-estado">🟢 Activo</span>
       <span style="background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="det-tiempo">🍳 --</span>
       <span style="background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="det-envio">🛵 --</span>
       <span style="display:none;background:rgba(255,255,255,.22);color:#fff;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.3);" id="det-dir-recogida"></span>
@@ -7649,9 +8710,14 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 
   <div class="scroll" style="padding:0 0 14px;" id="vmr-scroll">
 
-    <!-- Resumen del día -->
-    <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;padding:16px 18px 8px;">Hoy</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:16px;">
+    <!-- Resumen de ventas por mes -->
+    <div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;padding:16px 18px 8px;">Resumen de ventas</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 18px 10px;">
+      <button id="vmr-mes-prev" onclick="window._vmrMesCambiar&&window._vmrMesCambiar(-1)" style="width:32px;height:32px;border-radius:50%;border:.5px solid #e0e0e0;background:#fff;color:#D63A2A;font-size:16px;font-weight:700;cursor:pointer;line-height:1;">&#8249;</button>
+      <div id="vmr-mes-label" style="font-size:13px;font-weight:700;color:#333;">—</div>
+      <button id="vmr-mes-next" onclick="window._vmrMesCambiar&&window._vmrMesCambiar(1)" style="width:32px;height:32px;border-radius:50%;border:.5px solid #e0e0e0;background:#fff;color:#D63A2A;font-size:16px;font-weight:700;cursor:pointer;line-height:1;">&#8250;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:10px;">
       <div style="background:#fff;border-radius:12px;padding:12px 8px;text-align:center;border:.5px solid #e8e8e8;">
         <div style="font-size:22px;font-weight:700;color:#D63A2A;" id="vmr-pedidos">0</div>
         <div style="font-size:9px;color:#999;margin-top:2px;">Pedidos</div>
@@ -7661,8 +8727,14 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
         <div style="font-size:9px;color:#999;margin-top:2px;">Ventas</div>
       </div>
       <div style="background:#fff;border-radius:12px;padding:12px 8px;text-align:center;border:.5px solid #e8e8e8;">
-        <div style="font-size:22px;font-weight:700;color:#D63A2A;" id="vmr-visitas">0</div>
-        <div style="font-size:9px;color:#999;margin-top:2px;">Visitas</div>
+        <div style="font-size:22px;font-weight:700;color:#D63A2A;" id="vmr-rating">—</div>
+        <div style="font-size:9px;color:#999;margin-top:2px;">Calificación</div>
+      </div>
+    </div>
+    <div style="padding:0 18px 16px;">
+      <div style="background:#FBF3F1;border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border:.5px solid #f0ddd8;">
+        <span style="font-size:11px;color:#999;font-weight:600;">Acumulado total</span>
+        <span id="vmr-acumulado" style="font-size:15px;font-weight:800;color:#D63A2A;">$0</span>
       </div>
     </div>
 
@@ -7754,12 +8826,12 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
           <div>
             <div class="sec-lbl" style="display:flex;align-items:center;justify-content:space-between;">
               <span>Mi jornada hoy</span>
-              <span style="font-size:9px;font-weight:600;color:var(--green);background:rgba(31,194,106,.1);border-radius:8px;padding:2px 8px;letter-spacing:.3px;border:1px solid rgba(31,194,106,.2);">● EN VIVO</span>
+              <span onclick="navTo('vr-ventas')" style="font-size:10px;font-weight:700;color:#D63A2A;cursor:pointer;letter-spacing:.2px;">Ver ventas ›</span>
             </div>
             <div class="jornada-row">
               <div class="jornada-box">
                 <div class="jornada-val" id="hj-pedidos">0</div>
-                <div class="jornada-lbl">Pedidos</div>
+                <div class="jornada-lbl">Pedidos hoy</div>
               </div>
               <div class="jornada-box">
                 <div class="jornada-val" id="hj-ventas">$0</div>
@@ -7789,10 +8861,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
                 <div class="qi-icon" style="background:#FFF8E1;">📣</div>
                 <div class="qi-lbl">Promos</div>
               </div>
-              <div class="qi" onclick="navTo('vr-notif')">
-                <div class="qi-icon" style="background:#E8F0F8;">🔔</div>
-                <div class="qi-lbl">Alertas</div>
-                <div class="qi-badge" id="qi-badge-notif" style="display:none;"></div>
+              <div class="qi" onclick="navTo('vr-ventas')">
+                <div class="qi-icon" style="background:#E8F0F8;">📊</div>
+                <div class="qi-lbl">Ventas</div>
               </div>
             </div>
           </div>
@@ -8232,6 +9303,61 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     <!-- ╔══════════════════════════════════════════════╗
          ║  V-NOTIF — Notificaciones                   ║
          ╚══════════════════════════════════════════════╝ -->
+    <div class="view go-right" id="vr-ventas">
+      <div class="hdr">
+        <div class="sbar"><span>9:41</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="navTo('vr-home',true)">‹</button>
+            <div>
+              <div class="hdr-title">📊 Ventas</div>
+              <div class="hdr-sub">Resumen por mes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scr" style="padding:0 0 24px;background:#F7F5F2;">
+        <!-- Selector de mes -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;">
+          <button id="vrv-mes-prev" onclick="window._vrvMesCambiar&&window._vrvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #D63A2A;background:#FDECEA;color:#D63A2A;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8249;</button>
+          <div style="text-align:center;">
+            <div id="vrv-mes-label" style="font-size:16px;font-weight:800;color:#2a2a2a;">—</div>
+            <div style="font-size:9px;color:#aaa;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:1px;">Resumen del mes</div>
+          </div>
+          <button id="vrv-mes-next" onclick="window._vrvMesCambiar&&window._vrvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #D63A2A;background:#FDECEA;color:#D63A2A;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8250;</button>
+        </div>
+
+        <!-- Tarjeta hero: Ventas del mes -->
+        <div style="margin:0 16px 12px;background:linear-gradient(135deg,#D63A2A,#B02818);border-radius:18px;padding:20px;box-shadow:0 4px 16px rgba(214,58,42,.25);">
+          <div style="font-size:11px;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.4px;text-transform:uppercase;">Ventas del mes</div>
+          <div id="vrv-ventas" style="font-size:38px;font-weight:800;color:#fff;line-height:1.1;margin-top:4px;">$0</div>
+          <div style="display:flex;gap:18px;margin-top:14px;">
+            <div><span id="vrv-pedidos" style="font-size:17px;font-weight:800;color:#fff;">0</span><span style="font-size:11px;color:rgba(255,255,255,.8);"> pedidos</span></div>
+            <div><span id="vrv-rating" style="font-size:17px;font-weight:800;color:#fff;">—</span><span style="font-size:11px;color:rgba(255,255,255,.8);"> calificación</span></div>
+          </div>
+        </div>
+
+        <!-- Acumulado total -->
+        <div style="margin:0 16px 18px;background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">💰</span>
+            <span style="font-size:12px;color:#777;font-weight:600;">Acumulado total histórico</span>
+          </div>
+          <span id="vrv-acumulado" style="font-size:18px;font-weight:800;color:#1a8a4a;">$0</span>
+        </div>
+
+        <!-- Top 3 productos -->
+        <div style="padding:0 16px;">
+          <div style="font-size:13px;font-weight:800;color:#2a2a2a;margin-bottom:10px;">🏆 Top 3 del mes</div>
+          <div class="pill-row" style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="vrv-top-tab on" onclick="window._vrvTopTab&&window._vrvTopTab('dinero',this)" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">💰 Por dinero</button>
+            <button class="vrv-top-tab" onclick="window._vrvTopTab&&window._vrvTopTab('cantidad',this)" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📦 Por cantidad</button>
+          </div>
+          <div id="vrv-top-lista"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="view go-right" id="vr-notif">
       <div class="hdr">
         <div class="sbar"><span>9:41</span><span></span></div>
@@ -8378,6 +9504,367 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
       </div>
 
     </div><!-- /vr-config -->
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════════╗
+     ║  VN-SHELL — Centro Operativo del NEGOCIO (clon de vr, morado) ║
+     ║  Prefijo vn- - navegación negTo - NO comparte estado con vr-  ║
+     ╚══════════════════════════════════════════════════════════╝ -->
+<div id="vn-shell" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1;">
+
+  <div id="vneg-overlay">
+    <div id="vneg-overlay-box" class="ro-box phase-send">
+      <div id="vneg-overlay-body"></div>
+    </div>
+  </div>
+
+  <!-- VN-HOME — Panel del negocio -->
+  <div class="view go-right" id="vn-home">
+    <div class="hdr" style="background:linear-gradient(135deg,#5B2C8A,#7B3FA0);">
+      <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+      <div class="hdr-inner">
+        <div class="hdr-home">
+          <div class="hdr-brand">
+            <button class="btn-back" onclick="go('v-home','left')" style="background:rgba(255,255,255,.18);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:20px;cursor:pointer;margin-right:6px;flex-shrink:0;">‹</button>
+            <div class="hdr-logo" style="background:rgba(255,255,255,.18);">🏪</div>
+            <div>
+              <div class="hdr-biz-name" id="vn-hdr-name">Mi Negocio</div>
+              <div class="hdr-biz-sub">DOMINIO CUMBRES · ZONA PRIVADA</div>
+            </div>
+          </div>
+          <div class="hdr-estado-row">
+            <div class="estado-toggle-wrap" id="vn-estado-wrap" onclick="negTo('vn-config')">
+              <div class="estado-dot verde" id="vn-estado-dot"></div>
+              <span class="estado-lbl" id="vn-estado-lbl">ACTIVO</span>
+              <span class="estado-chevron">▾</span>
+            </div>
+            <div class="hdr-hora" id="vn-hora">--:--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scr" style="padding:12px 0 24px;">
+      <div id="vn-urgencia-wrap" style="padding:0 14px;"></div>
+      <div class="sec-lbl" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Mi jornada hoy</span>
+        <span onclick="negTo('vn-ventas')" style="font-size:10px;font-weight:700;color:#7B3FA0;cursor:pointer;letter-spacing:.2px;">Ver ventas ›</span>
+      </div>
+      <div class="jornada-row">
+        <div class="jornada-box"><div class="jornada-val" id="vnj-pedidos">0</div><div class="jornada-lbl">Pedidos hoy</div></div>
+        <div class="jornada-box"><div class="jornada-val" id="vnj-ventas">$0</div><div class="jornada-lbl">Ventas</div></div>
+        <div class="jornada-box"><div class="jornada-val" id="vnj-apertura">—</div><div class="jornada-lbl">Desde</div></div>
+      </div>
+      <div class="sec-lbl">Accesos rápidos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 14px;">
+        <div class="qi" onclick="negTo('vn-pedidos')"><div class="qi-icon" style="background:#F0EBF8;">📦</div><div class="qi-lbl">Pedidos</div></div>
+        <div class="qi" onclick="negTo('vn-menu')"><div class="qi-icon" style="background:#F0EBF8;">✏️</div><div class="qi-lbl">Productos</div></div>
+        <div class="qi" onclick="negTo('vn-promos')"><div class="qi-icon" style="background:#F0EBF8;">📣</div><div class="qi-lbl">Promos</div></div>
+        <div class="qi" onclick="negTo('vn-ventas')"><div class="qi-icon" style="background:#F0EBF8;">📊</div><div class="qi-lbl">Ventas</div></div>
+      </div>
+    </div>
+    <div class="nav">
+      <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
+      <div class="ni" onclick="negTo('vn-pedidos')"><div class="ni-ic">📦</div><div class="ni-lb">Pedidos</div></div>
+      <div class="ni" onclick="negTo('vn-menu')"><div class="ni-ic">✏️</div><div class="ni-lb">Productos</div></div>
+      <div class="ni" onclick="negTo('vn-promos')"><div class="ni-ic">📣</div><div class="ni-lb">Promos</div></div>
+      <div class="ni" onclick="negTo('vn-config')"><div class="ni-ic">⚙️</div><div class="ni-lb">Config</div></div>
+    </div>
+  </div>
+
+  <!-- VN-PEDIDOS (placeholder Paso 4) -->
+      <div class="view go-right" id="vn-pedidos">
+      <div class="hdr">
+        <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="negTo('vn-home',true)">‹</button>
+            <div>
+              <div class="hdr-title">📦 Pedidos</div>
+              <div class="hdr-sub" id="vn-ped-sub">—</div>
+            </div>
+          </div>
+          <div class="pill-row" style="padding:8px 0 0;">
+            <button class="chip on" id="vntab-pedidos"     onclick="vnegTabPedidos('pedidos',this)">🔴 Pedidos</button>
+            <button class="chip"   id="vntab-en_proceso"  onclick="vnegTabPedidos('en_proceso',this)">👨‍🍳 En proceso</button>
+            <button class="chip"   id="vntab-entregados"  onclick="vnegTabPedidos('entregados',this)">✅ Entregados</button>
+          </div>
+        </div>
+      </div>
+      <div class="scr" id="vn-ped-scr" style="padding:8px 0;">
+        <div id="vn-ped-cont"></div>
+      </div>
+      <div class="nav">
+        <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
+        <div class="ni"><div class="ni-ic">📦</div><div class="ni-lb on">Pedidos</div></div>
+        <div class="ni" onclick="negTo('vn-menu')"><div class="ni-ic">✏️</div><div class="ni-lb">Productos</div></div>
+        <div class="ni" onclick="negTo('vn-config')"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="negTo('vn-config')"><div class="ni-ic">⚙️</div><div class="ni-lb">Config</div></div>
+      </div>
+    </div>
+
+  <!-- VN-MENU (placeholder Paso 3) -->
+      <div class="view go-right" id="vn-menu">
+      <div class="hdr">
+        <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="negTo('vn-home',true)">‹</button>
+            <div style="flex:1;">
+              <div class="hdr-title">✏️ Mi Menú</div>
+              <div class="hdr-sub" id="vn-menu-sub">—</div>
+            </div>
+            <button onclick="vnegAbrirFormProd(null)"
+              style="background:var(--w15);border:1px solid var(--w25);color:#fff;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">
+              + Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Categorías STICKY fuera del header, debajo de él -->
+      <div id="vn-menu-cats-bar" style="background:#fff;border-bottom:.5px solid #e8e8e0;flex-shrink:0;position:relative;z-index:5;">
+        <div class="pill-row" id="vn-menu-cats" style="padding:8px 14px;"></div>
+        <!-- BUSCADOR MI MENÚ -->
+        <div style="padding:0 14px 10px;display:flex;align-items:center;gap:8px;background:#f8f8f5;border-top:.5px solid #f0f0e8;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-left:4px;">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input id="vn-menu-search-inp" type="text" placeholder="Buscar producto o categoría…"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            style="flex:1;border:none;background:transparent;font-size:12px;color:#111;outline:none;font-family:'Inter',sans-serif;-webkit-appearance:none;padding:0;"
+            oninput="vnegFiltrarMenu(this.value)"
+          >
+          <span id="vn-menu-search-clear" onclick="document.getElementById('menu-search-inp').value='';vnegFiltrarMenu('');"
+            style="display:none;color:#bbb;font-size:15px;cursor:pointer;flex-shrink:0;line-height:1;">✕</span>
+        </div>
+      </div>
+      <div class="scr" id="vn-menu-scr" style="padding:4px 0;">
+        <div id="vn-menu-cont"></div>
+      </div>
+      <div class="nav">
+        <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
+        <div class="ni" onclick="negTo('vn-pedidos')"><div class="ni-ic">📦</div><div class="ni-lb">Pedidos</div></div>
+        <div class="ni"><div class="ni-ic">✏️</div><div class="ni-lb on">Productos</div></div>
+        <div class="ni" onclick="negTo('vn-config')"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="negTo('vn-config')"><div class="ni-ic">⚙️</div><div class="ni-lb">Config</div></div>
+      </div>
+    </div>
+
+    <div class="view go-right" id="vn-prod-form">
+      <div class="hdr">
+        <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="negTo('vn-menu')">‹</button>
+            <div>
+              <div class="hdr-title" id="vn-rf-pform-titulo">Nuevo producto</div>
+              <div class="hdr-sub">Datos del producto</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scr" id="vn-rf-pform-scr" style="padding:14px;">
+        <input type="hidden" id="vn-rf-pform-id">
+        <!-- Input real de archivo — oculto, activado por vnegTapFoto() -->
+        <input type="file" id="vn-pf-file-input" accept="image/*" style="display:none;" onchange="vnegFotoSeleccionada(this)">
+        <!-- Zona de foto — gestionada por _renderFotoUI() -->
+        <div id="vn-pf-foto-wrap">
+          <div class="prod-img-ph" onclick="vnegTapFoto()">📷<span>Toca para agregar foto</span></div>
+        </div>
+        <div class="form-g">
+          <label class="lbl">Nombre *</label>
+          <input id="vn-pf-nombre" class="inp" placeholder="Ej: Taco de Bistec">
+        </div>
+        <div class="form-g">
+          <label class="lbl">Categoría *</label>
+          <select id="vn-pf-cat" class="inp" style="appearance:auto;-webkit-appearance:auto;"></select>
+        </div>
+        <div class="form-g">
+          <label class="lbl">Descripción</label>
+          <textarea id="vn-pf-desc" class="inp-ta" rows="2" placeholder="Ingredientes, presentación..."></textarea>
+        </div>
+        <div class="form-g">
+          <label class="lbl">Precio ($) *</label>
+          <input id="vn-pf-precio" class="inp" type="number" min="1" step="1" placeholder="0">
+        </div>
+        <div class="toggle-row" style="margin-bottom:16px;padding:10px 0;border-top:.5px solid #f0f0f0;border-bottom:.5px solid #f0f0f0;">
+          <div class="toggle-info">
+            <div class="toggle-info-tit">Disponible ahora</div>
+            <div class="toggle-info-sub">Los clientes pueden añadirlo al pedido</div>
+          </div>
+          <div class="toggle on" id="vn-pf-toggle" onclick="vnegTogglePfDisp()"></div>
+        </div>
+        <div class="err-msg" id="vn-pf-err">⚠️ Nombre, categoría, precio y foto son obligatorios.</div>
+        <button class="btn btn-red" onclick="vnegGuardarProd()" style="margin-bottom:8px;">Guardar producto →</button>
+        <button class="btn btn-ghost" id="vn-pf-del-btn" onclick="vnegEliminarProd()" style="display:none;">🗑 Eliminar producto</button>
+      </div>
+    </div>
+
+  <!-- VN-PROMOS (placeholder) -->
+      <div class="view go-right" id="vn-promos">
+      <div class="hdr">
+        <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="negTo('vn-home',true)">‹</button>
+            <div>
+              <div class="hdr-title">📣 Promociones</div>
+              <div class="hdr-sub">Visibilidad dentro de Dominio Cumbres</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scr" id="vn-promos-scr" style="padding:10px 0 20px;">
+
+        <!-- Acceso directo a Crear Promoción -->
+        <div style="margin:0 14px 14px;">
+          <button onclick="window.irACrearPromo&&window.irACrearPromo()" style="width:100%;background:linear-gradient(135deg,#4A1A70,#7B3FA0);border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span style="font-size:18px;">📣</span> Crear Promoción
+          </button>
+        </div>
+        <div style="margin:0 14px 12px;background:var(--card-bg);border-radius:16px;padding:14px;border:1.5px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <div style="background:#f0f0f0;border-radius:8px;padding:3px 10px;font-size:10px;font-weight:800;color:#666;letter-spacing:.4px;">BÁSICO</div>
+            <div style="font-size:11px;color:var(--green);font-weight:700;">✅ Plan actual</div>
+          </div>
+          <div style="font-size:12px;color:var(--tx2);line-height:1.6;">
+            Puedes operar, recibir pedidos y gestionar tu menú.<br>
+            <span style="color:var(--tx4);">Las promociones y estadísticas avanzadas requieren plan Premium.</span>
+          </div>
+        </div>
+
+        <!-- Plan PREMIUM -->
+        <div class="sec-lbl">Actualizar plan</div>
+        <div style="margin:0 14px 10px;background:linear-gradient(120deg,#1a2a3a,#1a5a8a);border-radius:16px;padding:16px;cursor:pointer;" onclick="toast('📌 Planes y pagos — próximamente en Dominio Cumbres')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="background:rgba(255,255,255,.2);border-radius:8px;padding:3px 10px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.4px;">PREMIUM</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.7);">Más visibilidad · Más ventas</div>
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:10px;">
+            ⭐ Aparecer primero en búsquedas<br>
+            🔥 Crear ofertas y descuentos<br>
+            📊 Métricas de vistas y favoritos<br>
+            📣 Acceso al generador de promos
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;text-align:center;font-size:13px;font-weight:700;color:#fff;">Ver planes Premium →</div>
+        </div>
+
+        <!-- BANNER CARRUSEL -->
+        <div style="margin:0 14px 10px;background:linear-gradient(120deg,#2a1a3a,#5a2a80);border-radius:16px;padding:16px;cursor:pointer;" onclick="toast('📌 Banner carrusel — producto independiente, próximamente')">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="background:rgba(255,255,255,.2);border-radius:8px;padding:3px 10px;font-size:10px;font-weight:800;color:#fff;letter-spacing:.4px;">BANNER</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.7);">Carrusel principal · Pago único</div>
+          </div>
+          <div style="font-size:12px;color:rgba(255,255,255,.85);line-height:1.6;margin-bottom:10px;">
+            🏷️ Aparece en el carrusel que ven TODOS los usuarios<br>
+            👁 Vecinos, negocios y repartidores<br>
+            📐 Diseño personalizado con tu imagen<br>
+            ⏱ Duración: 24h, 3 días o 7 días
+          </div>
+          <div style="background:rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;text-align:center;font-size:13px;font-weight:700;color:#fff;">Cotizar banner →</div>
+        </div>
+
+        <!-- ¿Por qué anunciarse? -->
+        <div class="sec-lbl">¿Por qué anunciarse en DC?</div>
+        <div style="margin:0 14px 10px;background:var(--card-bg);border-radius:14px;padding:13px 14px;border:.5px solid var(--border);">
+          <div style="font-size:11px;color:var(--tx2);line-height:1.8;">
+            🏘️ Tu audiencia son vecinos de tu propia zona<br>
+            📍 Distancia mínima — tus clientes viven cerca<br>
+            👁 Apareces donde tus vecinos buscan comida<br>
+            📊 Puedes ver cuántos te vieron y cuántos compraron
+          </div>
+        </div>
+
+        <div class="futura" style="margin-top:4px;">
+          <strong>🔗 Integración:</strong> El flujo <code>v-promo-crear → preview → activa</code> ya existe en el index. Se activará aquí para usuarios Premium sin reescribir.
+        </div>
+      </div>
+    </div>
+
+  <!-- VN-VENTAS (placeholder Paso 5) -->
+      <div class="view go-right" id="vn-ventas">
+      <div class="hdr">
+        <div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div>
+        <div class="hdr-inner">
+          <div class="hdr-row">
+            <button class="btn-back" onclick="negTo('vn-home',true)">‹</button>
+            <div>
+              <div class="hdr-title">📊 Ventas</div>
+              <div class="hdr-sub">Resumen por mes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="scr" style="padding:0 0 24px;background:#F7F5F2;">
+        <!-- Selector de mes -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;">
+          <button id="vn-vrv-mes-prev" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8249;</button>
+          <div style="text-align:center;">
+            <div id="vn-vrv-mes-label" style="font-size:16px;font-weight:800;color:#2a2a2a;">—</div>
+            <div style="font-size:9px;color:#aaa;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:1px;">Resumen del mes</div>
+          </div>
+          <button id="vn-vrv-mes-next" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8250;</button>
+        </div>
+
+        <!-- Tarjeta hero: Ventas del mes -->
+        <div style="margin:0 16px 12px;background:linear-gradient(135deg,#7B3FA0,#5B2C8A);border-radius:18px;padding:20px;box-shadow:0 4px 16px rgba(214,58,42,.25);">
+          <div style="font-size:11px;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.4px;text-transform:uppercase;">Ventas del mes</div>
+          <div id="vn-vrv-ventas" style="font-size:38px;font-weight:800;color:#fff;line-height:1.1;margin-top:4px;">$0</div>
+          <div style="display:flex;gap:18px;margin-top:14px;">
+            <div><span id="vn-vrv-pedidos" style="font-size:17px;font-weight:800;color:#fff;">0</span><span style="font-size:11px;color:rgba(255,255,255,.8);"> pedidos</span></div>
+            <div><span id="vn-vrv-rating" style="font-size:17px;font-weight:800;color:#fff;">—</span><span style="font-size:11px;color:rgba(255,255,255,.8);"> calificación</span></div>
+          </div>
+        </div>
+
+        <!-- Acumulado total -->
+        <div style="margin:0 16px 18px;background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;">💰</span>
+            <span style="font-size:12px;color:#777;font-weight:600;">Acumulado total histórico</span>
+          </div>
+          <span id="vn-vrv-acumulado" style="font-size:18px;font-weight:800;color:#1a8a4a;">$0</span>
+        </div>
+
+        <!-- Top 3 productos -->
+        <div style="padding:0 16px;">
+          <div style="font-size:13px;font-weight:800;color:#2a2a2a;margin-bottom:10px;">🏆 Top 3 del mes</div>
+          <div class="pill-row" style="display:flex;gap:8px;margin-bottom:12px;">
+            <button class="vrv-top-tab on" onclick="window._vnvTopTab&&window._vnvTopTab('dinero',this)" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">💰 Por dinero</button>
+            <button class="vrv-top-tab" onclick="window._vnvTopTab&&window._vnvTopTab('cantidad',this)" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📦 Por cantidad</button>
+          </div>
+          <div id="vn-vrv-top-lista"></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- VN-CONFIG — Estado y horarios del negocio -->
+  <div class="view go-right" id="vn-config">
+    <div class="hdr" style="background:linear-gradient(135deg,#5B2C8A,#7B3FA0);"><div class="sbar"><span class="vn-sbar-hora">--:--</span><span></span></div><div class="hdr-inner"><div class="hdr-row"><button class="btn-back" onclick="negTo('vn-home',true)">‹</button><div><div class="hdr-title">⚙️ Configuración</div><div class="hdr-sub">Estado y horarios</div></div></div></div></div>
+    <div class="scr" style="padding:8px 0 24px;">
+      <div class="sec-lbl">Estado de operación</div>
+      <div class="estado-cfg-preview">
+        <div class="estado-cfg-top">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--tx);" id="vneg-est-tit">🟢 Activo</div>
+            <div style="font-size:11px;color:var(--green);margin-top:1px;" id="vneg-est-desc">Recibiendo pedidos</div>
+          </div>
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green);" id="vneg-est-dot"></div>
+        </div>
+        <div class="estado-cfg-body">
+          <select class="inp-sel" id="vneg-est-sel" onchange="vnegPreviewEstado(this.value)">
+            <option value="activo">🟢 Activo — Recibiendo pedidos</option>
+            <option value="ocupado">🟡 Ocupado — Respuesta más lenta</option>
+            <option value="pausado">⏸️ Pausado — Sin nuevos pedidos por ahora</option>
+            <option value="cerrado">🔴 Cerrado — No disponible hoy</option>
+          </select>
+        </div>
+      </div>
+      <div class="sec-lbl">Horarios de servicio</div>
+      <div style="background:var(--card-bg);border-radius:16px;border:.5px solid var(--border);margin:0 14px 4px;padding:4px 14px;" id="vneg-horarios"></div>
+      <button class="btn btn-blue" style="margin:18px 14px 0;width:calc(100% - 28px);background:linear-gradient(135deg,#5B2C8A,#7B3FA0);" onclick="vnegGuardarConfig()">Guardar cambios</button>
+      <div class="cfg-confirm" id="vneg-confirm"><div class="cfg-confirm-ic">✅</div><div class="cfg-confirm-txt"><div class="t">Guardado</div><div class="s">Tu estado se actualizó</div></div></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══ M2-J: VISTA RESERVAR ════════════════════════════════════
@@ -8854,6 +10341,8 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
     lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:12px;">Cargando…</div>';
 
     var notifs = await (window.cargarNotificaciones ? window.cargarNotificaciones() : Promise.resolve([]));
+    // REGLA UNIVERSAL: Alertas = solo sistema/app; lo operativo (pedidos) avisa en su modulo
+    notifs = (notifs||[]).filter(function(n){ return (n.modulo||'') !== 'pedidos'; });
 
     if (!notifs || notifs.length === 0) {
       if (sub) sub.textContent = 'Sin notificaciones';
@@ -10213,8 +11702,23 @@ function _goCore(id,dir){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     tgt.classList.remove('go-right','go-left');
     tgt.classList.add('active');
-    // REGLA UNIVERSAL: toda pantalla inicia desde arriba
+    // Manejo de shells (restaurante/negocio): elevar el shell de la vista activa, bajar los demás
+    try {
+      var _vrSh = document.getElementById('vr-shell');
+      var _vnSh = document.getElementById('vn-shell');
+      var enVr = !!(_vrSh && _vrSh.contains(tgt));
+      var enVn = !!(_vnSh && _vnSh.contains(tgt));
+      if (_vrSh) { _vrSh.style.zIndex = enVr ? '50' : '1'; _vrSh.style.pointerEvents = enVr ? 'auto' : 'none'; }
+      if (_vnSh) { _vnSh.style.zIndex = enVn ? '50' : '1'; _vnSh.style.pointerEvents = enVn ? 'auto' : 'none'; }
+    } catch(e){}
+    // Limpiar listener de estado en vivo al salir del restaurante
+  try { var _foodViews=['v-food-det','v-carrito','v-food']; if (_foodViews.indexOf(id)===-1 && window._restEstadoUnsub) { window._restEstadoUnsub(); window._restEstadoUnsub = null; } } catch(e){}
+  // Reconectar listener en vivo al volver a la ficha del restaurante
+  try { if (id === 'v-food-det' && _S && _S.rest && _S.rest._id) { window._dcfConectarEstadoVivo && window._dcfConectarEstadoVivo(_S.rest._id); } } catch(e){}
+  // REGLA UNIVERSAL: toda pantalla inicia desde arriba
     try{tgt.scrollTop=0;tgt.querySelectorAll('*').forEach(function(el){if(el.scrollTop)el.scrollTop=0;});}catch(e){}
+    // REGLA UNIVERSAL: pantallas con pestañas siempre abren en la primera pestaña
+    try{tgt.querySelectorAll('.pill-row,.tabs-row').forEach(function(g){var b=g.querySelector('button[onclick]');if(b&&!b.classList.contains('on')&&!b.classList.contains('dcf-on'))b.click();});}catch(e){}
     if(window._dcDirtyV&&window._dcDirtyV!==tgt.id)window._dcDirtyV=null;
     // Auto-trigger data-onenter
     const fn=tgt.getAttribute('data-onenter');
@@ -10231,12 +11735,20 @@ function _goCore(id,dir){
     if(id==='v-food')setTimeout(()=>window.dcFood_init&&window.dcFood_init(),200);
     if(id==='v-panel-rest')setTimeout(()=>window.dcFood_cargarPanelRest&&window.dcFood_cargarPanelRest(),200);
     if(id==='v-repartidor')setTimeout(()=>window.dcFood_cargarPedidosRep&&window.dcFood_cargarPedidosRep(),200);
+    if(id==='v-home')window.actualizarBadgesReales&&window.actualizarBadgesReales();
+    if(id==='vn-home'){window.vnegCargarConfig&&window.vnegCargarConfig();window._updateHora&&window._updateHora();}
+    if(id==='vn-config'){window.vnegCargarConfig&&window.vnegCargarConfig();}
+    if(id==='vn-pedidos'){_vnegPedTab='pedidos';setTimeout(function(){window.vnegRenderPedidos&&window.vnegRenderPedidos();},100);}
+    if(id==='vn-menu')setTimeout(function(){window.vnegCargarMenu&&window.vnegCargarMenu();},100);
+    if(id==='vn-ventas'){window._vnvMesOffset=0;setTimeout(function(){window._vnvCalc&&window._vnvCalc();},100);}
     if(id==='v-mis-pedidos-food')setTimeout(()=>window.dcFood_cargarMisPedidos&&window.dcFood_cargarMisPedidos(),200);
+    if(id==='v-mis-pedidos-food')window._marcarPedidosLeidos&&window._marcarPedidosLeidos();
     if(id==='v-plaza')setTimeout(()=>window.cargarPlaza&&window.cargarPlaza(),200);
     if(id==='v-ride')setTimeout(()=>window.cargarRepartidores&&window.cargarRepartidores(),200);
     if(id==='v-admin-solicitudes')setTimeout(()=>window.cargarSolicitudes&&window.cargarSolicitudes(),300);
     if(id==='v-admin-analytics')setTimeout(()=>window.cargarAnalytics&&window.cargarAnalytics(),300);
     if(id==='v-home')setTimeout(()=>{window.renderHomePersonalizado&&window.renderHomePersonalizado();},50);
+    if(id==='v-home'){var _t=(localStorage.getItem('dcuserTipo')||'').toLowerCase();if(_t==='restaurante')setTimeout(()=>{window._calcMetricasRest&&window._calcMetricasRest('hoy');},120);if(_t==='negocio'){window._vnegCargarHorariosYRepintar&&window._vnegCargarHorariosYRepintar();setTimeout(()=>{window._calcMetricasNeg&&window._calcMetricasNeg();},120);}}
     if(id==='v-mipanel')setTimeout(()=>{window.cargarMiPerfil&&window.cargarMiPerfil();window.verificarChatsProveedor&&window.verificarChatsProveedor();},300);
     if(id==='v-mi-perfil')setTimeout(()=>{window.cargarMiPerfilDetalle&&window.cargarMiPerfilDetalle();},300);
     if(id==='v-mi-negocio')setTimeout(()=>{window._cargarBizStats&&window._cargarBizStats();},100);
@@ -10314,6 +11826,11 @@ function go(id,dir){
 })();
 // Botón Atrás del navegador y del celular
 window.addEventListener('popstate',function(e){
+  // REGLA UNIVERSAL #2: si hay un modal/overlay abierto, atrás lo cierra primero
+  var ovs = ['dcf-ocupado-ov','dcf-cerrado-ov','dcf-toast-estado'];
+  var cerrado = false;
+  for (var i=0;i<ovs.length;i++){ var el=document.getElementById(ovs[i]); if(el){ el.remove(); cerrado=true; } }
+  if (cerrado) { try{ history.pushState(e.state||{},'',''); }catch(_e){} return; }
   if(e.state&&e.state.viewId){_goCore(e.state.viewId,'left');}
 });
 // ===== REGLA UNIVERSAL DE REGRESO =====
@@ -10324,6 +11841,7 @@ document.addEventListener('click',function(ev){
   var b=ev.target&&ev.target.closest?ev.target.closest('.btn-back'):null;
   if(!b)return;
   if(b.closest('#vr-shell'))return;
+    if(b.closest('#vn-shell'))return;
   var oc=(b.getAttribute('onclick')||'');
   if(oc.indexOf('navTo')!==-1||oc.indexOf('navBack')!==-1)return;
   ev.preventDefault();ev.stopImmediatePropagation();ev.stopPropagation();
@@ -11926,7 +13444,7 @@ function _dcfRenderLista(docs) {
         ? '<img src="'+r.fotoPerfil+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0;">'
         : em)
       +(estOp==='cerrado' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;"><span style="background:#D63A2A;color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.3px;">🔴 CERRADO</span></div>' : '')
-      +'<span class="rbadge">'+(r.estado==='aprobado_pendiente_pago'?'⏳ Pend. pago':'✅ Activo')+'</span></div>'
+      +'<span class="rbadge">'+(r.estado==='aprobado_pendiente_pago'?'⏳ Pend. pago':'✓ Verificado')+'</span></div>'
       +'<div class="rbody">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
       +'<div class="rname">'+(r.nombreNegocio||r.nombre||'—')+'</div>'
@@ -11950,8 +13468,9 @@ window.dcFood_abrirRest = async function(restId) {
     ? window._estadoEfectivoDe(r.estadoOp, r.estadoOpTs || 0, r.horarios && r.horarios.length ? r.horarios : null)
     : (r.estadoOp || 'activo');
 
-  // ── Bloquear entrada si cerrado — mostrar modal propio
-  if (estEfect === 'cerrado') {
+  // ── Bloquear entrada si cerrado o pausado — mostrar modal propio
+  if (estEfect === 'cerrado' || estEfect === 'pausado') {
+    var _esPausa = (estEfect === 'pausado');
     // Quitar overlay anterior si existe
     var prevOv = document.getElementById('dcf-cerrado-ov');
     if (prevOv) prevOv.remove();
@@ -11959,9 +13478,9 @@ window.dcFood_abrirRest = async function(restId) {
     ov.id = 'dcf-cerrado-ov';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9990;display:flex;align-items:center;justify-content:center;padding:24px;';
     ov.innerHTML = '<div style="background:#fff;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3);">'
-      + '<div style="font-size:42px;margin-bottom:12px;">🔴</div>'
+      + '<div style="font-size:42px;margin-bottom:12px;">' + (_esPausa ? '⏸️' : '🔴') + '</div>'
       + '<div style="font-size:17px;font-weight:800;color:#111;margin-bottom:8px;">' + (r.nombreNegocio||r.nombre||'Restaurante') + '</div>'
-      + '<div style="font-size:13px;color:#666;line-height:1.5;margin-bottom:22px;">Por el momento este restaurante está cerrado.<br>Vuelve más tarde.</div>'
+      + '<div style="font-size:13px;color:#666;line-height:1.5;margin-bottom:22px;">' + (_esPausa ? 'Por el momento no está atendiendo.<br>Vuelve en un rato.' : 'Este restaurante ya cerró por hoy.<br>Vuelve mañana.') + '</div>'
       + '<button onclick="document.getElementById(\'dcf-cerrado-ov\').remove()" style="width:100%;padding:13px;background:#111;color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Entendido</button>'
       + '</div>';
     document.body.appendChild(ov);
@@ -11971,6 +13490,11 @@ window.dcFood_abrirRest = async function(restId) {
   // ── Restaurante abierto — flujo normal
   if (_S.rest && _S.rest._id !== restId) _S.carrito = {};
   _S.rest = _deriveFlags(r);
+  _S.rest._estadoEfectivo = estEfect;
+  _S._avisoOcupadoOk = false;
+  window._dcfPintarBadgeEstado && window._dcfPintarBadgeEstado(estEfect);
+  // REGLA UNIVERSAL #3: escuchar en vivo el estado del restaurante (sin refresh)
+  window._dcfConectarEstadoVivo && window._dcfConectarEstadoVivo(restId);
   _S.recepcion = _S.rest.permiteEntrega ? 'domicilio' : 'recoger';
   var g=function(id){return document.getElementById(id);};
   if(g('dcf-det-nombre'))g('dcf-det-nombre').textContent=r.nombreNegocio||r.nombre||'—';
@@ -12282,10 +13806,117 @@ window.dcFood_confirmarTransferencia = function() {
   dcFood_confirmarPedido();
 };
 
+// Aviso discreto y elegante para estados del restaurante
+// Pinta el badge de estado del restaurante en la vista del vecino
+window._dcfPintarBadgeEstado = function(estado){
+  var meta = {
+    activo:  {ic:'\ud83d\udfe2', txt:'Activo',   col:'#1FC26A'},
+    ocupado: {ic:'\ud83d\udfe1', txt:'Ocupado',  col:'#d97706'},
+    pausado: {ic:'\u23f8\ufe0f', txt:'En pausa',  col:'#888'},
+    cerrado: {ic:'\ud83d\udd34', txt:'Cerrado',  col:'#D63A2A'}
+  };
+  var m = meta[estado] || meta.activo;
+  var b = document.getElementById('dcf-det-estado');
+  if (b) { b.textContent = m.ic + ' ' + m.txt; b.style.color = m.col; }
+};
+// Refleja en vivo el cambio de estado del restaurante en la vista del vecino
+// Conecta (o reconecta) el listener en vivo del estado del restaurante actual
+window._dcfConectarEstadoVivo = function(restId){
+  try {
+    if (window._restEstadoUnsub) { window._restEstadoUnsub(); window._restEstadoUnsub = null; }
+    var _fbL = window._fs;
+    if (_fbL && window._fbDb && restId) {
+      window._restEstadoUnsub = _fbL.onSnapshot(_fbL.fsDoc(window._fbDb,'usuarios',restId), function(ds){
+        if (!ds.exists()) return;
+        var rr = ds.data();
+        var nuevoEf = (typeof window._estadoEfectivoDe === 'function')
+          ? window._estadoEfectivoDe(rr.estadoOp, rr.estadoOpTs || 0, rr.horarios && rr.horarios.length ? rr.horarios : null)
+          : (rr.estadoOp || 'activo');
+        if (!_S.rest || _S.rest._id !== restId) return;
+        if (nuevoEf === _S.rest._estadoEfectivo) return;
+        _S.rest._estadoEfectivo = nuevoEf;
+        window._dcfActualizarEstadoVista && window._dcfActualizarEstadoVista(nuevoEf);
+      });
+    }
+  } catch(e){ console.warn('[rest estado live]', e.message); }
+};
+window._dcfActualizarEstadoVista = function(estado){
+  window._dcfPintarBadgeEstado && window._dcfPintarBadgeEstado(estado);
+  if (estado === 'pausado' || estado === 'cerrado') {
+    // Sacar al vecino al listado y avisar (acaba de pausar/cerrar mientras estaba dentro)
+    var cur = document.querySelector('.view.active');
+    var dentro = cur && (cur.id === 'v-food-det' || cur.id === 'v-carrito');
+    if (dentro) {
+      // Cerrar cualquier overlay y vaciar carrito de ese restaurante
+      var ovs=['dcf-ocupado-ov','dcf-cerrado-ov']; ovs.forEach(function(o){var e=document.getElementById(o);if(e)e.remove();});
+      go('v-food','left');
+      setTimeout(function(){ window._dcfToastSalida && window._dcfToastSalida(estado); }, 350);
+    } else {
+      window._dcfAvisoEstado && window._dcfAvisoEstado(estado);
+    }
+  }
+};
+// Toast al ser expulsado a Dominio Food
+window._dcfToastSalida = function(estado){
+  var pausa = (estado === 'pausado');
+  var txt = pausa ? 'Lo sentimos, el negocio acaba de pausar sus pedidos.' : 'Lo sentimos, el negocio acaba de cerrar.';
+  var prev = document.getElementById('dcf-toast-salida'); if (prev) prev.remove();
+  var t = document.createElement('div'); t.id = 'dcf-toast-salida';
+  t.style.cssText = 'position:fixed;left:50%;top:70px;transform:translateX(-50%) translateY(-10px);background:#1c1c1e;color:#fff;padding:13px 20px;border-radius:14px;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,.3);z-index:99999;display:flex;align-items:center;gap:9px;opacity:0;transition:opacity .25s,transform .25s;max-width:320px;text-align:center;';
+  t.innerHTML = '<span style="font-size:16px;">'+(pausa?'\u23f8\ufe0f':'\ud83d\udd34')+'</span><span>'+txt+'</span>';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; });
+  setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(-10px)'; setTimeout(function(){ t.remove(); }, 260); }, 3400);
+};
+window._dcfAvisoEstado = function(estado){
+  var pausa = (estado === 'pausado');
+  var ic = pausa ? '\u23f8\ufe0f' : '\ud83d\udd34';
+  var txt = pausa ? 'Por el momento no est\u00e1 atendiendo. Vuelve en un rato.' : 'Este restaurante ya cerr\u00f3 por hoy.';
+  var prev = document.getElementById('dcf-toast-estado'); if (prev) prev.remove();
+  var t = document.createElement('div'); t.id = 'dcf-toast-estado';
+  t.style.cssText = 'position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(10px);background:#1c1c1e;color:#fff;padding:13px 20px;border-radius:14px;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,.28);z-index:99999;display:flex;align-items:center;gap:9px;opacity:0;transition:opacity .25s,transform .25s;max-width:300px;';
+  t.innerHTML = '<span style="font-size:16px;">'+ic+'</span><span>'+txt+'</span>';
+  document.body.appendChild(t);
+  requestAnimationFrame(function(){ t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; });
+  setTimeout(function(){ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; setTimeout(function(){ t.remove(); }, 260); }, 3000);
+};
+// Aviso de demora para 'ocupado' — pide confirmar, discreto
+window._dcfOcupadoContinuar = function(){
+  _S._avisoOcupadoOk = true;
+  var ov = document.getElementById('dcf-ocupado-ov'); if (ov) ov.remove();
+  window.dcFood_confirmarPedido && window.dcFood_confirmarPedido();
+};
+window._dcfAvisoOcupado = function(){
+  var prev = document.getElementById('dcf-ocupado-ov'); if (prev) prev.remove();
+  var ov = document.createElement('div'); ov.id = 'dcf-ocupado-ov';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9990;display:flex;align-items:flex-end;justify-content:center;';
+  ov.innerHTML = '<div style="background:#fff;border-radius:22px 22px 0 0;padding:26px 24px 30px;max-width:420px;width:100%;text-align:center;animation:dcfUp .25s ease;">'
+    + '<div style="font-size:34px;margin-bottom:10px;">\u23f1\ufe0f</div>'
+    + '<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:6px;">Mayor demora</div>'
+    + '<div style="font-size:13px;color:#666;line-height:1.5;margin-bottom:20px;">Este restaurante tiene alta demanda ahora mismo, tu pedido podr\u00eda tardar un poco m\u00e1s de lo normal.</div>'
+    + '<button onclick="window._dcfOcupadoContinuar&&window._dcfOcupadoContinuar();" style="width:100%;padding:14px;background:#D63A2A;color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:9px;">Entiendo, continuar</button>'
+    + '<button onclick="document.getElementById(\'dcf-ocupado-ov\').remove();" style="width:100%;padding:12px;background:none;color:#999;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;">Cancelar</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+  if (!document.getElementById('dcf-up-kf')) {
+    var st=document.createElement('style'); st.id='dcf-up-kf';
+    st.textContent='@keyframes dcfUp{from{transform:translateY(100%);}to{transform:translateY(0);}}';
+    document.head.appendChild(st);
+  }
+};
 window.dcFood_confirmarPedido = async function() {
   var items=Object.entries(_S.carrito).filter(function(e){return e[1].cantidad>0;});
   if(!items.length){alert('Carrito vacío.');return;}
   if(!_S.rest){alert('Sin restaurante.');return;}
+  var _estR = (_S.rest && _S.rest._estadoEfectivo) || 'activo';
+  if (_estR === 'cerrado' || _estR === 'pausado') {
+    window._dcfAvisoEstado && window._dcfAvisoEstado(_estR);
+    return;
+  }
+  if (_estR === 'ocupado' && !_S._avisoOcupadoOk) {
+    window._dcfAvisoOcupado && window._dcfAvisoOcupado();
+    return;
+  }
   var btnC=document.getElementById('btn-confirmar');
   if(btnC){btnC.disabled=true;btnC.textContent='Enviando...';}
   if(_isD()){
@@ -13083,9 +14714,17 @@ function _ultimoLimiteHorario(horariosArr) {
   }
   return best;
 }
+// Compartida (restaurante y negocio): ¿el horario indica CERRADO ahora?
+window._horarioFuerzaCerrado = function(horariosArr) {
+  try { return _calcEstadoHorario(horariosArr) === 'cerrado'; } catch(e){ return false; }
+};
 window._estadoEfectivoDe = function(manualOp, manualTs, horariosArr) {
   if (window._normEstadoOp) manualOp = window._normEstadoOp(manualOp);
   var porHorario = _calcEstadoHorario(horariosArr);
+  // EL HORARIO CONFIGURADO MANDA: si el horario dice cerrado, cerrado gana sin importar el manual.
+  if (porHorario === 'cerrado') return 'cerrado';
+  // Si el horario está ABIERTO, un 'cerrado' manual NO sobrevive: el horario abre (regla "cuando abra, que abra").
+  if (porHorario === 'activo' && manualOp === 'cerrado') return 'activo';
   var esManual = (manualOp==='activo'||manualOp==='ocupado'||manualOp==='pausado'||manualOp==='cerrado');
   if (esManual && manualTs) {
     var lim = _ultimoLimiteHorario(horariosArr);
@@ -13157,7 +14796,8 @@ var _rPfFoto      = null; // null | base64 dataURL de fotografía real seleccion
 var _rPagos       = { efectivo:true, transf:true, tarjeta:false };
 var _rBannerIdx   = 0;
 var _rBannerTimer = null;
-var _rHoraTimer   = null;
+var _vnHoraTmp;
+  var _rHoraTimer   = null;
 
 /* ═══════════════════════════════════════════════════════
    NAVEGACIÓN AISLADA
@@ -13227,9 +14867,11 @@ function dcRest_navTo(id, isBack) {
   _resetScroll(id);
 
   // RESET TABS Y FILTROS — siempre al entrar a cada vista
+  if (id === 'vr-ventas') { window._vrvMesOffset = 0; window._vrvTopModo = 'dinero'; window._vrvCalc && window._vrvCalc(); }
   if (id === 'vr-pedidos') {
     _rPedTab = 'pedidos';
     _syncTabUI();
+    window._marcarPedidosLeidos && window._marcarPedidosLeidos();
   }
   if (id === 'vr-menu') {
     _rMenuCat = 'todos';
@@ -13287,6 +14929,445 @@ function dcRest_navTo(id, isBack) {
 // Alias público: HTML onclicks usan navTo() — se mantiene para compatibilidad
 var navTo = dcRest_navTo;
 window.dcRest_navTo = dcRest_navTo;
+
+// ══════ NAVEGACIÓN DEL CENTRO OPERATIVO DEL NEGOCIO (vn-shell) ══════
+var _nNavStack = ['vn-home'];
+function dcNeg_navTo(id, isBack) {
+  var shell = document.getElementById('vn-shell');
+  var cur = shell ? shell.querySelector('.view.active') : null;
+  var nxt = document.getElementById(id);
+  if (!cur || !nxt || cur === nxt) return;
+  // REGLA #4: avisar antes de salir con cambios sin guardar
+  if (window._dirtyView && cur.id === window._dirtyView) {
+    var _seguir = window.confirm('\u26A0\uFE0F Tienes cambios sin guardar.\n\nPresiona CANCELAR para quedarte y guardarlos,\no ACEPTAR para salir y descartarlos.');
+    if (!_seguir) return;
+    window._dirtyView = null;
+    // DESCARTAR DE VERDAD: recargar el estado/horarios guardados
+    if (cur.id === 'vn-config') { try { window.vnegCargarConfig && window.vnegCargarConfig(); } catch(e){} }
+  }
+  // Reset scroll en destino
+  try { nxt.scrollTop = 0; var sc = nxt.querySelector('.scr'); if (sc) sc.scrollTop = 0; } catch(e){}
+  if (!isBack) _nNavStack.push(id);
+  if (isBack) {
+    cur.classList.add('anim-out'); cur.style.transform='translateX(100%)'; cur.style.opacity='0';
+    nxt.style.transform='translateX(-30%)'; nxt.style.opacity='0.4'; nxt.classList.add('active');
+    requestAnimationFrame(function(){ nxt.classList.add('anim-in'); nxt.style.transform='translateX(0)'; nxt.style.opacity='1'; });
+    setTimeout(function(){ cur.classList.remove('active','anim-out'); cur.style.cssText=''; nxt.classList.remove('anim-in'); nxt.style.cssText=''; }, 320);
+  } else {
+    nxt.style.transform='translateX(100%)'; nxt.style.opacity='0'; nxt.classList.add('active');
+    requestAnimationFrame(function(){ nxt.classList.add('anim-in'); nxt.style.transform='translateX(0)'; nxt.style.opacity='1'; });
+    setTimeout(function(){ cur.classList.remove('active'); cur.style.cssText=''; nxt.classList.remove('anim-in'); nxt.style.cssText=''; }, 320);
+  }
+}
+function dcNeg_navBack() {
+  if (_nNavStack.length <= 1) { dcNeg_navTo('vn-home', true); _nNavStack = ['vn-home']; return; }
+  _nNavStack.pop();
+  var prev = _nNavStack[_nNavStack.length - 1] || 'vn-home';
+  dcNeg_navTo(prev, true);
+}
+var negTo = function(id, isBack){ if(isBack) return dcNeg_navBack(); return dcNeg_navTo(id); };
+window.dcNeg_navTo = dcNeg_navTo;
+window.negTo = negTo;
+
+// UNA sola indicación para repintar el estado del negocio en todos lados (home, chips, vn-home).
+// El motor aplica el horario: cuando llega la hora de apertura, abre solo (Activo).
+window._vnegRepintarEstado = function(){
+  try {
+    // Chip header + tarjeta estado del home principal
+    if (window.dcPintarEstado) window.dcPintarEstado();
+    // Badge del Centro Operativo (vn-home)
+    if (window._vnegSyncHomeBadge) window._vnegSyncHomeBadge();
+    // Repintar la tarjeta de estado del v-home del negocio (igual que el restaurante con dcPintarEstado)
+    var _t = (localStorage.getItem('dcuserTipo')||'').toLowerCase();
+    var _vh = document.getElementById('v-home');
+    if (_t === 'negocio' && _vh && _vh.classList.contains('active')) {
+      var _manual = window.getEstadoOperativo ? window.getEstadoOperativo() : 'activo';
+      if (window._normEstadoOp) _manual = window._normEstadoOp(_manual);
+      var _ef = window._estadoEfectivoDe ? window._estadoEfectivoDe(_manual, Date.now(), VNEG_HORARIOS) : _manual;
+      var _cfg = DC_ESTADOS[_ef] || DC_ESTADOS.activo;
+      // Tarjeta de estado (el recuadro grande del home)
+      var _card = document.querySelector('#v-home [onclick*="vn-config"]');
+      if (_card) {
+        var _txt = _card.querySelector('div[style*="font-weight:700"]');
+        if (_txt) _txt.textContent = _cfg.ic + ' ' + _cfg.lbl;
+      }
+      // Chip del header (home-estado-op) ya lo cubre dcPintarEstado/getEstadoEfectivoActual
+    }
+    // Si el config está abierto, refrescar su badge con el efectivo
+    var vc = document.getElementById('vn-config');
+    if (vc && vc.classList.contains('active')) {
+      var manual = window.getEstadoOperativo ? window.getEstadoOperativo() : 'activo';
+      if (window._normEstadoOp) manual = window._normEstadoOp(manual);
+      var ef = window._estadoEfectivoDe ? window._estadoEfectivoDe(manual, Date.now(), VNEG_HORARIOS) : manual;
+      var sel = document.getElementById('vneg-est-sel');
+      if (sel) sel.value = ef;
+      if (window.vnegSyncCfgUI) window.vnegSyncCfgUI(ef);
+    }
+  } catch(e){}
+};
+
+// Estado operativo efectivo del usuario actual, aplicando el horario correcto según su tipo
+window.getEstadoEfectivoActual = function() {
+  var manual = window.getEstadoOperativo ? window.getEstadoOperativo() : 'activo';
+  if (window._normEstadoOp) manual = window._normEstadoOp(manual);
+  var tipo = (localStorage.getItem('dcuserTipo')||'').toLowerCase();
+  var horarios;
+  if (tipo === 'negocio' && typeof VNEG_HORARIOS !== 'undefined') horarios = VNEG_HORARIOS;
+  else horarios = undefined; // restaurante usa HORARIOS global
+  if (window._estadoEfectivoDe) { try { return window._estadoEfectivoDe(manual, Date.now(), horarios); } catch(e){} }
+  return manual;
+};
+
+// Cargar horarios del negocio desde Firebase y repintar el estado del home
+window._vnegCargarHorariosYRepintar = async function() {
+  try {
+    var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
+    if (!user || !_db) return;
+    var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var ds = await _fb.getDoc(_fb.doc(_db,'usuarios',user.uid));
+    if (ds.exists()) {
+      var d = ds.data();
+      if (d.horarios && d.horarios.length) VNEG_HORARIOS = d.horarios;
+      if (d.estadoOp) { try { localStorage.setItem('dcRestOpV2', d.estadoOp); } catch(e){} }
+    }
+    // Repintar el home (vuelve a calcular el estado con el horario ya cargado)
+    if (typeof _renderHome === 'function') _renderHome();
+    // Aplicar estado efectivo (horario manda) tras cargar — igual que el restaurante al login
+    if (window._vnegRepintarEstado) window._vnegRepintarEstado();
+  } catch(e){ console.warn('[vneg hor home]', e.message); }
+};
+
+// FINAL FELIZ del negocio (mismo que restaurante, IDs propios)
+var _vnegOvT1, _vnegOvT2;
+window._vnegShowOverlay = function(cfg) {
+  cfg = cfg || {};
+  var ov = document.getElementById('vneg-overlay');
+  var box = document.getElementById('vneg-overlay-box');
+  var body = document.getElementById('vneg-overlay-body');
+  if (!ov || !box || !body) { if (cfg.onDone) cfg.onDone(); return; }
+  clearTimeout(_vnegOvT1); clearTimeout(_vnegOvT2);
+  var logo = (typeof _SVG_LOGO !== 'undefined') ? _SVG_LOGO : '';
+  box.className = 'ro-box phase-send';
+  body.innerHTML = '<div class="ro-logo-wrap">' + logo + '</div>'
+    + '<div class="ro-title">' + (cfg.f1tit || 'Guardando cambios...') + '</div>'
+    + '<div class="ro-sub">' + (cfg.f1sub || 'Actualizando tu negocio.') + '</div>';
+  ov.classList.add('visible');
+  _vnegOvT1 = setTimeout(function() {
+    box.className = 'ro-box phase-ok';
+    body.innerHTML = '<div class="ro-check">✅</div>'
+      + '<div class="ro-title">' + (cfg.f2tit || 'Listo') + '</div>'
+      + '<div class="ro-sub">' + (cfg.f2sub || 'Cambios guardados.') + '</div>';
+    _vnegOvT2 = setTimeout(function() {
+      ov.classList.remove('visible');
+      if (cfg.onDone) cfg.onDone();
+    }, 1600);
+  }, 1400);
+};
+
+// Ir al Centro Operativo del negocio en una pestaña de pedidos específica
+window._irPedidosNegTab = function(tab){
+  go('vn-home','right');
+  setTimeout(function(){
+    if (window.dcNeg_navTo) window.dcNeg_navTo('vn-pedidos');
+    setTimeout(function(){ if(window.vnegTabPedidos){var b=document.getElementById('vntab-'+tab);window.vnegTabPedidos(tab,b);} }, 120);
+  }, 80);
+};
+
+// Calcular métricas del home del negocio (Por aceptar / Pedidos hoy / En proceso)
+window._calcMetricasNeg = async function(){
+  var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
+  if (!user || !_db) return;
+  var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+  var ledSet = function(cardId,on){ var c=document.getElementById(cardId); if(c) c.classList.toggle('led-on', !!on); };
+  try {
+    var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',user.uid)));
+    var GP_NUEVO=['nuevo'], GP_PROC=['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'];
+    var nAcep=0,nProc=0,nHoy=0;
+    var hoy0=new Date(); hoy0.setHours(0,0,0,0); var t0=hoy0.getTime();
+    snap.forEach(function(d){ var p=d.data(); var e=p.estado||'';
+      if(GP_NUEVO.indexOf(e)!==-1)nAcep++; else if(GP_PROC.indexOf(e)!==-1)nProc++;
+      if(e==='entregado'&&(p.fecha||0)>=t0)nHoy++;
+    });
+    setTxt('vnhome-poraceptar',nAcep); setTxt('vnhome-pedidos',nHoy); setTxt('vnhome-enproceso',nProc);
+    ledSet('vncard-poraceptar',nAcep>0); ledSet('vncard-pedidoshoy',nHoy>0); ledSet('vncard-enproceso',nProc>0);
+    // Banner de urgencia (igual que restaurante): X pedidos nuevos
+    var wrap = document.getElementById('vn-urgencia-wrap');
+    if (wrap) {
+      if (nAcep > 0) {
+        wrap.innerHTML = '<div onclick="window._irPedidosNegTab&&window._irPedidosNegTab(\'pedidos\')" style="cursor:pointer;background:linear-gradient(135deg,#5B2C8A,#7B3FA0);border-radius:16px;padding:16px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+          + '<div style="display:flex;align-items:center;gap:12px;"><span style="font-size:26px;">\ud83d\udce6</span><div><div style="font-size:15px;font-weight:800;">'+nAcep+(nAcep===1?' pedido nuevo':' pedidos nuevos')+'</div><div style="font-size:11px;opacity:.85;">Toca para atender</div></div></div>'
+          + '<span style="font-size:20px;">\u203a</span></div>';
+      } else { wrap.innerHTML = ''; }
+    }
+  } catch(e){ console.warn('[metNeg]',e.message); }
+};
+
+// ══════ FUNCIONES DE PANTALLAS DEL NEGOCIO (IDs vn- propios, datos por uid) ══════
+var _vnegPedTab = 'pedidos';
+window.vnegTabPedidos = function(tab, btn){
+  _vnegPedTab = tab;
+  document.querySelectorAll('#vn-pedidos .chip').forEach(function(b){ b.classList.remove('on'); });
+  if (btn) btn.classList.add('on');
+  window.vnegRenderPedidos();
+};
+window.vnegRenderPedidos = async function(){
+  var cont = document.getElementById('vn-ped-cont'); if(!cont) return;
+  var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
+  if(!user||!_db){cont.innerHTML='';return;}
+  cont.innerHTML='<div style="text-align:center;color:#aaa;padding:30px;font-size:12px;">Cargando…</div>';
+  try{
+    var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'),_fb.where('restauranteId','==',user.uid)));
+    var G={pedidos:['nuevo'],en_proceso:['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'],entregados:['entregado']};
+    var perm=G[_vnegPedTab]||[]; var arr=[];
+    snap.forEach(function(d){var p=d.data();p._id=d.id;if(perm.indexOf(p.estado)!==-1)arr.push(p);});
+    arr.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
+    if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin pedidos en esta categoría.</div>';return;}
+    cont.innerHTML=arr.map(function(p){
+      var items=(p.items||[]).map(function(it){return it.cantidad+'x '+it.nombre;}).join(', ');
+      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;font-size:13px;">'+(p.vecinoNombre||'Cliente')+'</span><span style="font-weight:800;color:#7B3FA0;">$'+(p.total||0)+'</span></div><div style="font-size:12px;color:#666;">'+items+'</div></div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error.</div>';}
+};
+
+window.vnegCargarMenu = async function(){
+  var cont=document.getElementById('vn-menu-cont'); if(!cont)return;
+  var user=window._fbAuth&&window._fbAuth.currentUser; var _db=window._fbDb;
+  if(!user||!_db){cont.innerHTML='';return;}
+  cont.innerHTML='<div style="text-align:center;color:#aaa;padding:30px;font-size:12px;">Cargando…</div>';
+  try{
+    var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var snap=await _fb.getDocs(_fb.collection(_db,'menu',user.uid,'productos'));
+    var arr=[];snap.forEach(function(d){var p=d.data();p._id=d.id;arr.push(p);});
+    if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Aún no tienes productos.<br>Agrega el primero arriba.</div>';return;}
+    cont.innerHTML=arr.map(function(p){
+      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;font-size:13px;">'+(p.nombre||'—')+'</div><div style="font-size:11px;color:#999;">'+(p.categoria||'')+' · $'+(p.precio||0)+'</div></div><button onclick="vnegAbrirFormProd(\''+p._id+'\')" style="background:#7B3FA0;color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">Editar</button></div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error.</div>';}
+};
+window.vnegFiltrarMenu = function(){ window.vnegCargarMenu(); };
+
+var _vnegEditPid=null;
+window.vnegAbrirFormProd = async function(pid){
+  _vnegEditPid=pid;
+  var s=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+  s('vn-pform-nombre','');s('vn-pform-cat','');s('vn-pform-desc','');s('vn-pform-precio','');
+  var disp=document.getElementById('vn-pform-disp');if(disp)disp.checked=true;
+  if(pid){try{var user=window._fbAuth.currentUser;var _db=window._fbDb;var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');var ds=await _fb.getDoc(_fb.doc(_db,'menu',user.uid,'productos',pid));if(ds.exists()){var p=ds.data();s('vn-pform-nombre',p.nombre);s('vn-pform-cat',p.categoria);s('vn-pform-desc',p.descripcion);s('vn-pform-precio',p.precio);if(disp)disp.checked=p.disponible!==false;}}catch(e){}}
+  negTo('vn-prod-form');
+};
+window.vnegGuardarProd = async function(){
+  var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
+  var nombre=g('vn-pform-nombre');
+  if(!nombre){alert('Falta el nombre del producto.');return;}
+  var disp=document.getElementById('vn-pform-disp');
+  var data={nombre:nombre,categoria:g('vn-pform-cat'),descripcion:g('vn-pform-desc'),precio:parseFloat(g('vn-pform-precio'))||0,disponible:disp?disp.checked:true};
+  try{var user=window._fbAuth.currentUser;var _db=window._fbDb;var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    if(_vnegEditPid){await _fb.setDoc(_fb.doc(_db,'menu',user.uid,'productos',_vnegEditPid),data,{merge:true});}
+    else{var cs=await _fb.getDocs(_fb.collection(_db,'menu',user.uid,'productos'));data.orden=cs.size;data.creado=Date.now();await _fb.addDoc(_fb.collection(_db,'menu',user.uid,'productos'),data);}
+    negTo('vn-menu',true);setTimeout(window.vnegCargarMenu,200);
+  }catch(e){alert('Error: '+e.message);}
+};
+window.vnegEliminarProd = async function(){
+  if(!_vnegEditPid){negTo('vn-menu',true);return;}
+  if(!confirm('¿Eliminar este producto?'))return;
+  try{var user=window._fbAuth.currentUser;var _db=window._fbDb;var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');await _fb.deleteDoc(_fb.doc(_db,'menu',user.uid,'productos',_vnegEditPid));negTo('vn-menu',true);setTimeout(window.vnegCargarMenu,200);}catch(e){alert('Error: '+e.message);}
+};
+window.vnegTogglePfDisp = function(){ var d=document.getElementById('vn-pform-disp'); if(d) d.checked=!d.checked; };
+window.vnegTapFoto = function(){ var i=document.getElementById('vn-pf-file-input'); if(i)i.click(); };
+window.vnegFotoSeleccionada = function(input){
+  if(!input.files||!input.files[0])return;
+  var r=new FileReader();
+  r.onload=function(e){ window._vnegFotoB64=e.target.result; var pv=document.getElementById('vn-pf-foto-prev'); if(pv){pv.style.backgroundImage='url('+e.target.result+')';pv.style.backgroundSize='cover';} };
+  r.readAsDataURL(input.files[0]);
+};
+
+// VENTAS negocio
+window._vnvMesOffset=0;
+window._vnvMesCambiar=function(dir){var n=window._vnvMesOffset+dir;if(n>0)n=0;window._vnvMesOffset=n;window._vnvCalc&&window._vnvCalc();};
+window._vnvTopTab=function(){};
+window._vnvCalc=async function(){
+  var user=window._fbAuth&&window._fbAuth.currentUser;var _db=window._fbDb;if(!user||!_db)return;
+  var uid=user.uid;var setTxt=function(id,v){var el=document.getElementById(id);if(el)el.textContent=v;};
+  var M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var hoy=new Date();var ref=new Date(hoy.getFullYear(),hoy.getMonth()+window._vnvMesOffset,1);
+  var ini=ref.getTime();var fin=new Date(ref.getFullYear(),ref.getMonth()+1,1).getTime();
+  setTxt('vn-vrv-mes-label',M[ref.getMonth()]+' '+ref.getFullYear());
+  setTxt('vn-ventas-mes-label',M[ref.getMonth()]+' '+ref.getFullYear());
+  try{var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'),_fb.where('restauranteId','==',uid)));
+    var nPed=0,venta=0,acum=0;
+    snap.forEach(function(d){var p=d.data();if(p.estado!=='entregado')return;acum+=(p.total||0);var f=p.fecha||0;if(f>=ini&&f<fin){nPed++;venta+=(p.total||0);}});
+    setTxt('vn-vrv-pedidos',nPed);setTxt('vn-vrv-ventas','$'+venta);setTxt('vn-vrv-acumulado','$'+acum);
+    var vs=await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'),_fb.where('restauranteId','==',uid)));
+    var tr=0,cr=0;vs.forEach(function(d){var v=d.data();if(v.ratingRestaurante){tr+=v.ratingRestaurante;cr++;}});
+    setTxt('vn-vrv-rating',cr>0?(tr/cr).toFixed(1)+'\u2605':'—');
+  }catch(e){console.warn('[vnv]',e.message);}
+};
+
+// ══════ ESTADO Y HORARIOS DEL NEGOCIO (vneg) ══════
+var VNEG_HORARIOS = [
+  {id:'lun', dia:'Lunes',    abre:'08:00', cierra:'22:00', abierto:true },
+  {id:'mar', dia:'Martes',   abre:'08:00', cierra:'22:00', abierto:true },
+  {id:'mie', dia:'Mi\u00e9rcoles',abre:'08:00', cierra:'22:00', abierto:true },
+  {id:'jue', dia:'Jueves',   abre:'08:00', cierra:'22:00', abierto:true },
+  {id:'vie', dia:'Viernes',  abre:'08:00', cierra:'22:00', abierto:true },
+  {id:'sab', dia:'S\u00e1bado',   abre:'09:00', cierra:'22:00', abierto:true },
+  {id:'dom', dia:'Domingo',  abre:'10:00', cierra:'20:00', abierto:false}
+];
+var _vnegEstadoOp = 'activo';
+var _vnegEstadoOpTs = 0;
+var _vnegMeta = {
+  activo:  {ic:'\ud83d\udfe2', t:'Activo',  d:'Recibiendo pedidos',          c:'var(--green)'},
+  ocupado: {ic:'\ud83d\udfe1', t:'Ocupado', d:'Respuesta m\u00e1s lenta',        c:'#d97706'},
+  pausado: {ic:'\u23f8\ufe0f', t:'En pausa',d:'Sin nuevos pedidos por ahora', c:'#888'},
+  cerrado: {ic:'\ud83d\udd34', t:'Cerrado', d:'No disponible hoy',            c:'#D63A2A'}
+};
+
+// Estado efectivo del negocio (manual + horario), reusa el motor global
+function _vnegEstadoEfectivo() {
+  return window._estadoEfectivoDe
+    ? window._estadoEfectivoDe(_vnegEstadoOp, _vnegEstadoOpTs, VNEG_HORARIOS)
+    : _vnegEstadoOp;
+}
+
+// Preview en el selector de config
+function vnegSyncCfgUI(val) {
+  var m = _vnegMeta[val] || _vnegMeta.activo;
+  var tit = document.getElementById('vneg-est-tit');
+  var desc = document.getElementById('vneg-est-desc');
+  var dot = document.getElementById('vneg-est-dot');
+  if (tit) tit.textContent = m.ic + ' ' + m.t;
+  if (desc) { desc.textContent = m.d; desc.style.color = m.c; }
+  if (dot) dot.style.background = m.c;
+}
+function vnegPreviewEstado(val) {
+  var cerradoPorHorario = window._horarioFuerzaCerrado && window._horarioFuerzaCerrado(VNEG_HORARIOS);
+  // Mensaje 1: cerrado por horario, no se puede cambiar
+  if (cerradoPorHorario) {
+    if (window.toast) toast('Está cerrado por tu horario. No puedes cambiar el estado; cámbialo en Horarios.');
+    var s = document.getElementById('vneg-est-sel'); if (s) s.value = 'cerrado';
+    vnegSyncCfgUI('cerrado');
+    return;
+  }
+  // Mensaje 2: está abierto y seleccionan 'cerrado' → debe cambiarse en Horarios
+  if (val === 'cerrado') {
+    if (window.toast) toast('Está abierto por tu horario. Para cerrar, cambia el horario en Horarios.');
+    var s2 = document.getElementById('vneg-est-sel'); if (s2) s2.value = _vnegEstadoOp || 'activo';
+    vnegSyncCfgUI(_vnegEstadoOp || 'activo');
+    return;
+  }
+  window._dirtyView = 'vn-config';
+  vnegSyncCfgUI(val);
+  if (window.toast) toast('Estado: ' + (_vnegMeta[val]? _vnegMeta[val].ic+' '+_vnegMeta[val].t : val));
+}
+window.vnegPreviewEstado = vnegPreviewEstado;
+
+// Pintar el badge de estado en el vn-home
+function _vnegSyncHomeBadge() {
+  // El horario del NEGOCIO manda: usar VNEG_HORARIOS (no los del restaurante)
+  var manual = window.getEstadoOperativo ? window.getEstadoOperativo() : _vnegEstadoOp;
+  if (window._normEstadoOp) manual = window._normEstadoOp(manual);
+  var ef = window._estadoEfectivoDe ? window._estadoEfectivoDe(manual, Date.now(), VNEG_HORARIOS) : manual;
+  var m = _vnegMeta[ef] || _vnegMeta.activo;
+  var dot = document.getElementById('vn-estado-dot');
+  var lbl = document.getElementById('vn-estado-lbl');
+  if (dot) dot.style.background = m.c;
+  if (lbl) lbl.textContent = m.t.toUpperCase();
+}
+window._vnegSyncHomeBadge = _vnegSyncHomeBadge;
+
+// Render de horarios (editable)
+function vnegRenderHorarios() {
+  var cont = document.getElementById('vneg-horarios');
+  if (!cont) return;
+  cont.innerHTML = VNEG_HORARIOS.map(function(h, idx){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:.5px solid var(--border);">'
+      + '<div class="toggle' + (h.abierto?' on':'') + '" onclick="vnegToggleDia(' + idx + ')" style="flex-shrink:0;"></div>'
+      + '<div style="flex:1;font-size:12px;font-weight:600;color:var(--tx);">' + h.dia + '</div>'
+      + (h.abierto
+          ? '<select class="inp-sel" style="width:auto;padding:4px 6px;font-size:11px;" onchange="vnegSetHora(' + idx + ',\'abre\',this.value)">' + _vnegHorasOpts(h.abre) + '</select>'
+            + '<span style="font-size:11px;color:var(--tx4);">a</span>'
+            + '<select class="inp-sel" style="width:auto;padding:4px 6px;font-size:11px;" onchange="vnegSetHora(' + idx + ',\'cierra\',this.value)">' + _vnegHorasOpts(h.cierra) + '</select>'
+          : '<span style="font-size:11px;color:var(--tx4);font-style:italic;">Cerrado</span>')
+      + '</div>';
+  }).join('');
+}
+window.vnegRenderHorarios = vnegRenderHorarios;
+function _vnegHorasOpts(sel) {
+  var opts = '';
+  for (var h=6; h<=24; h++) {
+    ['00','30'].forEach(function(m){
+      if (h===24 && m==='30') return;
+      var v = String(h).padStart(2,'0') + ':' + m;
+      opts += '<option value="' + v + '"' + (v===sel?' selected':'') + '>' + v + '</option>';
+    });
+  }
+  return opts;
+}
+function vnegToggleDia(idx){ VNEG_HORARIOS[idx].abierto = !VNEG_HORARIOS[idx].abierto; vnegRenderHorarios(); window._dirtyView='vn-config'; }
+function vnegSetHora(idx,campo,val){ VNEG_HORARIOS[idx][campo]=val; window._dirtyView='vn-config'; }
+window.vnegToggleDia = vnegToggleDia;
+window.vnegSetHora = vnegSetHora;
+
+// Guardar config del negocio en Firebase (su propio uid)
+window.vnegGuardarConfig = async function() {
+  var sel = document.getElementById('vneg-est-sel');
+  var nuevoEstado = sel ? sel.value : 'activo';
+  _vnegEstadoOp = nuevoEstado;
+  _vnegEstadoOpTs = Date.now();
+  window._dirtyView = null;
+  // REUSA la función central probada (guarda estadoOp+ts en usuarios/uid, igual que restaurante)
+  if (window.setEstadoOperativo) { try { window.setEstadoOperativo(nuevoEstado); } catch(e){ console.warn('[vneg setEstado]', e.message); } }
+  _vnegSyncHomeBadge();
+  // Guardar los HORARIOS del negocio (lo único propio) junto al estado ya guardado
+  try {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (user && _db) {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      await _fb.setDoc(_fb.doc(_db,'usuarios',user.uid), { horarios:VNEG_HORARIOS }, { merge:true });
+    }
+  } catch(e){ console.warn('[vneg horarios]', e.message); }
+  // FINAL FELIZ (mismo que restaurante) + regreso automático al home del Centro Operativo
+  if (window._vnegShowOverlay) {
+    window._vnegShowOverlay({ f1tit:'Guardando cambios...', f1sub:'Actualizando tu negocio.', f2tit:'¡Listo!', f2sub:'Cambios guardados.', onDone:function(){ if(window._vnegRepintarEstado) window._vnegRepintarEstado(); negTo('vn-home', true); } });
+  }
+};
+
+// Cargar config del negocio al entrar a su Centro Operativo
+window.vnegCargarConfig = async function() {
+  try {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var ds = await _fb.getDoc(_fb.doc(_db,'usuarios',user.uid));
+    if (ds.exists()) {
+      var d = ds.data();
+      _vnegEstadoOp = d.estadoOp || 'activo';
+      _vnegEstadoOpTs = d.estadoOpTs || 0;
+      // Sincronizar con la fuente única (localStorage) para que v-home y vn-home coincidan
+      if (window.setEstadoOperativo && d.estadoOp) {
+        try { localStorage.setItem('dcRestOpV2', _vnegEstadoOp); } catch(e){}
+      }
+      if (d.horarios && d.horarios.length) VNEG_HORARIOS = d.horarios;
+      var nm = document.getElementById('vn-hdr-name');
+      if (nm) nm.textContent = d.nombreNegocio || d.nombre || 'Mi Negocio';
+    }
+    var estManual = window.getEstadoOperativo ? window.getEstadoOperativo() : _vnegEstadoOp;
+    if (window._normEstadoOp) estManual = window._normEstadoOp(estManual);
+    // Igual que el restaurante (_initConfig): al ENTRAR muestra el estado EFECTIVO (horario manda)
+    var estMostrar = estManual;
+    if (window._estadoEfectivoDe) { try { estMostrar = window._estadoEfectivoDe(estManual, Date.now(), VNEG_HORARIOS); } catch(e){} }
+    var sel = document.getElementById('vneg-est-sel');
+    if (sel) sel.value = estMostrar;
+    vnegSyncCfgUI(estMostrar);
+    vnegRenderHorarios();
+    _vnegSyncHomeBadge();
+  } catch(e){ console.warn('[vneg cargar]', e.message); }
+};
 
 function dcRest_navBack() {
   if (_rNavStack.length <= 1) { dcRest_navTo('vr-home', true); _rNavStack = ['vr-home']; return; }
@@ -13360,6 +15441,9 @@ window.dcRest_onViewEnter = _onViewEnter;
 var _rToastTimer;
 function toast(msg) {
   var el = document.getElementById('toast');
+  if (!el) return;
+  // Al frente (fuera del shell) pero abajo, como el original que funcionaba bien
+  if (el.parentNode !== document.body) document.body.appendChild(el);
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(_rToastTimer);
@@ -13370,13 +15454,19 @@ function toast(msg) {
    HORA LIVE
 ═══════════════════════════════════════════════════════ */
 function _updateHora() {
-  var el = document.getElementById('home-hora');
-  if (!el) return;
   var now = new Date();
   var h = String(now.getHours()).padStart(2,'0');
   var m = String(now.getMinutes()).padStart(2,'0');
-  el.textContent = h + ':' + m;
-  if (window.dcPintarEstado) window.dcPintarEstado(); // el horario puede retomar el control con el tiempo
+  var hora = h + ':' + m;
+  var el = document.getElementById('home-hora');
+  if (el) el.textContent = hora;
+  var eln = document.getElementById('vn-hora');
+  if (eln) eln.textContent = hora;
+  var sbars = document.querySelectorAll('.vn-sbar-hora');
+  for (var _i=0; _i<sbars.length; _i++) sbars[_i].textContent = hora;
+  if (!el && !eln) return;
+  if (window.dcPintarEstado) window.dcPintarEstado(); // el horario puede retomar el control
+  if (window._vnegRepintarEstado) window._vnegRepintarEstado(); // negocio: abre solo al llegar la hora con el tiempo
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -13544,11 +15634,20 @@ function _advanceBanner(idx) {
 /* ═══════════════════════════════════════════════════════
    PEDIDOS
 ═══════════════════════════════════════════════════════ */
-function tabPedidos(tab, btn) {
+window._irPedidosRestTab = function(tab){
+    go('vr-home','right');                                  // entra al Centro Operativo (igual que el botón)
+    setTimeout(function(){
+      if (window.dcRest_navTo) window.dcRest_navTo('vr-pedidos');  // navega a Pedidos dentro del shell
+      setTimeout(function(){
+        if (window.tabPedidos) { var btn=document.getElementById('tab-'+tab); window.tabPedidos(tab, btn); }
+      }, 120);
+    }, 80);
+  };
+  window.tabPedidos = function tabPedidos(tab, btn) {
   _rPedTab = tab;
   _syncTabUI();
   _renderPedidos();
-}
+};
 
 function _syncTabUI() {
   ['pedidos','en_proceso','entregados'].forEach(function(t){
@@ -13836,6 +15935,7 @@ var _SVG_LOGO = '<svg width="100" height="100" viewBox="0 0 106 106" fill="none"
   + '<circle cx="53" cy="53" r="4" fill="#1FC26A"/>'
   + '</svg>';
 
+window._showOverlay = _showOverlay;
 function _showOverlay(cfg) {
   var ov   = document.getElementById('rest-overlay');
   var box  = document.getElementById('rest-overlay-box');
@@ -13894,6 +15994,9 @@ function cambiarEstado(pid, nuevoEst) {
           var upd={estado:nuevoEst,actualizado:Date.now()};
           if(nuevoEst==='aceptado') upd.tiempoEstimado=p.tiempoEstimado;
           await f.updateDoc(f.doc(_db2,'pedidos',pid),upd);
+          // Notificar al vecino el cambio de estado (mismo formato que el resto de la app)
+          var _msgsV={aceptado:'\u00a1Tu pedido fue aceptado!',rechazado:'Tu pedido fue rechazado.',preparando:'Tu pedido se est\u00e1 preparando.',listo:'Tu pedido est\u00e1 listo.',en_camino:'Tu pedido va en camino.',entregado:'\u00a1Tu pedido fue entregado!',cancelado:'Tu pedido fue cancelado.'};
+          if(_msgsV[nuevoEst]&&p.vecinoId){try{await f.addDoc(f.collection(_db2,'notificaciones'),{uid:p.vecinoId,tipo:'pedido',modulo:'pedidos',titulo:'Actualizaci\u00f3n de tu pedido',mensaje:_msgsV[nuevoEst],leida:false,eliminada:false,prioridad:'normal',pedidoId:pid,fecha:f.serverTimestamp()});}catch(_ne){console.warn('[notif vecino]',_ne.message);}}
         } catch(e){ console.warn('[cambiarEstado] Firestore:',e.message); }
       })();
     }
@@ -14573,6 +16676,22 @@ function _initConfig() {
 }
 
 function cfgPreviewEstado(val) {
+  var _h = (typeof HORARIOS!=='undefined') ? HORARIOS : undefined;
+  var cerradoPorHorario = window._horarioFuerzaCerrado && window._horarioFuerzaCerrado(_h);
+  // Mensaje 1: cerrado por horario, no se puede cambiar
+  if (cerradoPorHorario) {
+    if (window.toast) toast('Está cerrado por tu horario. No puedes cambiar el estado; cámbialo en Horarios.');
+    var s = document.getElementById('cfg-est-sel'); if (s) s.value = 'cerrado';
+    _syncEstadoCfgUI('cerrado');
+    return;
+  }
+  // Mensaje 2: está abierto y seleccionan 'cerrado' → debe cambiarse en Horarios
+  if (val === 'cerrado') {
+    if (window.toast) toast('Está abierto por tu horario. Para cerrar, cambia el horario en Horarios.');
+    var s2 = document.getElementById('cfg-est-sel'); if (s2) s2.value = (typeof _rEstadoOp!=='undefined'? _rEstadoOp : 'activo');
+    _syncEstadoCfgUI(typeof _rEstadoOp!=='undefined'? _rEstadoOp : 'activo');
+    return;
+  }
   // Solo vista previa — NO guarda nada; el guardado ocurre con el botón Guardar
   window._cfgEstadoPend = val;
   _syncEstadoCfgUI(val);
