@@ -2459,7 +2459,7 @@
         <div class="si69" style="align-items:flex-start;gap:10px;">
           <button class="btn-back" onclick="go('v-home','left')">‹</button>
           <div style="flex:1;min-width:0;"><div class="si13">🏪 Plaza Online</div><div class="si21" id="plaza-sub">Comercios de tu zona</div></div>
-          <button onclick="go('v-mis-compras-plaza','right');window._misComprasPlazaTab='proceso';setTimeout(function(){window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();},120);" style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;">🛒 Mis compras</button>
+          <button onclick="go('v-mis-compras-plaza','right');" style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:10px;padding:6px 9px;font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;flex-shrink:0;">🛒 Mis compras</button>
         </div>
         <div style="padding-top:10px;">
           <select id="plaza-cat-select" data-no-dirty="1" onchange="_plazaFiltrarSel(this.value)" style="width:100%;background:#fff;color:#111;border:none;border-radius:16px;padding:11px 14px;font-size:13px;font-weight:800;font-family:inherit;box-shadow:0 4px 14px rgba(0,0,0,.08);outline:none;">
@@ -2493,7 +2493,7 @@
         </div><!-- end plaza-demo -->
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="window._misComprasPlazaTab='proceso';go('v-mis-compras-plaza','right');setTimeout(function(){window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();},120);"><div class="ni-ic">🛒</div><div class="ni-lb" style="color:var(--blue);">Mis compras</div></div>
+        <div class="ni" onclick="go('v-mis-compras-plaza','right');"><div class="ni-ic">🛒</div><div class="ni-lb" style="color:var(--blue);">Mis compras</div></div>
         <div class="ni"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
         <div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
       </div>
@@ -2512,7 +2512,7 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
-      <button type="button" onclick="go('v-mis-compras-plaza','right');window._misComprasPlazaTab='proceso';setTimeout(function(){window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();},120);" style="border:none;background:#fff;color:var(--blue);font-size:12px;font-weight:900;padding:7px 13px;border-radius:20px;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">🛒 Mis compras</button>
+      <button type="button" onclick="go('v-mis-compras-plaza','right');" style="border:none;background:#fff;color:var(--blue);font-size:12px;font-weight:900;padding:7px 13px;border-radius:20px;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">🛒 Mis compras</button>
       <span id="plaza-det-cat" style="display:none;">🏪 Comercio</span>
     </div>
   </div>
@@ -2520,7 +2520,7 @@
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="go('v-plaza','left')"><div class="ni-ic">🏪</div><div class="ni-lb" style="color:var(--blue);">Plaza Online</div></div>
-    <div class="ni" onclick="go('v-mis-compras-plaza','right');window._misComprasPlazaTab='proceso';setTimeout(function(){window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();},120);"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div>
+    <div class="ni" onclick="go('v-mis-compras-plaza','right');"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div>
     <div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
   </div>
 </div>
