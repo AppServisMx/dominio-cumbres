@@ -13333,6 +13333,7 @@ if (typeof window.go !== 'function') {
   window.cambiarTabMisComprasPlaza = function(tab){ window._misComprasPlazaTab = tab || 'proceso'; window.cargarMisComprasPlaza && window.cargarMisComprasPlaza(); return false; };
 
   window.cargarMisComprasPlaza = async function(){
+    if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
     var el=document.getElementById('miscompras-plaza-lista');
     var sub=document.getElementById('miscompras-plaza-sub');
     var bProc=document.getElementById('miscompras-tab-proceso');
@@ -13537,6 +13538,7 @@ if (typeof window.go !== 'function') {
 
   window.cambiarTabMisComprasPlaza=function(tab){window._misComprasPlazaTab=tab||'proceso'; if(window.cargarMisComprasPlaza)window.cargarMisComprasPlaza(); return false;};
   window.cargarMisComprasPlaza=async function(){
+    if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
     var el=document.getElementById('miscompras-plaza-lista'), sub=document.getElementById('miscompras-plaza-sub'), bProc=document.getElementById('miscompras-tab-proceso'), bAnt=document.getElementById('miscompras-tab-anteriores');
     if(!el)return; var tab=window._misComprasPlazaTab||'proceso';
     if(sub)sub.textContent=tab==='anteriores'?'Compras anteriores':'Compras en proceso';
@@ -13603,7 +13605,7 @@ if (typeof window.go !== 'function') {
     el.innerHTML=html;
   }
   window.cambiarTabMisComprasPlaza=function(tab){window._misComprasPlazaTab=tab||'proceso'; renderMisCompras(); return false;};
-  window.cargarMisComprasPlaza=function(){renderMisCompras();};
+  window.cargarMisComprasPlaza=function(){if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}renderMisCompras();};
 
   window.plazaFinalFelizCarrito=function(msg){
     // primero intenta el final feliz oficial ya existente de la app
@@ -13772,6 +13774,7 @@ if (typeof window.go !== 'function') {
 
     window.cambiarTabMisComprasPlaza=function(tab){ window._misComprasPlazaTab=tab||'proceso'; window.cargarMisComprasPlaza(); return false; };
     window.cargarMisComprasPlaza=function(){
+      if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
       var el=document.getElementById('miscompras-plaza-lista'); if(!el) return;
       var sub=document.getElementById('miscompras-plaza-sub');
       var bp=document.getElementById('miscompras-tab-proceso'), ba=document.getElementById('miscompras-tab-anteriores');
@@ -13922,6 +13925,7 @@ if (typeof window.go !== 'function') {
 
   window.cambiarTabMisComprasPlaza=function(tab){ window._misComprasPlazaTab=tab||'proceso'; window.cargarMisComprasPlaza(); return false; };
   window.cargarMisComprasPlaza=function(){
+    if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
     var el=document.getElementById('miscompras-plaza-lista'); if(!el) return;
     var sub=document.getElementById('miscompras-plaza-sub');
     var bp=document.getElementById('miscompras-tab-proceso'), ba=document.getElementById('miscompras-tab-anteriores');
