@@ -236,7 +236,8 @@
     if(!v){
       v=document.createElement('div');
       v.className='view go-right';
-      v.id='dc-legacy-v-plaza-comprando-2' data-dc-legacy-id="v-plaza-comprando";
+      v.id='dc-legacy-v-plaza-comprando-2';
+      v.dataset.dcLegacyId='v-plaza-comprando';
       v.style.flexDirection='column';
       v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" type="button" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">🛒 COMPRANDO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="dc-legacy-v-plaza-comprando-lista-1" data-dc-legacy-id="v-plaza-comprando-lista" style="padding:10px 6px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';
       var base=document.getElementById('v-mis-compras-plaza')||document.querySelector('.view:last-of-type');
