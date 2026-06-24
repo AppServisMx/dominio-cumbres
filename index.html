@@ -13738,318 +13738,226 @@ if (typeof window.go !== 'function') {
 
 
 <!-- DC PLAZA 2B/2C REAL NAV FIX — SOLO COMPRA -> COMPRANDO -> SEGUIMIENTO -->
-
-<!-- ═══════════════════════════════════════════════════════════════
-     ETAPA 3 — RATING PROVEEDOR · CMV PROVEEDOR · MEMBRESÍA
-     ═══════════════════════════════════════════════════════════════ -->
+<!-- ETAPA 3 -->
 <script>
-(function(){
-'use strict';
+var _FBFS = 'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js';
+async function _fbGet(col1,col2,col3,col4){ var m=await import(_FBFS); return m.getDoc(m.doc(window._fbDb,col1,col2,col3,col4)); }
+async function _fbGet2(col1,col2){ var m=await import(_FBFS); return m.getDoc(m.doc(window._fbDb,col1,col2)); }
+async function _fbSet(col1,col2,col3,col4,data){ var m=await import(_FBFS); return m.setDoc(m.doc(window._fbDb,col1,col2,col3,col4),data); }
+async function _fbUpd(col1,col2,data){ var m=await import(_FBFS); return m.updateDoc(m.doc(window._fbDb,col1,col2),data); }
+async function _fbColSub(col1,col2,col3){ var m=await import(_FBFS); return m.getDocs(m.collection(window._fbDb,col1,col2,col3)); }
 
-/* ── helpers ─────────────────────────────────────────────────── */
-function _db()   { return window._fbDb; }
-function _auth() { return window._fbAuth; }
-function _myUid(){ var a=_auth(); return a&&a.currentUser&&a.currentUser.uid; }
-function _fs()   { return window._fs || {}; }
-function _doc(db,path){ var f=_fs(); return (f.fsDoc||f.doc)(db,...path.split('/')); }
-function _getDoc(ref)  { return (_fs().getDoc)(ref); }
-function _setDoc(ref,d){ return (_fs().setDoc)(ref,d); }
-function _updateDoc(ref,d){ return (_fs().updateDoc)(ref,d); }
-function _getDocs(q)   { return (_fs().getDocs)(q); }
-function _col(db,p)    { return (_fs().collection)(db,p); }
-
-/* Pantalla de "Final Feliz" ligero — reemplaza el alert */
-function _feliz(msg) {
-  var t = document.createElement('div');
-  t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'
-    + 'background:#fff;border-radius:20px;padding:28px 24px;text-align:center;'
-    + 'box-shadow:0 8px 40px rgba(0,0,0,.22);z-index:9999;min-width:240px;font-family:Inter,sans-serif;';
-  t.innerHTML = '<div style="font-size:40px;margin-bottom:12px;">✅</div>'
-    + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px;">' + msg + '</div>'
-    + '<button onclick="this.parentNode.remove()" style="margin-top:14px;background:var(--green,#1fc26a);color:#fff;border:none;border-radius:12px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Aceptar</button>';
+function _feliz(msg){
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:20px;padding:28px 24px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.22);z-index:9999;min-width:240px;font-family:Inter,sans-serif;';
+  t.innerHTML='<div style="font-size:40px;margin-bottom:12px;">\u2705</div><div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px;">'+msg+'</div><button onclick="this.parentNode.remove()" style="margin-top:14px;background:#1fc26a;color:#fff;border:none;border-radius:12px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Aceptar</button>';
   document.body.appendChild(t);
-  setTimeout(function(){ if(t.parentNode) t.remove(); }, 3000);
+  setTimeout(function(){if(t.parentNode)t.remove();},3000);
 }
 
-/* ── 1. RATING PROVEEDOR ─────────────────────────────────────── */
-var _ratingSeleccionado = 0;
-
-window.dcProvRatingModoEditar = function() {
-  var blk = document.getElementById('det-rating-block');
-  if (!blk) return;
-  blk.innerHTML = ''
-    + '<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:4px;">⭐ Editar tu calificación</div>'
-    + '<div style="font-size:11px;color:#9a7020;margin-bottom:10px;" id="det-rating-avg"></div>'
-    + '<div id="det-stars" style="display:flex;gap:6px;margin-bottom:10px;">'
-    + '<span onclick="dcProvRatingSet(1)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
-    + '<span onclick="dcProvRatingSet(2)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
-    + '<span onclick="dcProvRatingSet(3)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
-    + '<span onclick="dcProvRatingSet(4)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
-    + '<span onclick="dcProvRatingSet(5)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
-    + '</div>'
-    + '<textarea id="det-rating-com" class="nota" rows="2" placeholder="Comentario opcional..."></textarea>'
-    + '<button onclick="dcProvRatingEnviar()" style="width:100%;margin-top:8px;background:#F5C518;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#1a1200;cursor:pointer;font-family:\'Inter\',sans-serif;">Enviar calificación →</button>';
+/* RATING */
+var _ratingSel=0;
+window.dcProvRatingModoEditar=function(){
+  var b=document.getElementById('det-rating-block'); if(!b)return;
+  _ratingSel=0;
+  b.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:4px;">\u2b50 Calificar proveedor</div>'
+    +'<div style="font-size:11px;color:#9a7020;margin-bottom:10px;" id="det-rating-avg2"></div>'
+    +'<div id="det-stars" style="display:flex;gap:6px;margin-bottom:10px;">'
+    +'<span onclick="dcProvRatingSet(1)" style="font-size:28px;cursor:pointer;">\u2606</span>'
+    +'<span onclick="dcProvRatingSet(2)" style="font-size:28px;cursor:pointer;">\u2606</span>'
+    +'<span onclick="dcProvRatingSet(3)" style="font-size:28px;cursor:pointer;">\u2606</span>'
+    +'<span onclick="dcProvRatingSet(4)" style="font-size:28px;cursor:pointer;">\u2606</span>'
+    +'<span onclick="dcProvRatingSet(5)" style="font-size:28px;cursor:pointer;">\u2606</span>'
+    +'</div>'
+    +'<textarea id="det-rating-com" class="nota" rows="2" placeholder="Comentario opcional..."></textarea>'
+    +'<button onclick="dcProvRatingEnviar()" style="width:100%;margin-top:8px;background:#F5C518;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#1a1200;cursor:pointer;font-family:inherit;">Enviar calificaci\u00f3n \u2192</button>';
 };
-
-window.dcProvRatingSet = function(n) {
-  _ratingSeleccionado = n;
-  document.querySelectorAll('#det-stars span').forEach(function(s, i) {
-    s.textContent = i < n ? '⭐' : '☆';
-    s.style.transform = i < n ? 'scale(1.15)' : 'scale(1)';
-  });
+window.dcProvRatingSet=function(n){
+  _ratingSel=n;
+  document.querySelectorAll('#det-stars span').forEach(function(s,i){s.textContent=i<n?'\u2b50':'\u2606';});
 };
-
-window.dcProvRatingEnviar = async function() {
-  if (!_ratingSeleccionado) { alert('Selecciona una calificación'); return; }
-  var p = window._proveedorActual || {};
-  var provUid = p.uid || p.id || '';
-  if (!provUid) return;
-  var myUid = _myUid();
-  if (!myUid || !_db()) { alert('Necesitas iniciar sesión'); return; }
-  var comentario = (document.getElementById('det-rating-com') || {}).value || '';
-  var btn = document.querySelector('#det-rating-block button');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
-  try {
-    var db = _db(); var fs = _fs();
-    await _setDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'votos',myUid), {
-      rating: _ratingSeleccionado, comentario: comentario,
-      fecha: new Date().toISOString(), vecUid: myUid
-    });
-    var snap = await _getDocs(fs.collection(db,'calificaciones',provUid,'votos'));
-    var total = 0, count = 0;
-    snap.forEach(function(d){ total += (d.data().rating||0); count++; });
-    var promedio = count ? Math.round((total/count)*10)/10 : 0;
-    await _setDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'resumen','datos'), { promedio: promedio, total: count });
-    try { await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',provUid), { ratingPromedio: promedio, ratingTotal: count }); } catch(e){}
-    var avg = document.getElementById('det-rating-avg');
-    if (avg) avg.textContent = '⭐ ' + promedio + ' (' + count + ' opiniones)';
-    document.getElementById('det-rating-com') && (document.getElementById('det-rating-com').value='');
-    // Cambiar bloque a modo "ya calificaste"
-    var blk = document.getElementById('det-rating-block');
-    if (blk) blk.innerHTML = ''
-      + '<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">⭐ Tu calificación</div>'
-      + '<div style="font-size:22px;margin-bottom:6px;">' + '⭐'.repeat(_ratingSeleccionado) + '☆'.repeat(5-_ratingSeleccionado) + '</div>'
-      + '<div style="font-size:11px;color:#9a7020;margin-bottom:10px;" id="det-rating-avg">⭐ ' + promedio + ' (' + count + ' opiniones)</div>'
-      + '<button onclick="dcProvRatingModoEditar()" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar calificación</button>';
-    _ratingSeleccionado = 0;
-    _feliz('¡Gracias por calificar!');
-  } catch(e) {
+window.dcProvRatingEnviar=async function(){
+  if(!_ratingSel){alert('Selecciona estrellas');return;}
+  var p=window._proveedorActual||{}; var pUid=p.uid||p.id||''; if(!pUid)return;
+  var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid;
+  if(!myUid){alert('Inicia sesi\u00f3n');return;}
+  var com=(document.getElementById('det-rating-com')||{}).value||'';
+  var btn=document.querySelector('#det-rating-block button:last-child');
+  if(btn){btn.disabled=true;btn.textContent='\u23f3 Guardando...';}
+  try{
+    await _fbSet('calificaciones',pUid,'votos',myUid,{rating:_ratingSel,comentario:com,fecha:new Date().toISOString(),vecUid:myUid});
+    var snap=await _fbColSub('calificaciones',pUid,'votos');
+    var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
+    var prom=cnt?Math.round((tot/cnt)*10)/10:0;
+    await _fbSet('calificaciones',pUid,'resumen','datos',{promedio:prom,total:cnt});
+    try{await _fbUpd('usuarios',pUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
+    var blk=document.getElementById('det-rating-block');
+    var promStr=prom.toString();
+    if(blk) blk.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">\u2b50 Tu calificaci\u00f3n</div>'
+      +'<div style="font-size:22px;margin-bottom:6px;">'+'\u2b50'.repeat(_ratingSel)+'\u2606'.repeat(5-_ratingSel)+'</div>'
+      +'<div style="font-size:11px;color:#9a7020;margin-bottom:10px;">\u2b50 '+promStr+' ('+cnt+' opiniones)</div>'
+      +'<button onclick="dcProvRatingModoEditar()" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">\u270f\ufe0f Editar calificaci\u00f3n</button>';
+    _ratingSel=0;
+    _feliz('\u00a1Gracias por calificar!');
+  }catch(e){
     console.error('rating',e);
-    if (btn) { btn.disabled=false; btn.textContent='Enviar calificación →'; }
-    alert('Error al guardar');
+    if(btn){btn.disabled=false;btn.textContent='Enviar calificaci\u00f3n \u2192';}
+    alert('Error: '+e.message);
   }
 };
-
-window.dcProvRatingCargar = async function(provUid) {
-  var blk = document.getElementById('det-rating-block');
-  var avg = document.getElementById('det-rating-avg');
-  if (!blk) return;
-  var tipo = (localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
-  // Solo vecinos pueden calificar
-  if (tipo !== 'vecino') { blk.style.display='none'; return; }
-  blk.style.display = 'block';
-  _ratingSeleccionado = 0;
-  document.querySelectorAll('#det-stars span').forEach(function(s){ s.textContent='☆'; s.style.transform='scale(1)'; });
-  if (avg) avg.textContent = 'Cargando...';
-  if (!_db() || !provUid) { if(avg) avg.textContent=''; return; }
-  try {
-    var fs = _fs(); var db = _db();
-    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'resumen','datos'));
-    if (snap.exists()) {
-      var d = snap.data();
-      if (avg) avg.textContent = '⭐ ' + (d.promedio||'—') + ' (' + (d.total||0) + ' opiniones)';
-    } else {
-      if (avg) avg.textContent = 'Sé el primero en calificar';
-    }
-  } catch(e) { if(avg) avg.textContent=''; }
-};
-
-/* ── 2. CMV PROVEEDOR ───────────────────────────────────────── */
-var _vprovFotoBase64 = null;
-
-window.vprovCmvRenderPreview = function() {
-  var nombre = (document.getElementById('vprov-cmv-nombre')||{}).value || 'Mi nombre';
-  var desc   = (document.getElementById('vprov-cmv-desc')  ||{}).value || 'Descripción del servicio';
-  var oficios= (document.getElementById('vprov-cmv-oficios')||{}).textContent || '';
-  var imgSrc = _vprovFotoBase64 || (document.getElementById('vprov-cmv-foto-prev')||{}).dataset.src || '';
-  var fotoHtml = imgSrc
-    ? '<img src="'+imgSrc+'" style="width:54px;height:54px;object-fit:cover;border-radius:13px;border:2px solid #e8e8e8;">'
-    : '<div style="width:54px;height:54px;border-radius:13px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🔧</div>';
-  var p = document.getElementById('vprov-cmv-preview');
-  if (!p) return;
-  p.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;">'
-    + fotoHtml
-    + '<div style="flex:1;min-width:0;">'
-    + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px;">' + nombre + '</div>'
-    + '<div style="font-size:11px;color:#555;margin-bottom:4px;">' + oficios + '</div>'
-    + '<div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + desc + '</div>'
-    + '</div>'
-    + '<div style="flex-shrink:0;">'
-    + '<div style="background:var(--green,#1fc26a);color:#fff;font-size:10px;font-weight:700;padding:5px 10px;border-radius:9px;">Contactar</div>'
-    + '</div></div>';
-};
-
-window.vprovCmvFotoChange = function(inp) {
-  if (!inp.files || !inp.files[0]) return;
-  var r = new FileReader();
-  r.onload = function(e) {
-    _vprovFotoBase64 = e.target.result;
-    var prev = document.getElementById('vprov-cmv-foto-prev');
-    if (prev) { prev.innerHTML = '<img src="'+_vprovFotoBase64+'" style="width:100%;height:100%;object-fit:cover;">'; }
-    window.vprovCmvRenderPreview();
-  };
-  r.readAsDataURL(inp.files[0]);
-};
-
-var _vprovFotosTrabajo = [];
-window.vprovCmvQuitarFoto = function(idx) {
-  _vprovFotosTrabajo.splice(idx, 1);
-  var grid = document.getElementById('vprov-cmv-fotos-grid');
-  if (!grid) return;
-  grid.innerHTML = '';
-  _vprovFotosTrabajo.forEach(function(src, i) { _vprovCmvAddFotoGrid(grid, src, i); });
-};
-function _vprovCmvAddFotoGrid(grid, src, idx) {
-  var d = document.createElement('div');
-  d.style.cssText = 'position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
-  d.innerHTML = '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">'
-    + '<button onclick="vprovCmvQuitarFoto('+idx+')" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;">×</button>';
-  grid.appendChild(d);
-}
-window.vprovCmvFotosChange = function(inp) {
-  if (!inp.files || !inp.files.length) return;
-  var grid = document.getElementById('vprov-cmv-fotos-grid');
-  Array.from(inp.files).forEach(function(file) {
-    var r = new FileReader();
-    r.onload = function(e) {
-      var idx = _vprovFotosTrabajo.length;
-      _vprovFotosTrabajo.push(e.target.result);
-      if (grid) _vprovCmvAddFotoGrid(grid, e.target.result, idx);
-    };
-    r.readAsDataURL(file);
-  });
-};
-
-window.vprovCmvCargar = async function() {
-  _vprovFotoBase64 = null;
-  window.vprovCmvRenderPreview();
-  if (!_auth()||!_auth().currentUser||!_db()) return;
-  var uid = _auth().currentUser.uid;
-  try {
-    var fs = _fs(); var db = _db();
-    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid));
-    if (!snap.exists()) return;
-    var d = snap.data();
-    var nm = document.getElementById('vprov-cmv-nombre'); if(nm) nm.value = d.nombre||'';
-    var ds = document.getElementById('vprov-cmv-desc');   if(ds) ds.value = d.descripcion||'';
-    // Oficios: read-only desde la DB
-    var ofs = [d.oficio1,d.oficio2,d.oficio3].filter(Boolean).join(' · ') || d.categoria || '—';
-    var ofsEl = document.getElementById('vprov-cmv-oficios');
-    if (ofsEl) ofsEl.textContent = ofs;
-    // Foto existente
-    if (d.fotoUrl) {
-      var prev = document.getElementById('vprov-cmv-foto-prev');
-      if (prev) { prev.dataset.src = d.fotoUrl; prev.innerHTML = '<img src="'+d.fotoUrl+'" style="width:100%;height:100%;object-fit:cover;">'; }
-    }
-    // Fotos de trabajos
-    if (Array.isArray(d.fotosTrabajo) && d.fotosTrabajo.length) {
-      var grid = document.getElementById('vprov-cmv-fotos-grid');
-      if (grid) {
-        grid.innerHTML = '';
-        d.fotosTrabajo.forEach(function(url){
-          var img = document.createElement('div');
-          img.style.cssText = 'width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
-          img.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
-          grid.appendChild(img);
-        });
+window.dcProvRatingCargar=async function(pUid){
+  var blk=document.getElementById('det-rating-block'); if(!blk)return;
+  var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
+  if(tipo!=='vecino'){blk.style.display='none';return;}
+  blk.style.display='block'; _ratingSel=0;
+  document.querySelectorAll('#det-stars span').forEach(function(s){s.textContent='\u2606';});
+  var avg=document.getElementById('det-rating-avg');
+  if(!pUid||!window._fbDb){if(avg)avg.textContent='';return;}
+  try{
+    var snap=await _fbGet('calificaciones',pUid,'resumen','datos');
+    if(snap.exists()){var d=snap.data();if(avg)avg.textContent='\u2b50 '+(d.promedio||'\u2014')+' ('+(d.total||0)+' opiniones)';}
+    else{if(avg)avg.textContent='S\u00e9 el primero en calificar';}
+    var auth2=window._fbAuth; var myUid2=auth2&&auth2.currentUser&&auth2.currentUser.uid;
+    if(myUid2){
+      var miVotoSnap=await _fbGet('calificaciones',pUid,'votos',myUid2);
+      if(miVotoSnap.exists()){
+        var mv=miVotoSnap.data(); var nr=mv.rating||0;
+        blk.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">\u2b50 Tu calificaci\u00f3n</div>'
+          +'<div style="font-size:22px;margin-bottom:6px;">'+'\u2b50'.repeat(nr)+'\u2606'.repeat(5-nr)+'</div>'
+          +'<div style="font-size:11px;color:#9a7020;margin-bottom:10px;"></div>'
+          +'<button onclick="dcProvRatingModoEditar()" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">\u270f\ufe0f Editar calificaci\u00f3n</button>';
+        return;
       }
     }
+    dcProvRatingModoEditar();
+  }catch(e){if(avg)avg.textContent='';dcProvRatingModoEditar();}
+};
+
+/* CMV PROVEEDOR */
+var _cmvFotoB64=null, _cmvFotos=[];
+window.vprovCmvRenderPreview=function(){
+  var nm=(document.getElementById('vprov-cmv-nombre')||{}).value||'Mi nombre';
+  var ds=(document.getElementById('vprov-cmv-desc')||{}).value||'Descripci\u00f3n';
+  var ofs=(document.getElementById('vprov-cmv-oficios')||{}).textContent||'';
+  var foto=_cmvFotoB64||((document.getElementById('vprov-cmv-foto-prev')||{}).dataset||{}).src||'';
+  var fHtml=foto
+    ?'<img src="'+foto+'" style="width:54px;height:54px;object-fit:cover;border-radius:13px;border:2px solid #e8e8e8;flex-shrink:0;">'
+    :'<div style="width:54px;height:54px;border-radius:13px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">\ud83d\udd27</div>';
+  var p=document.getElementById('vprov-cmv-preview'); if(!p)return;
+  p.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;">'
+    +fHtml+'<div style="flex:1;min-width:0;">'
+    +'<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px;">'+nm+'</div>'
+    +'<div style="font-size:11px;color:#555;margin-bottom:4px;">'+ofs+'</div>'
+    +'<div style="font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+ds+'</div>'
+    +'</div><div style="flex-shrink:0;"><div style="background:#1fc26a;color:#fff;font-size:10px;font-weight:700;padding:5px 10px;border-radius:9px;">Contactar</div></div></div>';
+};
+window.vprovCmvFotoChange=function(inp){
+  if(!inp.files||!inp.files[0])return;
+  var r=new FileReader(); r.onload=function(e){
+    _cmvFotoB64=e.target.result;
+    var pv=document.getElementById('vprov-cmv-foto-prev');
+    if(pv)pv.innerHTML='<img src="'+_cmvFotoB64+'" style="width:100%;height:100%;object-fit:cover;">';
     window.vprovCmvRenderPreview();
-  } catch(e) {}
+  }; r.readAsDataURL(inp.files[0]);
 };
-
-window.vprovCmvGuardar = async function() {
-  if (!_auth()||!_auth().currentUser||!_db()) { alert('Sin sesión'); return; }
-  var uid = _auth().currentUser.uid;
-  var nm  = (document.getElementById('vprov-cmv-nombre')||{}).value||'';
-  var ds  = (document.getElementById('vprov-cmv-desc')  ||{}).value||'';
-  var btn = document.getElementById('vprov-cmv-btn-guardar');
-  if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
-  try {
-    var fs = _fs(); var db = _db();
-    // Las fotos base64 superan el límite de 1MB de Firestore — solo guardamos texto
-    var upd = { nombre: nm, descripcion: ds };
-    await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid), upd);
-    if (btn) { btn.disabled=false; btn.textContent='Guardar cambios'; }
-    _feliz('¡Perfil actualizado!');
-  } catch(e) {
+function _cmvRenderGrid(){
+  var g=document.getElementById('vprov-cmv-fotos-grid'); if(!g)return;
+  g.innerHTML='';
+  _cmvFotos.forEach(function(src,i){
+    var d=document.createElement('div');
+    d.style.cssText='position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;display:inline-block;';
+    var img=document.createElement('img');
+    img.src=src; img.style.cssText='width:100%;height:100%;object-fit:cover;';
+    var btn=document.createElement('button');
+    btn.textContent='\u00d7';
+    btn.style.cssText='position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    (function(idx){btn.onclick=function(){vprovCmvQuitarFoto(idx);};})(i);
+    d.appendChild(img); d.appendChild(btn);
+    g.appendChild(d);
+  });
+}
+window.vprovCmvQuitarFoto=function(i){_cmvFotos.splice(i,1);_cmvRenderGrid();};
+window.vprovCmvFotosChange=function(inp){
+  if(!inp.files||!inp.files.length)return;
+  Array.from(inp.files).forEach(function(f){
+    var r=new FileReader(); r.onload=function(e){_cmvFotos.push(e.target.result);_cmvRenderGrid();}; r.readAsDataURL(f);
+  });
+};
+window.vprovCmvCargar=async function(){
+  _cmvFotoB64=null; _cmvFotos=[];
+  var g=document.getElementById('vprov-cmv-fotos-grid'); if(g)g.innerHTML='';
+  window.vprovCmvRenderPreview();
+  var auth=window._fbAuth; if(!auth||!auth.currentUser||!window._fbDb)return;
+  var uid=auth.currentUser.uid;
+  try{
+    var snap=await _fbGet2('usuarios',uid); if(!snap.exists())return;
+    var d=snap.data();
+    var nm=document.getElementById('vprov-cmv-nombre'); if(nm)nm.value=d.nombre||'';
+    var ds=document.getElementById('vprov-cmv-desc');   if(ds)ds.value=d.descripcion||'';
+    var ofs=[d.oficio1,d.oficio2,d.oficio3].filter(Boolean).join(' \u00b7 ')||d.categoria||'\u2014';
+    var oEl=document.getElementById('vprov-cmv-oficios'); if(oEl)oEl.textContent=ofs;
+    if(d.fotoUrl){
+      var pv=document.getElementById('vprov-cmv-foto-prev');
+      if(pv){pv.dataset.src=d.fotoUrl;pv.innerHTML='<img src="'+d.fotoUrl+'" style="width:100%;height:100%;object-fit:cover;">';}
+    }
+    window.vprovCmvRenderPreview();
+  }catch(e){console.error('cmv-cargar',e);}
+};
+window.vprovCmvGuardar=async function(){
+  var auth=window._fbAuth; if(!auth||!auth.currentUser){alert('Sin sesi\u00f3n');return;}
+  var uid=auth.currentUser.uid;
+  var nm=(document.getElementById('vprov-cmv-nombre')||{}).value||'';
+  var ds=(document.getElementById('vprov-cmv-desc')||{}).value||'';
+  var btn=document.getElementById('vprov-cmv-btn-guardar');
+  if(btn){btn.disabled=true;btn.textContent='\u23f3 Guardando...';}
+  try{
+    await _fbUpd('usuarios',uid,{nombre:nm,descripcion:ds});
+    if(btn){btn.disabled=false;btn.textContent='Guardar cambios';}
+    _feliz('\u00a1Perfil actualizado!');
+  }catch(e){
     console.error('cmv-guardar',e);
-    if (btn) { btn.disabled=false; btn.textContent='Guardar cambios'; }
-    alert('Error al guardar');
+    if(btn){btn.disabled=false;btn.textContent='Guardar cambios';}
+    alert('Error: '+e.message);
   }
 };
 
-/* ── 3. MEMBRESÍA ───────────────────────────────────────────── */
-window.cargarMembresia = async function() {
-  var cont = document.getElementById('memb-cont');
-  if (!cont) return;
-  cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Cargando...</div>';
-  if (!_auth()||!_auth().currentUser||!_db()) {
-    cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Sin sesión activa</div>'; return;
-  }
-  var uid = _auth().currentUser.uid;
-  try {
-    var fs = _fs(); var db = _db();
-    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid));
-    var d = snap.exists() ? snap.data() : {};
-    var memb   = d.membresia || {};
-    var estado = memb.estado || 'pendiente_pago';
-    var vence  = memb.fechaVencimiento
-      ? new Date(memb.fechaVencimiento.seconds ? memb.fechaVencimiento.seconds*1000 : memb.fechaVencimiento).toLocaleDateString('es-MX')
-      : '—';
-    var plan   = memb.plan || 'Básico';
-    var monto  = memb.monto || 150;
-    var colMap = { activo:'#0A4220', vencido:'#D63A2A' };
-    var bgMap  = { activo:'#E8F5EE', vencido:'#FDECEA' };
-    var col    = colMap[estado] || '#9A6800';
-    var bg     = bgMap[estado]  || '#FFF8E1';
-    var lbl    = estado==='activo'?'✅ Activa':estado==='vencido'?'🔴 Vencida':'⏳ Pendiente de pago';
-    cont.innerHTML = ''
-      + '<div style="background:'+bg+';border-radius:16px;padding:22px;margin-bottom:16px;text-align:center;">'
-      +   '<div style="font-size:36px;margin-bottom:10px;">💎</div>'
-      +   '<div style="font-size:18px;font-weight:800;color:'+col+';margin-bottom:6px;">Plan '+plan+'</div>'
-      +   '<div style="display:inline-block;background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;">'+lbl+'</div>'
-      + '</div>'
-      + '<div style="background:#fff;border-radius:14px;border:.5px solid #e8e8e8;padding:16px;margin-bottom:14px;">'
-      +   '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:.5px solid #f0f0f0;margin-bottom:10px;">'
-      +     '<span style="font-size:12px;color:#888;">Vigencia hasta</span>'
-      +     '<span style="font-size:13px;font-weight:700;color:#333;">'+vence+'</span>'
-      +   '</div>'
-      +   '<div style="display:flex;justify-content:space-between;align-items:center;">'
-      +     '<span style="font-size:12px;color:#888;">Monto mensual</span>'
-      +     '<span style="font-size:15px;font-weight:800;color:#1fc26a;">$'+monto+' MXN</span>'
-      +   '</div>'
-      + '</div>'
-      + (estado==='activo' ? '' :
-          '<div style="background:#FFF8E1;border-radius:14px;padding:16px;margin-bottom:14px;">'
-        +   '<div style="font-size:12px;font-weight:700;color:#9A6800;margin-bottom:8px;">💳 Cómo realizar tu pago</div>'
-        +   '<div style="font-size:12px;color:#7a5000;line-height:1.8;">'
-        +     '1. Realiza transferencia o depósito<br>'
-        +     '2. Monto: <strong>$'+monto+' MXN mensuales</strong><br>'
-        +     '3. Envía comprobante por WhatsApp o correo al equipo DC App Servis<br>'
-        +     '4. Tu cuenta se activa en menos de 24 horas'
-        +   '</div>'
-        + '</div>')
-      + '<div style="background:#f8f8f8;border-radius:14px;padding:14px;font-size:11px;color:#888;line-height:1.6;">'
-      +   '¿Dudas? Escríbenos a <strong>zonadominiocumbres@gmail.com</strong>'
-      + '</div>';
-  } catch(e) {
+/* MEMBRESIA */
+window.cargarMembresia=async function(){
+  var cont=document.getElementById('memb-cont'); if(!cont)return;
+  cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;">Cargando...</div>';
+  var auth=window._fbAuth;
+  if(!auth||!auth.currentUser){cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;">Sin sesi\u00f3n</div>';return;}
+  var uid=auth.currentUser.uid;
+  try{
+    var snap=await _fbGet2('usuarios',uid);
+    var d=snap.exists()?snap.data():{};
+    var memb=d.membresia||{};
+    var est=memb.estado||'pendiente_pago';
+    var vence=memb.fechaVencimiento
+      ?new Date(memb.fechaVencimiento.seconds?memb.fechaVencimiento.seconds*1000:memb.fechaVencimiento).toLocaleDateString('es-MX'):'\u2014';
+    var plan=memb.plan||'B\u00e1sico', monto=memb.monto||150;
+    var cM={activo:'#0A4220',vencido:'#D63A2A'}, bM={activo:'#E8F5EE',vencido:'#FDECEA'};
+    var col=cM[est]||'#9A6800', bg=bM[est]||'#FFF8E1';
+    var lbl=est==='activo'?'\u2705 Activa':est==='vencido'?'\ud83d\udd34 Vencida':'\u23f3 Pendiente de pago';
+    cont.innerHTML='<div style="background:'+bg+';border-radius:16px;padding:22px;margin-bottom:16px;text-align:center;">'
+      +'<div style="font-size:36px;margin-bottom:10px;">\ud83d\udc8e</div>'
+      +'<div style="font-size:18px;font-weight:800;color:'+col+';margin-bottom:6px;">Plan '+plan+'</div>'
+      +'<div style="display:inline-block;background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;">'+lbl+'</div></div>'
+      +'<div style="background:#fff;border-radius:14px;border:.5px solid #e8e8e8;padding:16px;margin-bottom:14px;">'
+      +'<div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:.5px solid #f0f0f0;margin-bottom:10px;">'
+      +'<span style="font-size:12px;color:#888;">Vigencia hasta</span><span style="font-size:13px;font-weight:700;">'+vence+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;">'
+      +'<span style="font-size:12px;color:#888;">Monto mensual</span><span style="font-size:15px;font-weight:800;color:#1fc26a;">'+monto+' MXN</span></div></div>'
+      +(est==='activo'?''
+        :'<div style="background:#FFF8E1;border-radius:14px;padding:16px;margin-bottom:14px;">'
+        +'<div style="font-size:12px;font-weight:700;color:#9A6800;margin-bottom:8px;">\ud83d\udcb3 C\u00f3mo pagar</div>'
+        +'<div style="font-size:12px;color:#7a5000;line-height:1.8;">1. Transferencia o dep\u00f3sito<br>2. Monto: <strong>'+monto+' MXN/mes</strong><br>3. Env\u00eda comprobante por WhatsApp al equipo DC App Servis<br>4. Activaci\u00f3n en menos de 24 hrs</div></div>')
+      +'<div style="background:#f8f8f8;border-radius:14px;padding:14px;font-size:11px;color:#888;">\u00bfDudas? <strong>zonadominiocumbres@gmail.com</strong></div>';
+  }catch(e){
     console.error('membresia',e);
-    cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">No se pudo cargar la membresía</div>';
+    cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;">Error: '+e.message+'</div>';
   }
 };
-
-})();
 </script>
 
 <script src="app.js"></script>
