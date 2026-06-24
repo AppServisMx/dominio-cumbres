@@ -6543,7 +6543,7 @@ document.addEventListener('click',function(ev){
 // Al intentar REGRESAR de esa pantalla, se pide confirmación.
 // Excepciones: búsquedas, chat y login (no son capturas que se "guarden").
 window._dcDirtyV = null;
-var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat','v-prov-cmv'];
+var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat','v-prov-cmv','v-serv-det','v-membresia'];
 var _DC_DIRTY_IDS_EXCL = ['busqueda-input','chat-input','menu-search-inp'];
 document.addEventListener('change', _dcDirtyUniv, true);
 document.addEventListener('input',  _dcDirtyUniv, true);
@@ -13758,20 +13758,21 @@ function _feliz(msg){
 
 /* ======= RATING ======= */
 var _ratingSel=0;
-
+window._ratingVotoActual={nr:0,comentario:''};
 function _ratingMostrarVotado(nr,comentario,prom,cnt){
+  window._ratingVotoActual={nr:nr,comentario:comentario||''};
   var blk=document.getElementById('det-rating-block'); if(!blk)return;
-  var comHtml=comentario?'<div style="font-size:11px;color:#7a5000;background:#fffbe6;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-style:italic;">"'+comentario+'"</div>':'';
+  var comHtml=comentario?'<div style="font-size:11px;color:#7a5000;background:#fffbe6;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-style:italic;">&ldquo;'+comentario.replace(/</g,'&lt;')+'&rdquo;</div>':'';
   blk.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">&#x2B50; Tu calificaci&#xF3;n</div>'
     +'<div style="font-size:22px;margin-bottom:6px;">'+'&#x2B50;'.repeat(nr)+'&#x2606;'.repeat(5-nr)+'</div>'
     +comHtml
     +(prom!==null?'<div style="font-size:11px;color:#9a7020;margin-bottom:10px;">Promedio: &#x2B50; '+prom+' ('+cnt+' opiniones)</div>':'')
-    +'<button onclick="dcProvRatingModoEditar('+nr+',\''+String(comentario||'').replace(/'/g,"\\'")+'\' )" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">&#x270F;&#xFE0F; Editar calificaci&#xF3;n</button>';
+    +'<button onclick="dcProvRatingModoEditar()" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">&#x270F;&#xFE0F; Editar calificaci&#xF3;n</button>';
 }
 
-window.dcProvRatingModoEditar=function(preNr,preCom){
+window.dcProvRatingModoEditar=function(){
   var b=document.getElementById('det-rating-block'); if(!b)return;
-  var nr=preNr||0; var com=preCom||'';
+  var nr=window._ratingVotoActual.nr||0; var com=window._ratingVotoActual.comentario||'';
   _ratingSel=nr;
   var estrellas='';
   for(var i=1;i<=5;i++) estrellas+='<span onclick="dcProvRatingSet('+i+')" style="font-size:28px;cursor:pointer;">'+(i<=nr?'&#x2B50;':'&#x2606;')+'</span>';
@@ -13780,6 +13781,7 @@ window.dcProvRatingModoEditar=function(preNr,preCom){
     +'<textarea id="det-rating-com" class="nota" rows="2" placeholder="Comentario opcional...">'+com+'</textarea>'
     +'<button onclick="dcProvRatingEnviar()" style="width:100%;margin-top:8px;background:#F5C518;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#1a1200;cursor:pointer;font-family:inherit;">Enviar calificaci&#xF3;n &#x2192;</button>';
 };
+
 
 window.dcProvRatingSet=function(n){
   _ratingSel=n;
@@ -13817,7 +13819,7 @@ window.dcProvRatingCargar=async function(pUid){
   if(tipo!=='vecino'){blk.style.display='none';return;}
   blk.style.display='block'; _ratingSel=0;
   blk.innerHTML='<div style="text-align:center;padding:20px;color:#cca020;font-size:12px;">Cargando...</div>';
-  if(!pUid||!window._fbDb){dcProvRatingModoEditar(0,'');return;}
+  if(!pUid||!window._fbDb){dcProvRatingModoEditar();return;}
   try{
     var promSnap=await _fbGet4('calificaciones',pUid,'resumen','datos');
     var prom=null,cnt=0;
@@ -13833,8 +13835,8 @@ window.dcProvRatingCargar=async function(pUid){
         return;
       }
     }
-    dcProvRatingModoEditar(0,'');
-  }catch(e){console.error('rating-cargar',e);dcProvRatingModoEditar(0,'');}
+    dcProvRatingModoEditar();
+  }catch(e){console.error('rating-cargar',e);dcProvRatingModoEditar();}
 };
 
 /* ======= CMV PROVEEDOR ======= */
