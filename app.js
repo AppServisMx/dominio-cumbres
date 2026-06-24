@@ -1688,7 +1688,7 @@
     var key=window.dcEstadoKey(txt); if(!key) return;
     ['pendiente','esperando','proceso','finalizado','cancelado','pausado'].forEach(function(k){el.classList.remove('dc-auto-'+k);});
     el.classList.add('dc-state-auto','dc-auto-'+key);
-    if(!el.querySelector('.dc-state-dot') && !/^[🔵🟡🟢⚪🔴🟣]/.test(txt)){
+    if(!el.querySelector('.dc-state-dot') && !/^[🔵🟡🟢⚪🔴🟠]/.test(txt)){
       var s=document.createElement('span'); s.className='dc-state-dot';
       el.insertBefore(s, el.firstChild);
     }

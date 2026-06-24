@@ -913,7 +913,7 @@ window._plazaRenderLista = function(docs) {
     var meta = {
       activo:  { lbl:'🟢 Abierto',  col:'var(--green-dk)', bg:'var(--green-lt)' },
       ocupado: { lbl:'🟡 Ocupado',  col:'#d97706',         bg:'#FFF8E1'         },
-      pausado: { lbl:'⏸ En pausa', col:'#888',            bg:'#f0f0f0'         },
+      pausado: { lbl:'🟠 En pausa', col:'#E87722',          bg:'#FFF0E6'         },
       cerrado: { lbl:'🔴 Cerrado',  col:'#D63A2A',         bg:'#FDECEA'         }
     }[estOp] || { lbl:'🟢 Abierto', col:'var(--green-dk)', bg:'var(--green-lt)' };
     var foto = r.fotoPerfil || r.fotoPublica || r.logo || '';
@@ -974,7 +974,7 @@ window.plazaAbrirComercio = async function(id) {
   if (g('plaza-det-desc')) g('plaza-det-desc').textContent = window.dcCleanText(r.descripcionPublica || r.descripcion || 'Productos disponibles', 140);
   if (g('plaza-det-cat')) g('plaza-det-cat').textContent = _plazaCatLabel(_plazaCatBase(r));
   if (g('plaza-det-estado')) {
-    var meta = estOp==='cerrado' ? {lbl:'🔴 Cerrado',col:'#D63A2A'} : estOp==='pausado' ? {lbl:'⏸ En pausa',col:'#888'} : estOp==='ocupado' ? {lbl:'🟡 Ocupado',col:'#d97706'} : {lbl:'🟢 Abierto',col:'var(--green-dk)'};
+    var meta = estOp==='cerrado' ? {lbl:'🔴 Cerrado',col:'#D63A2A'} : estOp==='pausado' ? {lbl:'🟠 En pausa',col:'#E87722'} : estOp==='ocupado' ? {lbl:'🟡 Ocupado',col:'#d97706'} : {lbl:'🟢 Abierto',col:'var(--green-dk)'};
     g('plaza-det-estado').textContent = meta.lbl;
     g('plaza-det-estado').style.color = meta.col;
   }
@@ -1844,7 +1844,7 @@ window.cargarMisComprasPlaza = async function() {
   var DC_ESTADOS = {
     activo:  { ic:'🟢', lbl:'Activo',  col:'#1FC26A', bg:'#E8F5EE', desc:'Recibiendo pedidos y solicitudes' },
     ocupado: { ic:'🟡', lbl:'Ocupado', col:'#9A6800', bg:'#FFF8E1', desc:'Respuesta más lenta' },
-    pausado: { ic:'🟣', lbl:'Pausado', col:'#7B3FA0', bg:'#F0EBF8', desc:'Sin nuevos pedidos por ahora' },
+    pausado: { ic:'🟠', lbl:'Pausado', col:'#E87722', bg:'#FFF0E6', desc:'Sin nuevos pedidos por ahora' },
     cerrado: { ic:'🔴', lbl:'Cerrado', col:'#D63A2A', bg:'#FDECEA', desc:'No disponible hoy' },
   };
   // REGLA UNIVERSAL DE ESTADO: catálogo unificado (Mi Panel = Configuración).
