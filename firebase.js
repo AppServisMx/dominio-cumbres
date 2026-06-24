@@ -143,6 +143,7 @@
     // M2-J: cargar agenda del proveedor (clave por su uid)
     window._cargarAgendaProveedor(p);
     go('v-serv-det','right');
+    setTimeout(function(){ window.dcProvRatingCargar && window.dcProvRatingCargar(p.uid||p._id||p.id||''); }, 250);
   };
 
   // M2-J: leer agenda del proveedor y mostrar disponibilidad en v-serv-det
