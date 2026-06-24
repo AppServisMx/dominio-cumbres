@@ -10278,7 +10278,7 @@ var _vnegEstadoOpTs = 0;
 var _vnegMeta = {
   activo:  {ic:'\ud83d\udfe2', t:'Activo',  d:'Recibiendo pedidos',          c:'var(--green)'},
   ocupado: {ic:'\ud83d\udfe1', t:'Ocupado', d:'Respuesta m\u00e1s lenta',        c:'#d97706'},
-  pausado: {ic:'\u23f8\ufe0f', t:'En pausa',d:'Sin nuevos pedidos por ahora', c:'#888'},
+  pausado: {ic:'\ud83d\udfe0', t:'En pausa',d:'Sin nuevos pedidos por ahora', c:'#E87722'},
   cerrado: {ic:'\ud83d\udd34', t:'Cerrado', d:'No disponible hoy',            c:'#D63A2A'}
 };
 
@@ -12125,7 +12125,7 @@ function vnegCmvRenderPreview() {
   var em = EMOJIS[cat] || '🏪';
   var estLabel, estStyle;
   if (estOp === 'cerrado')      { estLabel='🔴 Cerrado'; estStyle='background:#FDECEA;color:#D63A2A;'; }
-  else if (estOp === 'pausado') { estLabel='⏸ Pausado'; estStyle='background:#f0f0f0;color:#888;'; }
+  else if (estOp === 'pausado') { estLabel='🟠 Pausado'; estStyle='background:#FFF0E6;color:#E87722;'; }
   else if (estOp === 'ocupado') { estLabel='🟡 Ocupado'; estStyle='background:#FFF8E1;color:#d97706;'; }
   else                          { estLabel='🟢 Abierto'; estStyle='background:#E8F5EE;color:#1a7a42;'; }
   var fotoHtml = _vnCmvFotoData
@@ -12289,7 +12289,7 @@ function cmvRenderPreview() {
   var em      = EMOJIS[cat] || '🍽️';
   var estLabel, estStyle;
   if (estOp === 'cerrado')      { estLabel='🔴 Cerrado'; estStyle='background:#FDECEA;color:#D63A2A;'; }
-  else if (estOp === 'pausado') { estLabel='⏸ Pausado'; estStyle='background:#f0f0f0;color:#888;'; }
+  else if (estOp === 'pausado') { estLabel='🟠 Pausado'; estStyle='background:#FFF0E6;color:#E87722;'; }
   else if (estOp === 'ocupado') { estLabel='🟡 Ocupado'; estStyle='background:#FFF8E1;color:#d97706;'; }
   else                          { estLabel='🟢 Abierto'; estStyle='background:#E8F5EE;color:#1a7a42;'; }
   var fotoHtml = _cmvFotoData
