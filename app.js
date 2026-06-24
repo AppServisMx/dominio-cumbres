@@ -207,7 +207,6 @@
   function handler(e){var t=e.target;if(!t||!t.closest)return;var tabBtn=t.closest('#dc-plaza-tabs-old-disabled');if(tabBtn&&tabBtn.closest('#v-mis-compras-plaza')){stop(e);var now=Date.now();if(now-lastTap<260)return false;lastTap=now;tab=tabBtn.id==='miscompras-tab-anteriores'?'anteriores':'proceso';closeOpen();renderMis();return false;}var conf=t.closest('#dc-plaza-confirmar-compra');if(conf)return finish(e);if(!t.closest('#v-mis-compras-plaza'))return;var qbtn=t.closest('.dc-b2a-qty');if(qbtn){stop(e);return patchQty(qbtn.getAttribute('data-key'),qbtn.getAttribute('data-d'));}var del=t.closest('.dc-b2a-del');if(del){stop(e);return delItem(del.getAttribute('data-key'));}var b=t.closest('.dc-b2abc-buy,.dc-b2a-buy,.dc-plaza-2a-comprar');if(b){stop(e);return buy();}if(t.closest('[data-b2a-control="1"],button,input,textarea,select'))return;var card=t.closest('.dc-b2a-toggle,#dc-plaza-b2a-card');if(card){stop(e);setOpen(!isOpen());renderMis();return false;}}
   window.addEventListener('pointerdown',handler,true);window.addEventListener('click',handler,true);window.addEventListener('touchstart',handler,true);
   window.cargarMisComprasPlaza=renderMis;window.cambiarTabMisComprasPlaza=function(t){tab=t||'proceso';closeOpen();return renderMis();};window.dcPlazaComprarDesdeMisCompras=buy;window.dcPlazaRenderComprando=renderComprando;
-  var oldGo=window.go;if(!window.__dcPlazaStableGoWrap){window.__dcPlazaStableGoWrap=true;window.go=function(view,dir){try{if(view!=='v-mis-compras-plaza')closeOpen();}catch(_){}var r=(typeof oldGo==='function')?oldGo.apply(this,arguments):undefined;try{if(view==='v-mis-compras-plaza'&&!window.__dcPlazaL14GoWrap){closeOpen();setTimeout(renderMis,80);}if(view==='v-plaza-comprando')setTimeout(renderComprando,80);}catch(_){}return r;};}
 })();
 
 
@@ -316,15 +315,7 @@
 
   window.dcPlazaRenderComprando = renderComprandoRestaurant;
   window.dcPlazaRenderComprandoRestaurant = renderComprandoRestaurant;
-  if(!window.__dcPlaza2BRestaurantGoWrap){
-    window.__dcPlaza2BRestaurantGoWrap=true;
-    var oldGo=window.go;
-    window.go=function(view,dir){
-      var res=(typeof oldGo==='function')?oldGo.apply(this,arguments):undefined;
-      if(view==='v-plaza-comprando') setTimeout(renderComprandoRestaurant,80);
-      return res;
-    };
-  }
+
   if(document.getElementById('v-plaza-comprando')&&document.getElementById('v-plaza-comprando').classList.contains('active')) setTimeout(renderComprandoRestaurant,50);
 })();
 
@@ -437,8 +428,6 @@
   window.dcPlazaRenderComprando=renderComprandoSafe;
   window.dcPlazaRenderComprandoRestaurant=renderComprandoSafe;
   window.dcPlazaConfirmarCompraFinal=finalize;
-  window.go=function(view,dir){if(view==='v-plaza-comprando')setTimeout(renderComprandoSafe,40);return activate(view,dir);};
-
   var moTarget=document.getElementById('miscompras-plaza-lista');
   if(moTarget){var mo=new MutationObserver(function(){if(window.__dcPlazaL14GoWrap)return;var txt=(moTarget.textContent||'').toLowerCase();if(order()&&txt.indexOf('sin compras en proceso')>=0)setTimeout(function(){renderLockedOrder(order());},30);});mo.observe(moTarget,{childList:true,subtree:true});}
   if(document.getElementById('v-plaza-comprando')&&document.getElementById('v-plaza-comprando').classList.contains('active'))renderComprandoSafe();
@@ -1612,20 +1601,6 @@
   window.cargarMisComprasPlaza=function(){ window._misComprasPlazaTab='proceso'; try{localStorage.setItem(TAB_KEY,JSON.stringify('proceso'));}catch(_){} setTimeout(function(){render(true);},0); return render(true);};
   window.cambiarTabMisComprasPlaza=function(t){setTabs(t);render(true);return false;};
 
-  var oldGo=window.go;
-  if(!window.__dcPlazaL14GoWrap){
-    window.__dcPlazaL14GoWrap=true;
-    window.go=function(view,dir){
-      try{
-        var cur=document.getElementById('v-mis-compras-plaza');
-        if(cur&&cur.classList.contains('active')) collapseAll();
-        if(view==='v-mis-compras-plaza') collapseAll();
-      }catch(_){}
-      var r=(typeof oldGo==='function')?oldGo.apply(this,arguments):undefined;
-      if(view==='v-mis-compras-plaza'){window._misComprasPlazaTab='proceso';try{localStorage.setItem(TAB_KEY,JSON.stringify('proceso'));}catch(_){} setTimeout(boot,0);} if(view==='v-plaza-comprando') setTimeout(fixComprandoBack,0);
-      return r;
-    };
-  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,120);
   setInterval(function(){var v=document.getElementById('v-mis-compras-plaza'); if(v&&v.classList.contains('active')){var el=document.getElementById('miscompras-plaza-lista'); if(el&&!el.querySelector('.dc-l14-card,.dc-l14-empty'))render(true);} var c=document.getElementById('v-plaza-comprando'); if(c&&c.classList.contains('active'))fixComprandoBack();},700);
   window.dcPlazaLimpieza15Render=function(){return render(true);};
@@ -1752,17 +1727,6 @@
   window.dcPlazaRenderComprando=renderComprandoL20;
   window.dcPlazaRenderComprandoRestaurant=renderComprandoL20;
 
-  var oldGo=window.go;
-  if(!window.__dcPlazaL20GoWrap){
-    window.__dcPlazaL20GoWrap=true;
-    window.go=function(view,dir){
-      try{if(view!=='v-mis-compras-plaza') collapseAll();}catch(_){ }
-      var r=(typeof oldGo==='function')?oldGo.apply(this,arguments):undefined;
-      if(view==='v-plaza-comprando') setTimeout(renderComprandoL20,20);
-      if(view==='v-mis-compras-plaza'){try{collapseAll(); if(typeof window.dcPlazaLimpieza15Render==='function')setTimeout(window.dcPlazaLimpieza15Render,30);}catch(_){ }}
-      return r;
-    };
-  }
   setTimeout(function(){if(document.getElementById('v-plaza-comprando')&&document.getElementById('v-plaza-comprando').classList.contains('active'))renderComprandoL20();},80);
 })();
 
