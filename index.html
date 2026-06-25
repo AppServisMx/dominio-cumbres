@@ -1886,9 +1886,10 @@
       </div>
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">📦</div><div class="ni-lb" style="color:var(--blue);">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
+        <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">📦</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb" style="color:var(--red);">Pedidos</div></div>
+        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb" style="color:var(--blue);">Mis Compras</div></div>
+        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
 <div class="view go-right" id="v-serv-det">
