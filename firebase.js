@@ -961,8 +961,8 @@ window._plazaRenderLista = function(docs) {
       + '<div class="si05"><div class="si17">'+(r.nombrePublico || r.nombreNegocio || r.nombre || '—')+'</div>'
       + '<span class="si44" style="background:'+meta.bg+';color:'+meta.col+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;">'+meta.lbl+'</span></div>'
       + '<div class="si10">'+(r.descripcionPublica || r.descripcion || cat || 'Comercio local')+'</div>'
-      + '<div class="si46">'+_plazaCatLabel(cat)+(r.ratingPromedio?' · ⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.)':' · ⭐ Nuevo')+'</div>'
-      + '<div class="si47"><span class="si62">'+(r.direccionNegocio || 'Comercio de la zona')+'</span><button class="si48" style="background:var(--blue);">Ver productos →</button></div>'
+      + '<div class="si46">'+_plazaCatLabel(cat)+(r.ratingPromedio?' · ⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.)':'')+'</div>'
+      + '<div class="si47"><button onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombrePublico||r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button><button class="si48" style="background:var(--blue);">Ver productos →</button></div>'
       + '</div></div>';
   }).join('');
 };
@@ -1014,14 +1014,6 @@ window.plazaAbrirComercio = async function(id) {
   go('v-plaza-det','right');
   var detScr = document.getElementById('plaza-prod-lista'); if (detScr) detScr.scrollTop = 0;
   await window.plazaCargarProductos(id, r, estOp);
-  try {
-    var _rTipo3=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
-    if(_rTipo3==='vecino'){
-      var _pl=document.getElementById('plaza-prod-lista');
-      if(_pl){var _oRs3=_pl.querySelector('.dc-rating-inject');if(_oRs3)_oRs3.remove();var _rs3=document.createElement('div');_rs3.className='dc-rating-inject';_rs3.style.cssText='padding:14px;margin:8px 14px;background:#FFF8DC;border-radius:14px;border:.5px solid #f0e0a0;';_rs3.innerHTML='<div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:6px;" id="neg-det-rating-avg">⭐ Cargando...</div><div id="neg-det-rating-block"></div><div id="neg-det-opiniones-block" style="display:none;margin-top:12px;"></div>';_pl.insertBefore(_rs3,_pl.firstChild);}
-      window.dcRatingCargar&&window.dcRatingCargar(id,'neg-det','Calificar comercio');
-    }
-  }catch(e){}
 
 };
 
