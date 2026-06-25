@@ -14157,48 +14157,53 @@ window.cargarMembresia=async function(){
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-rp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:flex-end;justify-content:center;" onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()">
-  <div id="dc-rp-sheet" style="background:#fff;border-radius:24px 24px 0 0;padding:22px 20px 32px;width:100%;max-width:430px;box-shadow:0 -6px 40px rgba(0,0,0,.18);font-family:'Inter',sans-serif;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,1,.56,1);" onclick="event.stopPropagation()">
+  <div id="dc-rp-sheet" style="background:#fff;border-radius:24px 24px 0 0;padding:22px 20px 32px;width:100%;max-width:430px;max-height:88vh;overflow-y:auto;box-shadow:0 -6px 40px rgba(0,0,0,.18);font-family:'Inter',sans-serif;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,1,.56,1);" onclick="event.stopPropagation()">
     <div style="width:36px;height:4px;background:#e0e0e0;border-radius:4px;margin:0 auto 18px;"></div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
       <div>
         <div style="font-size:16px;font-weight:800;color:#111;line-height:1.2;" id="dc-rp-nombre">—</div>
-        <div style="font-size:12px;color:#888;margin-top:3px;">Comparte tu experiencia</div>
+        <div style="font-size:12px;color:#888;margin-top:3px;" id="dc-rp-subtitulo">Comparte tu experiencia</div>
       </div>
       <button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#f5f5f5;border:none;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;margin-left:10px;">✕</button>
     </div>
-    <div id="dc-rp-avg" style="font-size:11px;color:#9a7020;margin-bottom:16px;min-height:14px;"></div>
+    <div id="dc-rp-avg" style="font-size:12px;font-weight:700;color:#9a7020;background:#FFFBEB;border-radius:10px;padding:7px 12px;margin-bottom:14px;min-height:14px;display:none;"></div>
+    <!-- Modo: editar / enviar -->
     <div id="dc-rp-content" style="display:flex;flex-direction:column;gap:12px;">
       <div id="dc-rp-stars" style="display:flex;gap:10px;justify-content:center;margin:4px 0 2px;"></div>
       <textarea id="dc-rp-com" class="nota" rows="2" placeholder="Comentario opcional..." style="resize:none;"></textarea>
       <button id="dc-rp-btn" onclick="window.dcRatingPopupEnviar&&window.dcRatingPopupEnviar()" style="background:#F5C518;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;color:#1a1200;cursor:pointer;font-family:inherit;width:100%;">Enviar calificación →</button>
     </div>
+    <!-- Modo: ya calificado -->
     <div id="dc-rp-votado" style="display:none;"></div>
+    <!-- Comentarios de otros vecinos -->
+    <div id="dc-rp-comentarios" style="display:none;margin-top:18px;border-top:1px solid #f0f0f0;padding-top:14px;"></div>
   </div>
 </div>
 <script>
 (function(){
-  var _rpUid='', _rpSel=0;
+  var _rpUid='', _rpSel=0, _rpCardBtn=null;
 
   window.dcRatingAbrirPopup=function(pUid,nombre,e){
     if(e){e.stopPropagation();}
     var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
     if(tipo!=='vecino'){alert('Solo los vecinos pueden calificar.');return;}
     _rpUid=pUid; _rpSel=0;
+    _rpCardBtn=(e&&e.target)?e.target.closest('button'):null;
     var ov=document.getElementById('dc-rp-overlay');
     var sh=document.getElementById('dc-rp-sheet');
     if(!ov||!sh)return;
     document.getElementById('dc-rp-nombre').textContent=nombre||'—';
-    document.getElementById('dc-rp-avg').textContent='';
+    document.getElementById('dc-rp-subtitulo').textContent='Comparte tu experiencia';
+    var avg=document.getElementById('dc-rp-avg'); avg.textContent=''; avg.style.display='none';
     document.getElementById('dc-rp-votado').style.display='none';
     document.getElementById('dc-rp-content').style.display='flex';
+    document.getElementById('dc-rp-comentarios').style.display='none';
     document.getElementById('dc-rp-com').value='';
-    document.getElementById('dc-rp-btn').disabled=false;
-    document.getElementById('dc-rp-btn').textContent='Enviar calificación →';
+    var b=document.getElementById('dc-rp-btn'); b.disabled=false; b.textContent='Enviar calificación →';
     _rpRenderStars(0);
     ov.style.display='flex';
-    requestAnimationFrame(function(){sh.style.transform='translateY(0)';});
-    _rpCargarPromedio(pUid);
-    _rpCargarMiVoto(pUid);
+    requestAnimationFrame(function(){sh.style.transform='translateY(0)';sh.scrollTop=0;});
+    _rpCargarDatos(pUid);
   };
 
   window.dcRatingCerrarPopup=function(){
@@ -14216,10 +14221,9 @@ window.cargarMembresia=async function(){
     for(var i=1;i<=5;i++){
       var s=document.createElement('span');
       s.innerHTML=i<=sel?'⭐':'☆';
-      s.style.cssText='font-size:38px;cursor:pointer;transition:transform .12s;line-height:1;';
-      s.dataset.n=i;
+      s.style.cssText='font-size:38px;cursor:pointer;transition:transform .12s;line-height:1;user-select:none;';
       (function(n,el){
-        el.onmouseenter=function(){if(n>_rpSel)el.style.transform='scale(1.18)';};
+        el.onmouseenter=function(){el.style.transform='scale(1.2)';};
         el.onmouseleave=function(){el.style.transform='scale(1)';};
         el.onclick=function(){_rpRenderStars(n);};
       })(i,s);
@@ -14227,25 +14231,53 @@ window.cargarMembresia=async function(){
     }
   }
 
-  async function _rpCargarPromedio(pUid){
+  async function _rpCargarDatos(pUid){
     try{
+      // Promedio
       var snap=await _fbGet4('calificaciones',pUid,'resumen','datos');
-      var avg=document.getElementById('dc-rp-avg'); if(!avg)return;
-      if(snap.exists()){var d=snap.data();avg.textContent=d.promedio?'⭐ '+d.promedio+' ('+d.total+' opiniones)':'Sé el primero en calificar';}
-      else avg.textContent='Sé el primero en calificar';
+      var avg=document.getElementById('dc-rp-avg');
+      if(avg){
+        if(snap.exists()&&snap.data().promedio){var d=snap.data();avg.textContent='⭐ '+d.promedio+' promedio · '+d.total+' opiniones';avg.style.display='block';}
+        else{avg.textContent='Sé el primero en calificar';avg.style.display='block';}
+      }
+      // Mi voto
+      var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid;
+      if(myUid){
+        var mv=await _fbGet4('calificaciones',pUid,'votos',myUid);
+        if(mv.exists()){
+          var vd=mv.data();
+          _rpSel=vd.rating||0;
+          _rpRenderStars(_rpSel);
+          var com=document.getElementById('dc-rp-com'); if(com)com.value=vd.comentario||'';
+          var sub=document.getElementById('dc-rp-subtitulo'); if(sub)sub.textContent='Editar tu calificación';
+          var b=document.getElementById('dc-rp-btn'); if(b)b.textContent='Actualizar calificación →';
+        }
+      }
+      // Comentarios de otros
+      _rpMostrarComentarios(pUid, myUid||'');
     }catch(e){}
   }
 
-  async function _rpCargarMiVoto(pUid){
+  async function _rpMostrarComentarios(pUid, myUid){
     try{
-      var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid; if(!myUid)return;
-      var mv=await _fbGet4('calificaciones',pUid,'votos',myUid);
-      if(mv.exists()){
-        var vd=mv.data();
-        _rpSel=vd.rating||0;
-        _rpRenderStars(_rpSel);
-        var com=document.getElementById('dc-rp-com'); if(com)com.value=vd.comentario||'';
-      }
+      var snap=await _fbColSub3('calificaciones',pUid,'votos');
+      var items=[];
+      snap.forEach(function(d){var v=d.data();if(d.id!==myUid&&(v.comentario||'').trim())items.push(v);});
+      var ob=document.getElementById('dc-rp-comentarios'); if(!ob)return;
+      if(!items.length){ob.style.display='none';return;}
+      ob.style.display='block';
+      var html='<div style="font-size:12px;font-weight:800;color:#444;margin-bottom:10px;">💬 Opiniones de vecinos</div>';
+      items.forEach(function(v){
+        var nr=v.rating||0; var fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
+        html+='<div style="background:#f9f9f9;border-radius:12px;padding:11px 12px;margin-bottom:8px;">'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+          +'<span style="font-size:14px;">'+'⭐'.repeat(nr)+'☆'.repeat(5-nr)+'</span>'
+          +'<span style="font-size:10px;color:#bbb;">'+fecha+'</span></div>'
+          +(v.comentario?'<div style="font-size:12px;color:#444;line-height:1.5;font-style:italic;">&ldquo;'+v.comentario.replace(/</g,'&lt;')+'&rdquo;</div>':'')
+          +'<div style="font-size:11px;color:#aaa;margin-top:4px;">'+(v.nombre||'Vecino')+'</div>'
+          +'</div>';
+      });
+      ob.innerHTML=html;
     }catch(e){}
   }
 
@@ -14264,23 +14296,45 @@ window.cargarMembresia=async function(){
       var prom=cnt?Math.round((tot/cnt)*10)/10:0;
       await _fbSet4('calificaciones',_rpUid,'resumen','datos',{promedio:prom,total:cnt});
       try{await _fbUpd2('usuarios',_rpUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
+      // Actualizar botón de la tarjeta
+      if(_rpCardBtn){
+        _rpCardBtn.innerHTML='✅ Ya calificado';
+        _rpCardBtn.style.cssText=_rpCardBtn.style.cssText+'background:#E8F5E9;border-color:#1FC26A;color:#1a7a3a;';
+      }
+      // Mostrar confirmación en popup
       var cont=document.getElementById('dc-rp-content');
       var vot=document.getElementById('dc-rp-votado');
+      var obs=document.getElementById('dc-rp-comentarios');
       if(cont)cont.style.display='none';
+      if(obs)obs.style.display='none';
+      var avg=document.getElementById('dc-rp-avg');
+      if(avg){avg.textContent='⭐ '+prom+' promedio · '+cnt+' opiniones';avg.style.display='block';}
       if(vot){
         vot.style.display='block';
-        vot.innerHTML='<div style="text-align:center;padding:12px 0;">'
-          +'<div style="font-size:40px;margin-bottom:10px;">✅</div>'
-          +'<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:4px;">¡Gracias por calificar!</div>'
-          +'<div style="font-size:22px;margin:10px 0;">'+'⭐'.repeat(_rpSel)+'☆'.repeat(5-_rpSel)+'</div>'
-          +'<div style="font-size:12px;color:#9a7020;margin-bottom:16px;">Promedio: ⭐ '+prom+' ('+cnt+' opiniones)</div>'
-          +'<button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#1FC26A;border:none;border-radius:14px;padding:12px 28px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">Cerrar</button>'
-          +'</div>';
+        vot.innerHTML='<div style="text-align:center;padding:16px 0;">'
+          +'<div style="font-size:42px;margin-bottom:10px;">✅</div>'
+          +'<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:8px;">¡Gracias por calificar!</div>'
+          +'<div style="font-size:26px;margin:8px 0;">'+'⭐'.repeat(_rpSel)+'☆'.repeat(5-_rpSel)+'</div>'
+          +(com?'<div style="font-size:12px;color:#666;font-style:italic;margin:8px 0;">&ldquo;'+com.replace(/</g,'&lt;')+'&rdquo;</div>':'')
+          +'<div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">'
+          +'<button onclick="window._rpModoEditar&&window._rpModoEditar()" style="background:none;border:1.5px solid #d4a020;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar</button>'
+          +'<button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#1FC26A;border:none;border-radius:12px;padding:10px 22px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">Cerrar</button>'
+          +'</div></div>';
       }
     }catch(e){
       if(btn){btn.disabled=false;btn.textContent='Enviar calificación →';}
       alert('Error: '+e.message);
     }
+  };
+
+  window._rpModoEditar=function(){
+    var vot=document.getElementById('dc-rp-votado');
+    var cont=document.getElementById('dc-rp-content');
+    if(vot)vot.style.display='none';
+    if(cont){cont.style.display='flex';}
+    var sub=document.getElementById('dc-rp-subtitulo'); if(sub)sub.textContent='Editar tu calificación';
+    var b=document.getElementById('dc-rp-btn'); if(b){b.disabled=false;b.textContent='Actualizar calificación →';}
+    _rpRenderStars(_rpSel);
   };
 })();
 </script>
