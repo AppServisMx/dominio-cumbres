@@ -366,7 +366,7 @@ function _renderTransferencia(){
   if(hdrT) hdrT.textContent='📱 Transferencia';
   var store=window._dcPlazaStoreActual||null;
   var storeName=(store&&(store.nombrePublico||store.nombreNegocio||store.nombre))||'Plaza Online';
-  if(hdrS) hdrS.textContent=storeName;
+  if(hdrS) hdrS.textContent='Plaza Online';
   var allItems=norm(activeCartData().items);
   // Filtrar solo productos de la tienda actual
   var storeId=store&&(store._id||store.id||store.uid||'');
@@ -538,6 +538,8 @@ function _plazaShowCompraOverlay(onDone){
 var _confirmLock=false;
 
 function goSeguimiento(){
+  // Limpiar textareas para evitar el diálogo "cambios sin guardar" del browser
+  try{['dc-plaza-transfer-ref','dc-plaza-dir-compra','dc-plaza-nota-compra'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});}catch(_){}
   // Tras compra → volver a Plaza Online (limpiar comprando del stack)
   _navStack=_navStack.filter(function(id){return id!=='v-plaza-comprando';});
   _navSuppress=true;
