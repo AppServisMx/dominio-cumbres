@@ -294,8 +294,15 @@ function activeCartData(){
   wj(SEL_KEY,data);
   return data;
 }
+function _comprandoRestoreHdr(){
+  var h=document.querySelector('#v-plaza-comprando .si13');
+  var s=document.querySelector('#v-plaza-comprando .si21');
+  if(h) h.textContent='🛒 COMPRANDO';
+  if(s) s.textContent='Plaza Online';
+}
 function renderComprando(){
   ensureComprandoView();
+  _comprandoRestoreHdr();
   var data=activeCartData(), c=norm(data.items), subtotal=total(c);
   var el=document.getElementById('v-plaza-comprando-lista');
   if(!el) return false;
@@ -348,39 +355,76 @@ function renderComprando(){
   return false;
 }
 
-// Fix D — pantalla de captura de referencia de transferencia
+// Pantalla de captura de referencia de transferencia (diseño igual a Food)
 function _renderTransferencia(){
   ensureComprandoView();
   var el=document.getElementById('v-plaza-comprando-lista');
   if(!el) return;
+  // Cambiar header a "Transferencia" + nombre de la tienda
+  var hdrT=document.querySelector('#v-plaza-comprando .si13');
+  var hdrS=document.querySelector('#v-plaza-comprando .si21');
+  if(hdrT) hdrT.textContent='📱 Transferencia';
+  var store=window._dcPlazaStoreActual||null;
+  var storeName=(store&&(store.nombrePublico||store.nombreNegocio||store.nombre))||'Plaza Online';
+  if(hdrS) hdrS.textContent=storeName;
   var c=norm(activeCartData().items), subtotal=total(c);
+  // Datos bancarios del negocio
+  var banco=(store&&store.bancoTransferencia)||{};
+  var tieneData=banco.banco||banco.clabe||banco.cuenta||banco.titular;
+  var bancoHTML='';
+  if(tieneData){
+    var rowB=function(lbl,val){return val?'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid #f5f5f5;"><span style="font-size:11px;color:#888;">'+lbl+'</span><span style="font-size:12px;font-weight:700;color:#111;">'+esc(val)+'</span></div>':'';};
+    bancoHTML=rowB('Banco',banco.banco)+rowB('Titular',banco.titular)+rowB('Cuenta',banco.cuenta)+rowB('CLABE',banco.clabe);
+  }else{
+    bancoHTML='<div style="font-size:12px;color:#666;line-height:1.6;">El negocio aún no configuró datos de transferencia.<br><span style="color:var(--blue,#1a6fbf);font-weight:700;">Confirma el pedido y coordina el pago por chat o WhatsApp.</span></div>';
+  }
   el.innerHTML=
-    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
-      '<div style="font-size:10px;font-weight:900;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;">RESUMEN</div>'+
+    '<div style="background:#fff;border-radius:16px;padding:16px;margin:8px;border:.5px solid #e8e8e8;box-shadow:0 2px 8px rgba(0,0,0,.04);">'+
+      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Resumen</div>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;">'+
-        '<div style="font-size:13px;font-weight:900;color:#111;">Plaza Online</div>'+
-        '<div style="font-size:17px;font-weight:900;color:var(--blue);">'+money(subtotal)+'</div>'+
+        '<div style="font-size:14px;font-weight:700;color:#111;">'+esc(storeName)+'</div>'+
+        '<div style="font-size:18px;font-weight:700;color:var(--blue,#1a6fbf);">'+money(subtotal)+'</div>'+
       '</div>'+
     '</div>'+
-    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
-      '<div style="font-size:10px;font-weight:900;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">DATOS BANCARIOS DEL NEGOCIO</div>'+
-      '<div style="font-size:12px;color:#555;line-height:1.5;">El negocio aún no ha configurado sus datos bancarios.<br><span style="color:var(--blue);font-weight:700;">Confirma el pedido y coordina el pago por chat o WhatsApp.</span></div>'+
+    '<div style="background:#fff;border-radius:16px;padding:16px;margin:8px;border:.5px solid #e8e8e8;box-shadow:0 2px 8px rgba(0,0,0,.04);">'+
+      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Datos bancarios del negocio</div>'+
+      bancoHTML+
     '</div>'+
-    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
-      '<div style="font-size:11px;font-weight:900;color:#555;margin-bottom:8px;">📋 Captura tu referencia</div>'+
-      '<div style="font-size:10px;color:#888;margin-bottom:8px;">Folio, número de transacción o comentario</div>'+
-      '<textarea id="dc-plaza-transfer-ref" style="width:100%;min-height:80px;border:.8px solid #e0e2e4;border-radius:12px;padding:10px;font-size:12px;font-family:inherit;background:#fff;box-sizing:border-box;outline:none;resize:none;" placeholder="Ej: folio SPEI 12345, transferí a las 3:15pm..."></textarea>'+
-      '<div id="dc-plaza-transfer-msg" style="font-size:11px;margin-top:4px;min-height:16px;"></div>'+
+    '<div style="background:#FFF8E1;border-radius:16px;padding:16px;margin:8px;border:2px solid #F59E0B;">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'+
+        '<div style="width:28px;height:28px;background:#F59E0B;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">📋</div>'+
+        '<div>'+
+          '<div style="font-size:13px;font-weight:800;color:#92400E;">Captura tu referencia</div>'+
+          '<div style="font-size:11px;color:#B45309;">Folio, número de transacción o comentario</div>'+
+        '</div>'+
+      '</div>'+
+      '<textarea id="dc-plaza-transfer-ref" rows="3" style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid #F59E0B;border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;color:#111;resize:none;outline:none;line-height:1.5;" placeholder="Ej: folio SPEI 12345, transferí a las 3:15pm..."></textarea>'+
+      '<div id="dc-plaza-transfer-msg" style="font-size:11px;margin-top:4px;min-height:16px;color:#D63A2A;"></div>'+
     '</div>'+
-    '<button type="button" class="dc-plz-buy-btn" id="dc-plaza-ya-transferi" style="background:#F5C518;color:#5b4300;">✅ Ya transferí — Confirmar pedido →</button>'+
-    '<button type="button" style="width:calc(100% - 16px);margin:0 8px 18px;border:none;border-radius:14px;background:#f5f5f5;color:#555;padding:12px;font-size:12px;font-weight:900;font-family:inherit;" id="dc-plaza-volver-comprando">← Regresar</button>';
+    '<button type="button" class="dc-plz-buy-btn" id="dc-plaza-ya-transferi">✅ Ya transferí — Confirmar pedido →</button>'+
+    '<button type="button" style="width:calc(100% - 16px);margin:0 8px 24px;border:none;border-radius:14px;background:#f5f5f5;color:#555;padding:12px;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;" id="dc-plaza-volver-comprando">← Regresar</button>';
 }
 
-// Botón "Regresar" desde pantalla de transferencia
+// Botón "Regresar" desde pantalla de transferencia (restaura header también)
 document.addEventListener('click',function(e){
   var btn=e.target&&e.target.closest?e.target.closest('#dc-plaza-volver-comprando'):null;
   if(btn&&btn.closest('#v-plaza-comprando')){stop(e);renderComprando();return false;}
 },true);
+// En v-plaza-det capturar la tienda actual (respaldo por si _postHooks no alcanza)
+document.addEventListener('click',function(e){
+  var card=e.target&&e.target.closest?e.target.closest('.plaza-card'):null;
+  if(!card) return;
+  setTimeout(function(){
+    try{
+      var el=document.getElementById('plaza-det-nombre');
+      var nom=(el&&el.textContent||'').replace(/^\s*🏪\s*/,'').trim();
+      if(nom&&Array.isArray(window._plazaDocsCache)){
+        var s=window._plazaDocsCache.find(function(x){return nom===(x.nombrePublico||x.nombreNegocio||x.nombre||'');});
+        if(s) window._dcPlazaStoreActual=s;
+      }
+    }catch(_){}
+  },400);
+},false);
 
 window.dcPlazaRenderComprando=renderComprando;
 window.dcPlazaRenderComprandoRestaurant=renderComprando;
@@ -458,9 +502,11 @@ document.addEventListener('click',function(e){
 var _confirmLock=false;
 
 function goSeguimiento(){
-  // _navSuppress=true evita que dcGoOficial empuje v-plaza-comprando al stack
+  // Limpiar v-plaza-comprando del stack Y suprimir su push durante go()
+  _navStack=_navStack.filter(function(id){return id!=='v-plaza-comprando';});
   _navSuppress=true;
   try{if(typeof window.go==='function') window.go('v-plaza-seguimiento','right');}catch(e){}
+  _navStack=_navStack.filter(function(id){return id!=='v-plaza-comprando';});
   setTimeout(function(){_navSuppress=false;},0);
   [40,120,300].forEach(function(ms){setTimeout(function(){try{renderSeguimiento();}catch(_){}},ms);});
   setTimeout(function(){_confirmLock=false;},800);
@@ -565,6 +611,16 @@ function _postHooks(id){
       _plazaCollapseAll();
       setTimeout(function(){try{renderMisCompras(true);}catch(_){}},45);
     }
+    if(id==='v-plaza-det'){setTimeout(function(){
+      try{
+        var el=document.getElementById('plaza-det-nombre');
+        var nom=(el&&el.textContent||'').replace(/^\s*🏪\s*/,'').trim();
+        if(nom&&Array.isArray(window._plazaDocsCache)){
+          var s=window._plazaDocsCache.find(function(x){return nom===(x.nombrePublico||x.nombreNegocio||x.nombre||'');});
+          if(s) window._dcPlazaStoreActual=s;
+        }
+      }catch(_){}
+    },300);}
     if(id==='v-plaza-comprando'){setTimeout(function(){try{renderComprando();}catch(_){}},45);}
     if(id==='v-plaza-seguimiento'){setTimeout(function(){try{renderSeguimiento();}catch(_){}},45);}
     if(id==='v-favoritos'){window.__dcL33LastBeforeFav=window.__dcL33LastBeforeFav||'';}
