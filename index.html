@@ -14472,6 +14472,11 @@ window.cargarMembresia=async function(){
           var cs=document.getElementById('dc-com-sheet'); if(cs)cs.style.transform='translateY(100%)';
           setTimeout(function(){cp.style.display='none';cp.style.pointerEvents='';},320);
         }
+        var pp=document.getElementById('plaza-prod-det-ov');
+        if(pp&&pp.style.display==='flex'){
+          pp.style.display='none';
+          try{document.body.style.overflow='';document.body.style.touchAction='';}catch(e2){}
+        }
       }catch(e){}
       return (typeof _origGoR==='function')?_origGoR.apply(this,arguments):undefined;
     };
