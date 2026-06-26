@@ -8180,7 +8180,7 @@ function _dcfRenderLista(docs) {
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
       +'<div class="rname">'+(r.nombreNegocio||r.nombre||'—')+'</div>'
       +'<span style="'+estStyle+'">'+estLabel+'</span></div>'
-      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+r._id+'\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span> · ':'')+(r.descripcion||cat)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+r._id+'\',\'restaurante\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span> ·':'')+(r.descripcion||cat)+'</div>'
       +'<div class="rfooter" style="align-items:center;">'
       +'<button data-rate-id="'+r._id+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
       +'<span class="link-green">Pedir →</span>'
@@ -14400,10 +14400,22 @@ window.cargarMembresia=async function(){
     }
   };
 
-  function _rpRenderComBody(votos, bd){
-    if(!votos.length){bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">Aún no hay opiniones</div>';return;}
+  function _rpRenderComBody(votos, bd, tipo){
+    var etiqueta={restaurante:'restaurante',proveedor:'proveedor',negocio:'negocio'}[tipo]||'negocio';
+    var resumenHtml='';
+    if(votos.length){
+      var tot=0; votos.forEach(function(v){tot+=(v.rating||0);});
+      var prom=Math.round((tot/votos.length)*10)/10;
+      var comCnt=votos.filter(function(v){return (v.comentario||'').trim();}).length;
+      resumenHtml='<div style="background:linear-gradient(135deg,#FFFBEB,#FFF3E0);border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid #FFE082;">'
+        +'<div style="font-size:12px;color:#9a6000;line-height:1.6;">'
+        +'Este '+etiqueta+' tiene <strong style="color:#E65100;">⭐ '+prom+'</strong> en promedio'
+        +' y <strong style="color:#1a6fbf;">'+comCnt+' comentario'+(comCnt!==1?'s':'')+'</strong> de vecinos.'
+        +'</div></div>';
+    }
+    if(!votos.length){bd.innerHTML=resumenHtml+'<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">Aún no hay opiniones</div>';return;}
     var sorted=votos.slice().sort(function(a,b){return (b.fecha||'')>(a.fecha||'')?1:-1;});
-    var html='';
+    var html=resumenHtml;
     sorted.forEach(function(v){
       var nr=v.rating||0, com=(v.comentario||'').trim(), fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
       html+='<div style="background:#f9f9f9;border-radius:14px;padding:13px 14px;margin-bottom:10px;">'
@@ -14416,12 +14428,12 @@ window.cargarMembresia=async function(){
     bd.innerHTML=html;
   }
 
-  window.dcRatingVerComentarios=async function(bizId,e){
-    if(e)e.stopPropagation();
+  window.dcRatingVerComentarios=async function(bizId,tipo,e){
+    if(e)e.stopPropagation(); else if(tipo&&tipo.stopPropagation){e=tipo;tipo='negocio';e.stopPropagation();}
     var ov=document.getElementById('dc-com-overlay'), sh=document.getElementById('dc-com-sheet'), bd=document.getElementById('dc-com-body');
     if(!ov||!sh||!bd)return;
     var cached=_rpCacheGet(bizId);
-    if(cached){ _rpRenderComBody(cached,bd); }
+    if(cached){ _rpRenderComBody(cached,bd,tipo); }
     else { bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#ccc;">⏳ Cargando...</div>'; }
     ov.style.display='flex';
     requestAnimationFrame(function(){sh.style.transform='translateY(0)';sh.scrollTop=0;});
@@ -14430,7 +14442,7 @@ window.cargarMembresia=async function(){
       var votos=[];
       snap.forEach(function(d){var v=d.data(); v._id=d.id; votos.push(v);});
       _rpCacheSet(bizId,votos);
-      _rpRenderComBody(votos,bd);
+      _rpRenderComBody(votos,bd,tipo);
     }catch(err){ if(!cached)bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">No se pudieron cargar</div>'; }
   };
 
