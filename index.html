@@ -13005,6 +13005,11 @@ if (typeof window.go !== 'function') {
     var card = document.getElementById('plaza-prod-det-card');
     if (!ov || !card) return;
 
+    // Resetear propiedades que closeDetail/_cerrarDetallePlazaReal dejan en el overlay
+    ov.style.visibility = '';
+    ov.style.pointerEvents = '';
+    ov.style.display = 'flex';
+
     _dcLockBodyForModal();
 
     ov.style.overflow = 'hidden';
