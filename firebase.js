@@ -1151,7 +1151,7 @@ window.plazaAgregarAlCarritoDetalle = function(pid){
   try { localStorage.setItem('dcPlazaCarrito', JSON.stringify(window._plazaCarrito)); } catch(e) {}
   window.plazaCerrarProductoDetalle();
   setTimeout(function(){
-    window.plazaShowCarritoToast('✅ Producto agregado al carrito exitosamente');
+    try{window.plazaShowCarritoToast('✅ Producto agregado al carrito exitosamente');}catch(e){}
     window._plazaAgregandoDetalle = false;
   }, 80);
   return false;
@@ -1193,12 +1193,12 @@ window.plazaAbrirProductoDetalle = function(pid){
     + '<div style="font-size:12px;color:#444;line-height:1.42;margin:4px 0 12px;max-height:60px;overflow-y:auto;padding-right:3px;border-top:.5px solid #eef2f5;padding-top:10px;">'+desc+'</div>'
     + (!agotado ? '<div style="display:flex;align-items:center;justify-content:center;gap:18px;margin:4px 0 14px;">'
         + '<button type="button" onclick="return window.plazaCambiarQtyDetalle(-1)" style="width:40px;height:40px;border:none;border-radius:12px;background:var(--yellow);color:#111;font-size:22px;font-weight:900;font-family:inherit;line-height:40px;box-shadow:0 2px 7px rgba(0,0,0,.10);">−</button>'
-        + '<div id="dc-legacy-plaza-det-qty-num-1" data-dc-legacy-id="plaza-det-qty-num" style="min-width:24px;text-align:center;font-size:18px;font-weight:900;color:#111;">1</div>'
+        + '<div id="plaza-det-qty-num" style="min-width:24px;text-align:center;font-size:18px;font-weight:900;color:#111;">1</div>'
         + '<button type="button" onclick="return window.plazaCambiarQtyDetalle(1)" style="width:40px;height:40px;border:none;border-radius:12px;background:var(--yellow);color:#111;font-size:22px;font-weight:900;font-family:inherit;line-height:40px;box-shadow:0 2px 7px rgba(0,0,0,.10);">+</button>'
         + '</div>' : '')
     + '<button type="button" '+(agotado?'disabled':'')+' onclick="return window.plazaAgregarAlCarritoDetalle(\''+String(pid).replace(/'/g,"\\'")+'\')" style="width:100%;padding:14px;border:none;border-radius:17px;background:'+(agotado?'#ddd':'var(--blue)')+';color:#fff;font-size:13px;font-weight:900;font-family:inherit;cursor:'+(agotado?'not-allowed':'pointer')+';box-shadow:0 8px 16px rgba(26,122,181,.20);letter-spacing:.2px;">'+(agotado?'No disponible':'🛒 AGREGAR AL CARRITO')+'</button>'
     + '</div></div>';
-    ov.style.visibility = '';
+  ov.style.visibility = '';
   ov.style.pointerEvents = '';
   ov.style.display = 'flex';
   try { document.body.style.overflow='hidden'; document.body.style.touchAction='none'; } catch(e) {}

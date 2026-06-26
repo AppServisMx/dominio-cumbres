@@ -303,26 +303,84 @@ function renderComprando(){
     el.innerHTML='<div style="background:#fff;border:.5px solid #dde4ea;border-radius:14px;margin:8px;padding:18px;text-align:center;"><div style="font-size:28px;margin-bottom:6px;">🛒</div><div style="font-size:13px;font-weight:900;">Tu carrito está vacío</div></div>';
     return false;
   }
+
+  // Leer selecciones actuales
+  var entrega=localStorage.getItem('dcPlazaTipoEntrega')||'domicilio';
+  var pago=localStorage.getItem('dcPlazaTipoPago')||'efectivo';
+
   var html='';
   c.forEach(function(x,i){
     var img=x.foto?'<img src="'+esc(x.foto)+'" onerror="this.parentNode.textContent=\'🛍️\';this.remove();">':'🛍️';
     html+='<div class="dc-plz-product-row"><div class="dc-plz-product-img">'+img+'</div><div class="dc-plz-product-main"><div class="dc-plz-product-name">'+esc(x.nombre)+'</div><div class="dc-plz-product-sub">'+qty(x.cantidad)+' x '+money(num(x.precio))+'</div></div><div class="dc-plz-product-price">'+money(num(x.precio)*qty(x.cantidad))+'</div><button type="button" class="dc-plz-product-x" aria-label="Quitar producto" data-l20-remove="'+esc(x.key||i)+'">×</button></div>';
   });
+
+  // Fix C — opciones de entrega con estado activo según selección actual
   html+='<div class="dc-plz-sec-label">📦 ¿Cómo deseas recibir tu compra?</div>';
-  html+='<div class="dc-plz-option active" data-dc-plaza-entrega="domicilio"><div class="dc-plz-option-ic">🚚</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Entrega a domicilio</div><div class="dc-plz-option-sub">Repartidor DC / Tienda</div></div><div class="dc-plz-radio"></div></div>';
-  html+='<div class="dc-plz-option" data-dc-plaza-entrega="recoger"><div class="dc-plz-option-ic">🏪</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Pasaré a recoger</div><div class="dc-plz-option-sub">Recoger directamente en tienda</div></div><div class="dc-plz-radio"></div></div>';
-  html+='<div class="dc-plz-sec-label">📍 Tu dirección de entrega</div><input id="dc-plaza-dir-compra" class="dc-plz-input" placeholder="Calle, número, colonia, referencias...">';
-  html+='<div class="dc-plz-sec-label">📝 Nota para el negocio</div><textarea id="dc-plaza-nota-compra" class="dc-plz-input" placeholder="Color, talla, indicaciones, referencias..."></textarea>';
-  html+='<div class="dc-plz-info">🏍️ <b>Compra con entrega local</b><br>Acuerda el pago directamente con el negocio. El repartidor DC sólo realiza la entrega cuando aplique.</div>';
+  html+='<div class="dc-plz-option'+(entrega==='domicilio'?' active':'')+'" data-dc-plaza-entrega="domicilio"><div class="dc-plz-option-ic">🚚</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Entrega a domicilio</div><div class="dc-plz-option-sub">Repartidor DC / Tienda</div></div><div class="dc-plz-radio"></div></div>';
+  html+='<div class="dc-plz-option'+(entrega==='recoger'?' active':'')+'" data-dc-plaza-entrega="recoger"><div class="dc-plz-option-ic">🏪</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Pasaré a recoger</div><div class="dc-plz-option-sub">Recoger directamente en tienda</div></div><div class="dc-plz-radio"></div></div>';
+
+  // Fix C — campos condicionales según entrega
+  if(entrega==='domicilio'){
+    html+='<div class="dc-plz-sec-label">📍 Tu dirección de entrega</div><input id="dc-plaza-dir-compra" class="dc-plz-input" placeholder="Calle, número, colonia, referencias...">';
+    html+='<div class="dc-plz-sec-label">📝 Nota para el negocio</div><textarea id="dc-plaza-nota-compra" class="dc-plz-input" placeholder="Color, talla, indicaciones, referencias..."></textarea>';
+    html+='<div class="dc-plz-info">🏍️ <b>Compra con entrega local</b><br>Acuerda el pago directamente con el negocio. El repartidor DC sólo realiza la entrega cuando aplique.</div>';
+  }else{
+    html+='<div class="dc-plz-info">🏪 <b>Recoger en tienda</b><br>Presenta tu folio de compra en el negocio para recoger tu pedido. Coordina el horario directamente con ellos.</div>';
+    html+='<div class="dc-plz-sec-label">📝 Nota para el negocio</div><textarea id="dc-plaza-nota-compra" class="dc-plz-input" placeholder="Horario, nombre, indicaciones..."></textarea>';
+  }
+
+  // Fix C — opciones de pago con estado activo según selección actual
   html+='<div class="dc-plz-sec-label">💳 Forma de pago</div>';
-  html+='<div class="dc-plz-option active" data-dc-plaza-pago="efectivo"><div class="dc-plz-option-ic">💵</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Efectivo al entregar</div><div class="dc-plz-option-sub">Paga al recibir</div></div><div class="dc-plz-radio"></div></div>';
-  html+='<div class="dc-plz-option" data-dc-plaza-pago="tarjeta"><div class="dc-plz-option-ic">💳</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Tarjeta al entregar</div><div class="dc-plz-option-sub">Terminal en la entrega</div></div><div class="dc-plz-radio"></div></div>';
-  html+='<div class="dc-plz-option" data-dc-plaza-pago="transferencia"><div class="dc-plz-option-ic">🏦</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Transferencia</div><div class="dc-plz-option-sub">SPEI / Nómina</div></div><div class="dc-plz-radio"></div></div>';
+  html+='<div class="dc-plz-option'+(pago==='efectivo'?' active':'')+'" data-dc-plaza-pago="efectivo"><div class="dc-plz-option-ic">💵</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Efectivo al entregar</div><div class="dc-plz-option-sub">Paga al recibir</div></div><div class="dc-plz-radio"></div></div>';
+  html+='<div class="dc-plz-option'+(pago==='tarjeta'?' active':'')+'" data-dc-plaza-pago="tarjeta"><div class="dc-plz-option-ic">💳</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Tarjeta al entregar</div><div class="dc-plz-option-sub">Terminal en la entrega</div></div><div class="dc-plz-radio"></div></div>';
+  html+='<div class="dc-plz-option'+(pago==='transferencia'?' active':'')+'" data-dc-plaza-pago="transferencia"><div class="dc-plz-option-ic">🏦</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Transferencia</div><div class="dc-plz-option-sub">SPEI / Nómina</div></div><div class="dc-plz-radio"></div></div>';
+
   html+='<div class="dc-plz-summary"><div class="dc-plz-srow"><span>Subtotal</span><span>'+money(subtotal)+'</span></div><div class="dc-plz-srow"><span>Envío</span><span>Gratis</span></div><div class="dc-plz-srow total"><span>Total</span><span>'+money(subtotal)+'</span></div></div>';
-  html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Confirmar y pedir →</button>';
+
+  // Fix D — botón diferente si pago es transferencia
+  if(pago==='transferencia'){
+    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-ir-transferencia">Continuar → Pago por transferencia</button>';
+  }else{
+    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Confirmar y pedir →</button>';
+  }
+
   el.innerHTML=html;
   return false;
 }
+
+// Fix D — pantalla de captura de referencia de transferencia
+function _renderTransferencia(){
+  ensureComprandoView();
+  var el=document.getElementById('v-plaza-comprando-lista');
+  if(!el) return;
+  var c=norm(activeCartData().items), subtotal=total(c);
+  el.innerHTML=
+    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
+      '<div style="font-size:10px;font-weight:900;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;">RESUMEN</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-size:13px;font-weight:900;color:#111;">Plaza Online</div>'+
+        '<div style="font-size:17px;font-weight:900;color:var(--blue);">'+money(subtotal)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
+      '<div style="font-size:10px;font-weight:900;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">DATOS BANCARIOS DEL NEGOCIO</div>'+
+      '<div style="font-size:12px;color:#555;line-height:1.5;">El negocio aún no ha configurado sus datos bancarios.<br><span style="color:var(--blue);font-weight:700;">Confirma el pedido y coordina el pago por chat o WhatsApp.</span></div>'+
+    '</div>'+
+    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin:8px;box-shadow:0 4px 12px rgba(0,0,0,.06);">'+
+      '<div style="font-size:11px;font-weight:900;color:#555;margin-bottom:8px;">📋 Captura tu referencia</div>'+
+      '<div style="font-size:10px;color:#888;margin-bottom:8px;">Folio, número de transacción o comentario</div>'+
+      '<textarea id="dc-plaza-transfer-ref" style="width:100%;min-height:80px;border:.8px solid #e0e2e4;border-radius:12px;padding:10px;font-size:12px;font-family:inherit;background:#fff;box-sizing:border-box;outline:none;resize:none;" placeholder="Ej: folio SPEI 12345, transferí a las 3:15pm..."></textarea>'+
+      '<div id="dc-plaza-transfer-msg" style="font-size:11px;margin-top:4px;min-height:16px;"></div>'+
+    '</div>'+
+    '<button type="button" class="dc-plz-buy-btn" id="dc-plaza-ya-transferi" style="background:#F5C518;color:#5b4300;">✅ Ya transferí — Confirmar pedido →</button>'+
+    '<button type="button" style="width:calc(100% - 16px);margin:0 8px 18px;border:none;border-radius:14px;background:#f5f5f5;color:#555;padding:12px;font-size:12px;font-weight:900;font-family:inherit;" id="dc-plaza-volver-comprando">← Regresar</button>';
+}
+
+// Botón "Regresar" desde pantalla de transferencia
+document.addEventListener('click',function(e){
+  var btn=e.target&&e.target.closest?e.target.closest('#dc-plaza-volver-comprando'):null;
+  if(btn&&btn.closest('#v-plaza-comprando')){stop(e);renderComprando();return false;}
+},true);
 
 window.dcPlazaRenderComprando=renderComprando;
 window.dcPlazaRenderComprandoRestaurant=renderComprando;
@@ -333,12 +391,14 @@ setTimeout(function(){
 },80);
 
 // ——————————————————————————————————————————————
-// COMPRANDO — click handler (quitar item, entrega/pago)
+// COMPRANDO — click handler (quitar item, entrega/pago, transferencia)
 // ——————————————————————————————————————————————
 document.addEventListener('click',function(e){
   var t=e.target; if(!t||!t.closest) return;
-  var rem=t.closest('#v-plaza-comprando [data-l20-remove],#v-plaza-comprando [data-b2b-remove]');
-  if(rem){
+
+  // Fix B: usar closest sin selector compuesto para mayor compatibilidad
+  var rem=t.closest('[data-l20-remove],[data-b2b-remove]');
+  if(rem&&rem.closest('#v-plaza-comprando')){
     stop(e);
     var k=rem.getAttribute('data-l20-remove')||rem.getAttribute('data-b2b-remove');
     var c=cart().filter(function(x,i){return keyOf(x,i)!==String(k);});
@@ -347,14 +407,46 @@ document.addEventListener('click',function(e){
     try{if(typeof window.dcPlazaLimpieza15Render==='function') window.dcPlazaLimpieza15Render();}catch(_){}
     return false;
   }
-  var opt=t.closest('#v-plaza-comprando [data-dc-plaza-entrega],#v-plaza-comprando [data-dc-plaza-pago]');
-  if(opt){
+
+  // Fix C: al cambiar entrega/pago re-renderiza para mostrar campos correctos
+  var opt=t.closest('[data-dc-plaza-entrega],[data-dc-plaza-pago]');
+  if(opt&&opt.closest('#v-plaza-comprando')){
     stop(e);
     var attr=opt.hasAttribute('data-dc-plaza-entrega')?'data-dc-plaza-entrega':'data-dc-plaza-pago';
     opt.parentNode.querySelectorAll('['+attr+']').forEach(function(x){x.classList.remove('active');});
     opt.classList.add('active');
     localStorage.setItem(attr==='data-dc-plaza-entrega'?'dcPlazaTipoEntrega':'dcPlazaTipoPago',opt.getAttribute(attr));
+    // Re-render para mostrar u ocultar campos según selección
+    renderComprando();
     return false;
+  }
+
+  // Fix D: botón "Continuar → transferencia" abre pantalla de referencia
+  var btnTrans=t.closest('#dc-plaza-ir-transferencia');
+  if(btnTrans&&btnTrans.closest('#v-plaza-comprando')){
+    stop(e);
+    _renderTransferencia();
+    return false;
+  }
+
+  // Fix D: validar referencia antes de confirmar cuando es transferencia
+  var btnYaTransferi=t.closest('#dc-plaza-ya-transferi');
+  if(btnYaTransferi&&btnYaTransferi.closest('#v-plaza-comprando')){
+    stop(e);
+    var refEl=document.getElementById('dc-plaza-transfer-ref');
+    var ref=(refEl&&refEl.value||'').trim();
+    if(!ref){
+      if(refEl){refEl.style.borderColor='#D63A2A';}
+      var msg=document.getElementById('dc-plaza-transfer-msg');
+      if(msg){msg.textContent='Captura tu referencia de pago para continuar.';msg.style.color='#D63A2A';}
+      return false;
+    }
+    try{localStorage.setItem('dcPlazaTransferenciaRef',ref);}catch(_){}
+    // Ahora sí confirmar compra
+    var o={id:'plaza_'+Date.now(),folio:'#PZ'+String(Date.now()).slice(-6),tipo:'plaza_orden',estado:'en_proceso',titulo:'Plaza Online',fecha:Date.now(),items:selectedItems(),total:total(selectedItems()),entrega:(localStorage.getItem('dcPlazaTipoEntrega')||'domicilio'),pago:'transferencia',referenciaTransferencia:ref};
+    saveOrder(o); clearCart();
+    try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goProceso),false;}catch(_){}
+    return goProceso();
   }
 },true);
 
