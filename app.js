@@ -270,7 +270,7 @@
     html+='<div class="dc-plz-option" data-dc-plaza-pago="tarjeta"><div class="dc-plz-option-ic">💳</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Tarjeta al entregar</div><div class="dc-plz-option-sub">Terminal en la entrega</div></div><div class="dc-plz-radio"></div></div>';
     html+='<div class="dc-plz-option" data-dc-plaza-pago="transferencia"><div class="dc-plz-option-ic">🏦</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Transferencia</div><div class="dc-plz-option-sub">SPEI / Nómina</div></div><div class="dc-plz-radio"></div></div>';
     html+='<div class="dc-plz-summary"><div class="dc-plz-srow"><span>Subtotal</span><span>'+money(subtotal)+'</span></div><div class="dc-plz-srow"><span>Envío</span><span>'+(envio?money(envio):'Gratis')+'</span></div><div class="dc-plz-srow total"><span>Total</span><span>'+money(subtotal+envio)+'</span></div></div>';
-    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Comprar →</button>';
+    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Confirmar y pedir →</button>';
     el.innerHTML=html;
     return false;
   }
@@ -1575,7 +1575,7 @@
     return v;
   }
   function addStyle(){
-    if(true) return;
+    if(document.getElementById('dc-plaza-l20-style')) return;
     var s=document.createElement('style');s.id='dc-plaza-l20-style';s.textContent='\
 #v-plaza-comprando .scroll{background:#F5F6F0!important;}\
 #v-plaza-comprando .dc-plz-product-row{display:flex;align-items:center;gap:10px;background:#fff;border:.5px solid #e0e6eb;border-radius:14px;padding:10px;margin:8px 8px 10px;box-shadow:0 4px 12px rgba(10,48,85,.045);}\
@@ -1626,7 +1626,7 @@
     html+='<div class="dc-plz-option" data-dc-plaza-pago="tarjeta"><div class="dc-plz-option-ic">💳</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Tarjeta al entregar</div><div class="dc-plz-option-sub">Terminal en la entrega</div></div><div class="dc-plz-radio"></div></div>';
     html+='<div class="dc-plz-option" data-dc-plaza-pago="transferencia"><div class="dc-plz-option-ic">🏦</div><div class="dc-plz-option-txt"><div class="dc-plz-option-title">Transferencia</div><div class="dc-plz-option-sub">SPEI / Nómina</div></div><div class="dc-plz-radio"></div></div>';
     html+='<div class="dc-plz-summary"><div class="dc-plz-srow"><span>Subtotal</span><span>'+money(subtotal)+'</span></div><div class="dc-plz-srow"><span>Envío</span><span>'+(envio?money(envio):'Gratis')+'</span></div><div class="dc-plz-srow total"><span>Total</span><span>'+money(subtotal+envio)+'</span></div></div>';
-    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Comprar →</button>';
+    html+='<button type="button" class="dc-plz-buy-btn" id="dc-plaza-confirmar-compra">Confirmar y pedir →</button>';
     el.innerHTML=html;
     return false;
   }
