@@ -2614,7 +2614,6 @@
   <div class="plaza-hdr">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="si69">
-      <button class="btn-back" onclick="go('v-plaza','left')">‹</button>
       <div style="flex:1;min-width:0;">
         <div class="si13" id="plaza-det-nombre">🏪 Comercio</div>
         <div style="margin-top:3px;margin-bottom:2px;">
@@ -2642,7 +2641,6 @@
   <div class="plaza-hdr">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="si69">
-      <button class="btn-back" onclick="go('v-plaza','left')">‹</button>
       <div><div class="si13">🛒 Mis compras</div><div class="si21" id="miscompras-plaza-sub">Compras de Plaza Online</div></div>
     </div>
   </div>
@@ -13720,7 +13718,7 @@ if (typeof window.go !== 'function') {
   function ensureSeguimiento(order){
     ensureStyle();
     var v=document.getElementById('v-plaza-seguimiento');
-    if(!v){v=document.createElement('div');v.className='view go-right';v.id='v-plaza-seguimiento';v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">📍 SEGUIMIENTO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-seguimiento-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-plaza-comprando')||document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
+    if(!v){v=document.createElement('div');v.className='view go-right';v.id='v-plaza-seguimiento';v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><div><div class="si13">📍 SEGUIMIENTO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-seguimiento-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-plaza-comprando')||document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
     var el=document.getElementById('plaza-seguimiento-lista'); if(!el)return;
     order=order||rj('dcPlazaOrdenActivaV62',null)||{};var steps=['Compra enviada','Recibido por negocio','Preparando','Listo','En camino / para recoger','Entregado'];
     el.innerHTML='<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:18px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.07);"><div style="font-size:14px;font-weight:900;color:#111;">Compra '+esc(order.folio||'')+'</div><div style="font-size:11px;color:#777;font-weight:700;margin-top:3px;">'+fecha(order.fecha)+' · '+hora(order.fecha)+' · '+money(order.total)+'</div></div>'
