@@ -657,9 +657,8 @@ function _plazaGetQty(){
   for(var i=0;i<ids.length;i++){var el=document.getElementById(ids[i]);if(el)return qty(el.textContent||el.value||1);}
   return qty(window._plazaDetalleQty||1);
 }
-function _plazaActiveModal(btn){
-  return (btn&&btn.closest&&btn.closest('[id^="plaza-prod-det-ov"],#plaza-prod-modal,#plaza-detalle-modal,#plaza-producto-modal,[class*="plaza"][class*="modal"]'))
-    || document.querySelector('[id^="plaza-prod-det-ov"]')
+function _plazaActiveModal(){
+  return document.querySelector('[id^="plaza-prod-det-ov"]')
     || document.getElementById('plaza-prod-modal')
     || document.getElementById('plaza-detalle-modal')
     || document.getElementById('plaza-producto-modal');
@@ -672,8 +671,8 @@ function _plazaPidFrom(btn){
   var m=oc.match(/plazaAgregarAlCarritoDetalle\(['"]([^'"]+)/i); if(m) return String(m[1]);
   return String(window._plazaProductoDetalleId||window._plazaDetallePid||'');
 }
-function _plazaProdFromDOM(btn,pid){
-  var modal=_plazaActiveModal(btn);
+function _plazaProdFromDOM(pid){
+  var modal=_plazaActiveModal();
   var name='Producto';
   var title=modal&&modal.querySelector('h1,h2,h3,[style*="font-size:20"],[style*="font-size:19"],[style*="font-size:18"]');
   if(title) name=(title.textContent||'').replace(/\s+/g,' ').trim();
@@ -694,55 +693,48 @@ function _plazaProdFromCache(pid){
   return null;
 }
 function _plazaCloseDetail(){
-  document.querySelectorAll('[id^="plaza-prod-det-ov"],#plaza-prod-modal,#plaza-detalle-modal,#plaza-producto-modal,#plaza-modal-producto,#plaza-detalle-producto,[class*="plaza"][class*="modal"]').forEach(function(el){
-    el.style.display='none';el.style.visibility='hidden';el.style.pointerEvents='none';el.classList&&el.classList.remove('active','show','open');
+  ['plaza-prod-det-ov','plaza-prod-det-ov-v35','plaza-prod-det-ov-v36','plaza-prod-modal','plaza-detalle-modal','plaza-producto-modal','plaza-modal-producto','plaza-detalle-producto'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.style.display='none';el.style.visibility='hidden';el.style.pointerEvents='none';el.classList&&el.classList.remove('active','show','open');}
   });
   try{document.body.style.overflow='';document.body.style.touchAction='';document.documentElement.style.overflow='';}catch(e){}
   if(document.body.dataset)document.body.dataset.dcModalLocked='';
 }
-function _plazaAddToCart(btn,pid,q){
+function _plazaDoAdd(pid,q){
   if(window.__dcPlazaAddLock) return false;
   window.__dcPlazaAddLock=true;
-  pid=pid||_plazaPidFrom(btn);
-  var p=_plazaProdFromCache(pid)||_plazaProdFromDOM(btn,pid);
-  if(!p||p.disponible===false){window.__dcPlazaAddLock=false;return false;}
-  var cnt=qty(q||_plazaGetQty());
-  var id=String(p._id||p.id||p.productoId||pid||p.nombre||Date.now());
-  var negocio=String(window._plazaComercioActualId||window._plazaDetalleComercioId||p.negocioId||'');
-  var c=cart(); if(!Array.isArray(c)) c=[];
-  var key=negocio+'::'+id;
-  var found=c.find(function(x){return String(x.key||((x.negocioId||'')+'::'+(x.productoId||x.id)))===key;});
-  if(found){found.cantidad=qty(Number(found.cantidad||found.qty||0)+cnt);found.qty=found.cantidad;}
-  else c.push({id:id,productoId:id,key:key,negocioId:negocio,nombre:p.nombre||'Producto',precio:num(p.precio||p.price||0),cantidad:cnt,qty:cnt,foto:p.foto||p.fotoProducto||p.fotoPublica||''});
-  saveCart(c);
-  window.__dcPlazaAddLock=false;
-  _plazaCloseDetail();
-  var ff=window.dcPlazaFinalFelizOficial||window.plazaFinalFelizCarrito;
-  if(typeof ff==='function') ff(function(){_plazaCloseDetail();try{if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();}catch(_){}});
+  try{
+    var p=_plazaProdFromCache(pid)||_plazaProdFromDOM(pid);
+    if(!p||p.disponible===false) return false;
+    var cnt=qty(q||_plazaGetQty());
+    var id=String(p._id||p.id||p.productoId||pid||Date.now());
+    var negocio=String(window._plazaComercioActualId||window._plazaDetalleComercioId||p.negocioId||'');
+    var c=cart(); if(!Array.isArray(c)) c=[];
+    var key=negocio+'::'+id;
+    var found=c.find(function(x){return String(x.key||((x.negocioId||'')+'::'+(x.productoId||x.id)))===key;});
+    if(found){found.cantidad=qty(Number(found.cantidad||found.qty||0)+cnt);found.qty=found.cantidad;}
+    else c.push({id:id,productoId:id,key:key,negocioId:negocio,nombre:p.nombre||'Producto',precio:num(p.precio||p.price||0),cantidad:cnt,qty:cnt,foto:p.foto||p.fotoProducto||p.fotoPublica||''});
+    saveCart(c);
+    _plazaCloseDetail();
+    var ff=window.dcPlazaFinalFelizOficial||window.plazaFinalFelizCarrito;
+    if(typeof ff==='function') ff(function(){try{if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();}catch(_){}});
+  }finally{window.__dcPlazaAddLock=false;}
   return false;
 }
+// Registrado en window capture DESPUÉS de los parches legacy — sobreescribe su stopImmediatePropagation
+window.addEventListener('click',function(ev){
+  var btn=ev.target&&ev.target.closest&&ev.target.closest('button');
+  if(!btn) return;
+  var id=btn.id||'', oc=(btn.getAttribute('onclick')||'').toLowerCase(), txt=(btn.textContent||'').toLowerCase();
+  var isAdd=id.indexOf('plaza-btn-add-cart')===0||oc.indexOf('plazaagregaralcarritodetalle')>-1||txt.indexOf('agregar al carrito')>-1;
+  if(!isAdd||!_plazaActiveModal()) return;
+  ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
+  _plazaDoAdd(_plazaPidFrom(btn),_plazaGetQty());
+},true);
 window.plazaAgregarAlCarritoDetalle=function(pid,ev){
   if(ev){ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();}
-  var btn=ev&&ev.target&&ev.target.closest?ev.target.closest('button'):document.querySelector('#plaza-btn-add-cart,#plaza-btn-add-cart-v35,#plaza-btn-add-cart-v36');
-  return _plazaAddToCart(btn,pid,_plazaGetQty());
+  return _plazaDoAdd(pid,_plazaGetQty());
 };
-// Captura pointerdown/touchstart para respuesta inmediata antes del click
-(function(){
-  function isAddBtn(btn){
-    if(!btn) return false;
-    var txt=(btn.textContent||'').toLowerCase(), oc=(btn.getAttribute('onclick')||'').toLowerCase(), id=btn.id||'';
-    return id.indexOf('plaza-btn-add-cart')===0||oc.indexOf('plazaagregaralcarritodetalle')>-1||txt.indexOf('agregar al carrito')>-1;
-  }
-  function preAdd(ev){
-    var btn=ev.target&&ev.target.closest&&ev.target.closest('button');
-    if(!isAddBtn(btn)||!_plazaActiveModal(btn)) return;
-    ev.preventDefault();ev.stopPropagation();if(ev.stopImmediatePropagation)ev.stopImmediatePropagation();
-    _plazaAddToCart(btn,_plazaPidFrom(btn),_plazaGetQty());
-    return false;
-  }
-  window.addEventListener('pointerdown',preAdd,true);
-  window.addEventListener('touchstart',preAdd,true);
-})();
 
 
 // ══════════════════════════════════════════════
