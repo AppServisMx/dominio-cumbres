@@ -12901,99 +12901,8 @@ if (typeof window.go !== 'function') {
 </script>
 
 <script>
-/* ═══════════════════════════════════════════════════════
-   V17 — FLUIDEZ GUARDAR + SCROLL MODAL PRODUCTO PLAZA
-   - Reacción inmediata al tocar Guardar producto en Negocio.
-   - Muestra overlay/estado antes de esperar Firebase.
-   - Bloquea doble tap mientras guarda.
-   - El detalle de producto Plaza bloquea el scroll del fondo
-     y deja el scroll dentro de la ventana del producto.
-   - No toca compra real ni Mis compras.
-═══════════════════════════════════════════════════════ */
-(function(){
-  if (window.__DC_V17_SAVE_SCROLL__) return;
-  window.__DC_V17_SAVE_SCROLL__ = true;
-
-  function _dcLockBodyForModal(){
-    if (document.body.dataset.dcModalLocked === '1') return;
-    var y = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.dataset.dcModalLocked = '1';
-    document.body.dataset.dcModalScrollY = String(y);
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-  }
-
-  function _dcUnlockBodyForModal(){
-    if (document.body.dataset.dcModalLocked !== '1') return;
-    var y = parseInt(document.body.dataset.dcModalScrollY || '0', 10) || 0;
-    document.body.dataset.dcModalLocked = '';
-    document.body.dataset.dcModalScrollY = '';
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
-    try { window.scrollTo(0, y); } catch(e) {}
-  }
-
-  var _oldPlazaOpen = window.plazaAbrirProductoDetalle;
-  var _oldPlazaClose = window.plazaCerrarProductoDetalle;
-
-  window.plazaCerrarProductoDetalle = function(){
-    if (typeof _oldPlazaClose === 'function') _oldPlazaClose();
-    _dcUnlockBodyForModal();
-  };
-
-  window.plazaAbrirProductoDetalle = function(pid){
-    if (typeof _oldPlazaOpen === 'function') _oldPlazaOpen(pid);
-    var ov = document.getElementById('plaza-prod-det-ov');
-    var card = document.getElementById('plaza-prod-det-card');
-    if (!ov || !card) return;
-
-    // Resetear propiedades que closeDetail/_cerrarDetallePlazaReal dejan en el overlay
-    ov.style.visibility = '';
-    ov.style.pointerEvents = '';
-    ov.style.display = 'flex';
-
-    _dcLockBodyForModal();
-
-    ov.style.overflow = 'hidden';
-    ov.style.touchAction = 'none';
-    card.style.maxHeight = '86vh';
-    card.style.overflow = 'hidden';
-    card.style.touchAction = 'auto';
-    card.style.overscrollBehavior = 'contain';
-
-    var scroller = card.firstElementChild;
-    if (scroller) {
-      scroller.style.maxHeight = '86vh';
-      scroller.style.overflowY = 'auto';
-      scroller.style.webkitOverflowScrolling = 'touch';
-      scroller.style.overscrollBehavior = 'contain';
-      scroller.style.touchAction = 'pan-y';
-      if (!scroller.dataset.dcV17ScrollBound) {
-        scroller.dataset.dcV17ScrollBound = '1';
-        scroller.addEventListener('touchmove', function(e){ e.stopPropagation(); }, {passive:true});
-        scroller.addEventListener('wheel', function(e){ e.stopPropagation(); }, {passive:true});
-      }
-    }
-
-    if (!ov.dataset.dcV17NoBgScroll) {
-      ov.dataset.dcV17NoBgScroll = '1';
-      ov.addEventListener('touchmove', function(e){
-        if (e.target === ov) e.preventDefault();
-      }, {passive:false});
-      ov.addEventListener('wheel', function(e){
-        if (e.target === ov) e.preventDefault();
-      }, {passive:false});
-    }
-  };
-
-  window.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') {
-      var ov = document.getElementById('plaza-prod-det-ov');
-      if (ov && ov.style.display !== 'none') window.plazaCerrarProductoDetalle();
-    }
-  });
-
-  window.vnegGuardarProd = async function(){
+/* Panel Proveedor — Guardar producto */
+window.vnegGuardarProd = async function(){
     if (window._vnegSavingProd) return;
     var nombre = window.dcCleanText(_vnegGetVal('vn-pf-nombre'), 80);
     var cat    = window.dcCleanText(_vnegGetVal('vn-pf-cat') || 'General', 40);
@@ -13085,8 +12994,7 @@ if (typeof window.go !== 'function') {
         btn.textContent = btn.dataset.dcOldText || 'Guardar producto →';
       }
     }
-  };
-})();
+};
 </script>
 
 
