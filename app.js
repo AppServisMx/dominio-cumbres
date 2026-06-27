@@ -658,10 +658,13 @@ function _plazaGetQty(){
   return qty(window._plazaDetalleQty||1);
 }
 function _plazaActiveModal(){
-  return document.querySelector('[id^="plaza-prod-det-ov"]')
-    || document.getElementById('plaza-prod-modal')
-    || document.getElementById('plaza-detalle-modal')
-    || document.getElementById('plaza-producto-modal');
+  var ids=['plaza-prod-det-ov','plaza-prod-det-ov-v35','plaza-prod-det-ov-v36','plaza-prod-modal','plaza-detalle-modal','plaza-producto-modal'];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el&&el.style.display!=='none'&&el.style.visibility!=='hidden') return el;
+  }
+  var qs=document.querySelector('[id^="plaza-prod-det-ov"]');
+  return (qs&&qs.style.display!=='none'&&qs.style.visibility!=='hidden')?qs:null;
 }
 function _plazaPidFrom(btn){
   if(!btn) return '';
@@ -721,6 +724,43 @@ function _plazaDoAdd(pid,q){
   }finally{window.__dcPlazaAddLock=false;}
   return false;
 }
+// ══════════════════════════════════════════════
+// PLAZA — FINAL FELIZ (overlay "Producto agregado")
+// ══════════════════════════════════════════════
+function _plazaEnsureFF(){
+  var ov=document.getElementById('dc-plaza-fficial-v52');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='dc-plaza-fficial-v52';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2147483647;align-items:center;justify-content:center;font-family:inherit;';
+    ov.innerHTML='<div id="dc-plaza-fficial-box-v52" class="dc-overlay-box phase-send"><div id="dc-plaza-fficial-body-v52"></div></div>';
+    document.body.appendChild(ov);
+  }
+  return {ov:ov,box:document.getElementById('dc-plaza-fficial-box-v52'),body:document.getElementById('dc-plaza-fficial-body-v52')};
+}
+function _plazaShowFinal(onDone){
+  var x=_plazaEnsureFF(),ov=x.ov,box=x.box,body=x.body;
+  clearTimeout(window._dcPlazaV52T1); clearTimeout(window._dcPlazaV52T2);
+  box.className='dc-overlay-box phase-send';
+  body.innerHTML='<div class="dc-logo-wrap"><svg width="110" height="110" viewBox="0 0 106 106" fill="none"><defs><radialGradient id="bgl_plaza_ff" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#1E3A28"/><stop offset="100%" stop-color="#0C1A10"/></radialGradient></defs><circle cx="53" cy="53" r="50" fill="url(#bgl_plaza_ff)"/><g class="dcf-lr-load"><circle cx="53" cy="53" r="49" fill="none" stroke="#1FC26A" stroke-width="1.5" stroke-dasharray="10 5" stroke-linecap="round"/><circle cx="53" cy="4" r="3.5" fill="#2EE07A"/></g><g class="dcf-pg-load"><polygon points="53,14 57,32 53,28 49,32" fill="#1FC26A"/><polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(60 53 53)"/><polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(120 53 53)"/><polygon points="53,14 57,32 53,28 49,32" fill="#D63A2A" transform="rotate(180 53 53)"/><polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(240 53 53)"/><polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(300 53 53)"/></g><circle cx="53" cy="53" r="14" fill="#0C1A10"/><circle cx="53" cy="53" r="14" fill="none" stroke="#1FC26A" stroke-width="1"/><polygon points="53,42 55,50 53,48 51,50" fill="#1FC26A"/><polygon points="53,42 55,50 53,48 51,50" fill="#F5C518" transform="rotate(120 53 53)"/><polygon points="53,42 55,50 53,48 51,50" fill="#D63A2A" transform="rotate(240 53 53)"/><circle cx="53" cy="53" r="4" fill="#1FC26A"/></svg></div>'
+    +'<div class="dc-ov-title" style="color:var(--yellow);font-size:20px;font-weight:700;margin-top:0;">Agregando al carrito...</div>'
+    +'<div class="dc-ov-sub" style="color:rgba(245,197,24,.8);font-size:13px;margin-top:8px;line-height:1.6;">Estamos guardando tu selección.</div>';
+  ov.style.display='flex';
+  window._dcPlazaV52T1=setTimeout(function(){
+    box.className='dc-overlay-box phase-ok';
+    body.innerHTML='<div class="dc-check">✅</div>'
+      +'<div class="dc-ov-title" style="color:var(--green);font-size:22px;font-weight:700;margin-top:14px;">Producto agregado</div>'
+      +'<div class="dc-ov-sub" style="color:rgba(31,194,106,.85);font-size:13px;margin-top:8px;line-height:1.6;">Producto agregado al carrito<br>exitosamente.</div>';
+    window._dcPlazaV52T2=setTimeout(function(){
+      ov.style.display='none';
+      if(typeof onDone==='function') onDone();
+    },1600);
+  },1400);
+}
+window.dcPlazaFinalFelizOficial=_plazaShowFinal;
+window.plazaFinalFelizCarrito=function(msg,onDone){_plazaShowFinal(onDone);return false;};
+window.plazaShowCarritoToast=function(){_plazaShowFinal();return false;};
+
 // pointerdown/touchstart disparan ANTES del click, antes que los listeners legacy (v54) del parche.
 // Esto permite agregar el producto correctamente (con DOM fallback) antes de que v54 intercepte el click.
 // Después seteamos _dcPlazaAddLockV54=true para que v54 no doble-agregue en el click.
