@@ -9316,64 +9316,6 @@ function dcFood_scrollReset(viewId) {
 // Alias: mantiene compatibilidad con _goCore existente y cargarRestaurantes v1/v2
 window.cargarRestaurantes = window.dcFood_cargarRestaurantes;
 
-/* ═══════════════════════════════════════════════════════
-   LIMPIEZA 7A — FOOD CLIENTE FUENTE OFICIAL
-   Alcance: listado Food + detalle restaurante + menú cliente.
-   No toca: panel restaurante, carrito, pedidos, Plaza, Mis Compras, go().
-   La fuente oficial queda en dcFood_cargarRestaurantes / dcFood_cargarMenu.
-═══════════════════════════════════════════════════════ */
-(function(){
-  if (window.__DC_FOOD_CLIENTE_7A_OFICIAL__) return;
-  window.__DC_FOOD_CLIENTE_7A_OFICIAL__ = true;
-
-  var _foodListadoOficial = window.dcFood_cargarRestaurantes;
-  var _foodMenuOficial = window.dcFood_cargarMenu;
-
-  // Compatibilidad con _goCore y loaders legacy: cualquier llamada vieja
-  // termina usando la versión oficial del bloque Food, no loaders anteriores.
-  if (typeof _foodListadoOficial === 'function') {
-    try {
-      Object.defineProperty(window, 'cargarRestaurantes', {
-        configurable: true,
-        enumerable: true,
-        get: function(){ return _foodListadoOficial; },
-        set: function(fn){
-          if (fn === _foodListadoOficial) return;
-          // No aceptamos loaders legacy encima del oficial 7A.
-        }
-      });
-      Object.defineProperty(window, 'dcFood_cargarRestaurantes', {
-        configurable: true,
-        enumerable: true,
-        get: function(){ return _foodListadoOficial; },
-        set: function(fn){
-          if (fn === _foodListadoOficial) return;
-          if (!_foodListadoOficial && typeof fn === 'function') { _foodListadoOficial = fn; return; }
-        }
-      });
-    } catch(e) {
-      window.cargarRestaurantes = _foodListadoOficial;
-      window.dcFood_cargarRestaurantes = _foodListadoOficial;
-    }
-  }
-
-  if (typeof _foodMenuOficial === 'function') {
-    try {
-      Object.defineProperty(window, 'dcFood_cargarMenu', {
-        configurable: true,
-        enumerable: true,
-        get: function(){ return _foodMenuOficial; },
-        set: function(fn){
-          if (fn === _foodMenuOficial) return;
-          if (!_foodMenuOficial && typeof fn === 'function') { _foodMenuOficial = fn; return; }
-        }
-      });
-    } catch(e) {
-      window.dcFood_cargarMenu = _foodMenuOficial;
-    }
-  }
-})();
-
 
 </script>
 
