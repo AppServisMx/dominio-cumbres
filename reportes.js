@@ -371,11 +371,6 @@ window.cargarReportesDisponibles = async function() {
   // Categorías del proveedor — soporta legado y nuevo formato
   const categoriasProveedor = _categoriasDeProveedor(perfil);
 
-  // Log para diagnóstico — visible en consola del navegador
-  console.log('[reportes] perfil.categoria:', perfil && perfil.categoria);
-  console.log('[reportes] perfil.categorias:', perfil && perfil.categorias);
-  console.log('[reportes] categoriasProveedor resueltas:', categoriasProveedor);
-
   // Sin categoría configurada → error explícito, no mostrar todo
   if (categoriasProveedor.length === 0) {
     contenedor.innerHTML = `
@@ -776,4 +771,3 @@ window.actualizarBtnSolicitudRol = function() {
 // ── Exponer constante para Fase 2 ───────────────────────────
 window.DC_MAX_POSTULANTES = DC_MAX_POSTULANTES;
 
-console.log('[reportes.js] v3 cargado — límite postulantes:', DC_MAX_POSTULANTES);

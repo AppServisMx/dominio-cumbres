@@ -72,7 +72,7 @@ function saveCart(c){
 function clearCart(){
   wj(CART_KEY,[]); ['dcPlazaCarrito','dcPlazaCarritoEnProceso','dcPlazaCart','dc_plaza_cart'].forEach(function(k){wj(k,[]);});
   rm('dcPlazaCompraProceso'); META_KEYS.forEach(rm);
-  try{localStorage.setItem(OPEN_CART,'0');localStorage.setItem(OPEN_ORDER,'');localStorage.setItem(VAC_KEY,'0');localStorage.setItem('dcPlazaQF36Open','0');localStorage.setItem('dcPlazaQF36VaciarOpen','0');}catch(_){}
+  try{localStorage.setItem(OPEN_CART,'0');localStorage.setItem(OPEN_ORDER,'');localStorage.setItem(VAC_KEY,'0');}catch(_){}
 }
 function collapseAll(){
   try{localStorage.setItem(OPEN_CART,'0');localStorage.setItem(OPEN_ORDER,'');localStorage.setItem(VAC_KEY,'0');}catch(_){}
@@ -165,16 +165,8 @@ function renderMisCompras(force){
   _mcRendering=true; el.setAttribute('data-l14-sig',sig); el.innerHTML=html; _mcRendering=false; return true;
 }
 
-window.cargarMisComprasPlaza=function(){
-  window._misComprasPlazaTab='proceso';
-  try{localStorage.setItem(TAB_KEY,JSON.stringify('proceso'));}catch(_){}
-  setTimeout(function(){renderMisCompras(true);},0);
-  return renderMisCompras(true);
-};
 window.cambiarTabMisComprasPlaza=function(t){mcSetTabs(t);renderMisCompras(true);return false;};
 window.dcPlazaLimpieza15Render=function(){return renderMisCompras(true);};
-window.dcPlazaLimpieza14Render=window.dcPlazaLimpieza15Render;
-window.dcPlazaRenderMisComprasQF42=function(){return renderMisCompras(true);};
 
 // ——————————————————————————————————————————————
 // MIS COMPRAS — acciones
@@ -623,7 +615,7 @@ function isConfirmTarget(e){
   return !!t.closest('#dc-plaza-confirmar-compra,#dc-plaza-confirmar-compra-final,#dc-plaza-confirmar-compra-qf38');
 }
 function goProceso(){
-  try{window._misComprasPlazaTab='proceso';localStorage.setItem('dcPlazaQF36Open','0');localStorage.setItem('dcPlazaQF36VaciarOpen','0');}catch(e){}
+  try{window._misComprasPlazaTab='proceso';}catch(e){}
   try{if(typeof window.go==='function') window.go('v-mis-compras-plaza','right');}catch(e){}
   [40,120,300,650].forEach(function(ms){setTimeout(function(){renderMisCompras(true);},ms);});
   setTimeout(function(){_confirmLock=false;},800);
@@ -646,7 +638,6 @@ window.addEventListener('touchstart',function(e){if(isConfirmTarget(e)) stop(e);
 window.addEventListener('click',function(e){if(isConfirmTarget(e)) return finalizarCompra(e);},true);
 window.dcPlazaConfirmarCompra=finalizarCompra;
 window.dcPlazaConfirmarCompraFinal=finalizarCompra;
-window.dcPlazaIrMisComprasProcesoQF39=goProceso;
 
 
 // ══════════════════════════════════════════════
