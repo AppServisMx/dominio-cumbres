@@ -88,45 +88,9 @@
     abrirChat(provId, nombre, '🔧');
   };
 
-  // ============ CARGAR RESTAURANTES DESDE FIREBASE ============
-  window.cargarRestaurantes = async function() {
-    const lista = document.getElementById('food-lista');
-    const demo  = document.getElementById('food-demo');
-    const hdr   = document.getElementById('food-lista-header');
-    if(!lista) return;
-    try {
-      const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-      const q = query(collection(window._fbDb,'usuarios'), where('tipo','==','negocio'));
-      const snap = await getDocs(q);
-      if(snap.empty) {
-        if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Abiertos ahora</div>';
-        return;
-      }
-      if(demo) demo.style.display='none';
-      if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Restaurantes registrados</div>';
-      snap.forEach(d => {
-        const r = d.data();
-        const div = document.createElement('div');
-        div.className = 'rest-card';
-        div.innerHTML = `
-          <div class="si15 rest-banner">&#x1F37D;
-            <span class="si32">&#x23F0; ${r.horario||'Ver horario'}</span>
-          </div>
-          <div class="rest-body">
-            <div class="si05"><div class="rest-name">${r.nombreNegocio||r.nombre||'&#x2014;'}</div><span class="si44" style="${(()=>{var _e=(typeof window._estadoEfectivoDe==='function')?window._estadoEfectivoDe(r.estadoOp,r.estadoOpTs||0,r.horarios&&r.horarios.length?r.horarios:null):(r.estadoOp||'activo');return _e==='cerrado'?'background:#FDECEA;color:#D63A2A':_e==='pausado'?'background:#FFF0E6;color:#E87722':_e==='ocupado'?'background:#FFF8E1;color:#d97706':'background:var(--green-lt);color:var(--green-dk)';})()}">${(()=>{var _e=(typeof window._estadoEfectivoDe==='function')?window._estadoEfectivoDe(r.estadoOp,r.estadoOpTs||0,r.horarios&&r.horarios.length?r.horarios:null):(r.estadoOp||'activo');return _e==='cerrado'?'🔴 Cerrado':_e==='pausado'?'🟠 Pausado':_e==='ocupado'?'🟡 Ocupado':'🟢 Abierto';})()}</span></div>
-            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">&#x2B50; Nuevo en la app</div>
-            <div class="rest-footer"><span class="si01">${r.descripcion||''}</span><span class="si16">Pedir &#x2192;</span></div>
-          </div>`;
-        div.onclick = () => go('v-food-det','right');
-        lista.appendChild(div);
-      });
-    } catch(e) {
-      if(hdr) hdr.innerHTML = '<div class="si09">&#x1F7E2; Abiertos ahora</div>';
-    }
-  };
-
   // ============ FIN FIREBASE LOADERS ============
   // NOTA: auto-carga de v-servicios y v-food está en _goCore (línea ~8035 y 8043)
+  // cargarRestaurantes está definida en firebase.js (versión con _estadoEfectivoDe)
 
   // ── CONFIGURACIÓN EMAILJS ────────────────────────────────
   // INSTRUCCIONES PARA ACTIVAR:
