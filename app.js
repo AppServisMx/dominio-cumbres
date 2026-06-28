@@ -1019,7 +1019,11 @@ function dcGoOficial(id,dir){
   if(curId==='v-reg-vecino'&&id!=='v-reg-vecino'){var bv=document.getElementById('btn-reg-vecino');if(bv){bv.textContent='Crear mi cuenta →';bv.disabled=false;}}
   _resetRegistro(id);
   if(!id||!_viewExists(id)||(curId&&curId===id)){_postHooks(id);return false;}
-  if(dir==='left'&&curId&&typeof window._dcConfirmarSalida==='function'&&!window._dcConfirmarSalida(curId)) return false;
+  if(dir==='left'&&curId&&typeof window._dcConfirmarSalida==='function'){
+    window._dcPendingNav={id:id,dir:dir};
+    if(!window._dcConfirmarSalida(curId)){window._dcPendingNav=null;return false;}
+    window._dcPendingNav=null;
+  }
   if(!_navSuppress&&curId&&curId!==id) _pushView(curId);
   try{history.pushState({viewId:id},'','');}catch(_){}
   if(typeof window._goCore==='function') window._goCore(id,dir);
@@ -1299,6 +1303,58 @@ if(!window.DC_ESTADOS_GLOBALES_UI){
   window.__DC_REST_PANEL_7B_KEYS__=Object.keys(oficiales).filter(function(k){return typeof oficiales[k]==='function';});
 })();
 
+
+// ── Advertencia al salir con carrito activo (Objetivo 2 & 3) ──
+function _dcConfirmarSalidaCart(msg, btnSalir, onSalir, onQuedar){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+  ov.innerHTML='<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'
+    +'<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:16px;line-height:1.4;">'+msg+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px;">'
+    +'<button id="_dcCSC_salir" style="background:#D63A2A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">'+btnSalir+'</button>'
+    +'<button id="_dcCSC_quedar" style="background:#f0f0f0;color:#555;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;">Continuar comprando</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  function cerrar(){if(ov.parentNode) document.body.removeChild(ov);}
+  ov.querySelector('#_dcCSC_salir').onclick=function(){cerrar();if(onSalir) onSalir();};
+  ov.querySelector('#_dcCSC_quedar').onclick=function(){cerrar();if(onQuedar) onQuedar();};
+  ov.onclick=function(e){if(e.target===ov){cerrar();if(onQuedar) onQuedar();}};
+}
+
+window._dcConfirmarSalida=function(curId){
+  if(window._dcSalidaBypass){window._dcSalidaBypass=false;return true;}
+  var nav=window._dcPendingNav||{};
+  // Plaza: advertir si hay productos en el carrito
+  if(curId==='v-plaza-det'&&cart().length>0){
+    _dcConfirmarSalidaCart(
+      'Si sales de esta tienda perderás los productos agregados al carrito.',
+      'Salir y vaciar carrito',
+      function(){clearCart();try{_plazaUpdateCartBar();}catch(e){}window._dcSalidaBypass=true;if(typeof window.go==='function') window.go(nav.id||'v-plaza',nav.dir||'left');},
+      function(){}
+    );
+    return false;
+  }
+  // Food: advertir si hay productos en el carrito
+  if(curId==='v-food-det'){
+    var bar=document.getElementById('dcf-cart-bar');
+    if(bar&&bar.style.display==='flex'){
+      _dcConfirmarSalidaCart(
+        'Si sales de este restaurante perderás los productos agregados al carrito.',
+        'Salir y vaciar carrito',
+        function(){if(typeof window.dcFood_vaciarCarrito==='function') window.dcFood_vaciarCarrito();window._dcSalidaBypass=true;if(typeof window.go==='function') window.go(nav.id||'v-food',nav.dir||'left');},
+        function(){}
+      );
+      return false;
+    }
+  }
+  // Fallback: dirty-form (comportamiento original de chat.js)
+  if(window._dcDirtyV&&window._dcDirtyV===curId){
+    var ok=window.confirm('⚠️ Tienes cambios sin guardar.\n\nPresiona CANCELAR para quedarte,\no ACEPTAR para salir sin guardar.');
+    if(ok) window._dcDirtyV=null;
+    return ok;
+  }
+  return true;
+};
 
 })(); // fin IIFE principal
 

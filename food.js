@@ -24,6 +24,9 @@ var _DPrest = [];
 var _DPvec = [];
 var _DPrep = [];
 
+/* ── XSS helper ──────────────────────────────────────── */
+function _fesc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
 /* ── Helpers Firestore ───────────────────────────────── */
 async function _fb() {
   return await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
@@ -197,11 +200,11 @@ function _dcfRenderLista(docs) {
       +'<span class="rbadge">'+(r.estado==='aprobado_pendiente_pago'?'⏳ Pend. pago':'✓ Verificado')+'</span></div>'
       +'<div class="rbody">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-      +'<div class="rname">'+(r.nombreNegocio||r.nombre||'—')+'</div>'
+      +'<div class="rname">'+_fesc(r.nombreNegocio||r.nombre||'—')+'</div>'
       +'<span style="'+estStyle+'">'+estLabel+'</span></div>'
-      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+r._id+'\',\'restaurante\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span> ·':'')+(r.descripcion||cat)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+_fesc(r._id)+'\',\'restaurante\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span> ·':'')+_fesc(r.descripcion||cat)+'</div>'
       +'<div class="rfooter" style="align-items:center;">'
-      +'<button data-rate-id="'+r._id+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
+      +'<button data-rate-id="'+_fesc(r._id)+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+_fesc(r._id)+'\',\''+_fesc(r.nombreNegocio||r.nombre||'')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
       +'<span class="link-green">Pedir →</span>'
       +'</div></div></div>';
   }).join('');
@@ -230,7 +233,7 @@ window.dcFood_abrirRest = async function(restId) {
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9990;display:flex;align-items:center;justify-content:center;padding:24px;';
     ov.innerHTML = '<div style="background:#fff;border-radius:22px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.3);">'
       + '<div style="font-size:42px;margin-bottom:12px;">' + (_esPausa ? '⏸️' : '🔴') + '</div>'
-      + '<div style="font-size:17px;font-weight:800;color:#111;margin-bottom:8px;">' + (r.nombreNegocio||r.nombre||'Restaurante') + '</div>'
+      + '<div style="font-size:17px;font-weight:800;color:#111;margin-bottom:8px;">' + _fesc(r.nombreNegocio||r.nombre||'Restaurante') + '</div>'
       + '<div style="font-size:13px;color:#666;line-height:1.5;margin-bottom:22px;">' + (_esPausa ? 'Por el momento no está atendiendo.<br>Vuelve en un rato.' : 'Este restaurante ya cerró por hoy.<br>Vuelve mañana.') + '</div>'
       + '<button onclick="document.getElementById(\'dcf-cerrado-ov\').remove()" style="width:100%;padding:13px;background:#111;color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Entendido</button>'
       + '</div>';
@@ -800,7 +803,7 @@ function _renderTracking(d) {
   var e = esRecoger ? (_EST_RECOGER[d.estado]||_EST_RECOGER.nuevo) : (_EST[d.estado]||_EST.nuevo);
   var sub=e.sub;
   if(!esRecoger&&d.estado==='preparando'&&d.tiempoEstimado)sub='~'+d.tiempoEstimado+' min';
-  if(!esRecoger&&d.estado==='repartidor_asignado'&&d.repartidorNombre)sub=d.repartidorNombre+' en camino';
+  if(!esRecoger&&d.estado==='repartidor_asignado'&&d.repartidorNombre)sub=_fesc(d.repartidorNombre)+' en camino';
   var g=function(id){return document.getElementById(id);};
   if(g('trk-ic'))g('trk-ic').textContent=e.ic;
   if(g('trk-txt'))g('trk-txt').textContent=e.txt;
@@ -811,7 +814,7 @@ function _renderTracking(d) {
   if(resumen){
     if(d.items&&d.items.length){
       resumen.style.display='block';
-      if(resItems) resItems.innerHTML=(d.items||[]).map(function(i){return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #f5f5f5;"><span style="font-size:12px;color:#111;">'+i.cantidad+'× '+i.nombre+'</span><span style="font-size:12px;font-weight:700;">$'+(i.cantidad*i.precio)+'</span></div>';}).join('');
+      if(resItems) resItems.innerHTML=(d.items||[]).map(function(i){return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid #f5f5f5;"><span style="font-size:12px;color:#111;">'+_fesc(i.cantidad)+'× '+_fesc(i.nombre)+'</span><span style="font-size:12px;font-weight:700;">$'+_fesc(i.cantidad*i.precio)+'</span></div>';}).join('');
       if(resTotales){
         var sub=d.subtotal||0,env=d.envio||0,tot=d.total||(sub+env);
         var pb=d.estadoPago==='pendiente_confirmacion'?'<span style="background:#EDE7F6;color:#4527A0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;">⏳ Pendiente</span>':d.estadoPago==='por_cobrar_entrega'?'<span style="background:#FFF8E1;color:#7a5000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:6px;">💵 Al entregar</span>':'';
@@ -1334,5 +1337,8 @@ function dcFood_scrollReset(viewId) {
 /* ── Alias y exposes al final del script Food ─────────── */
 // Alias: mantiene compatibilidad con _goCore existente y cargarRestaurantes v1/v2
 window.cargarRestaurantes = window.dcFood_cargarRestaurantes;
+
+// Vaciar carrito de Food desde app.js (usado por advertencia al salir)
+window.dcFood_vaciarCarrito = function() { _S.carrito = {}; _updateCartBar(); };
 
 
