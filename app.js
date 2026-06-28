@@ -4246,6 +4246,7 @@ window.cargarMisComprasPlaza = function() {
     const lb = document.getElementById('login-nombre-bienvenido');
     if (lb) lb.textContent = nombre;
   }
+  window.setNombre = setNombre;
   function firebaseError(code) {
     if (code === 'auth/email-already-in-use')    return '📧 Ese correo ya tiene cuenta. Usa "Ya tengo cuenta".';
     if (code === 'auth/weak-password')           return '🔐 La contraseña debe tener mínimo 6 caracteres.';

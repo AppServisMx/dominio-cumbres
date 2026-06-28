@@ -50,6 +50,7 @@
     return '❌ Error: ' + code;
   }
 
+  window.cerrarSesion = async function() {
     // 1. Cerrar sesión Firebase
     try {
       const { signOut } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
@@ -212,7 +213,7 @@
 
       if (snap.exists()) {
         const datos = snap.data();
-        setNombre(datos.nombre || datos.nombreNegocio || correoLogin);
+        window.setNombre && window.setNombre(datos.nombre || datos.nombreNegocio || correoLogin);
 
         // Normalizar estado para evitar errores por espacios, mayúsculas o undefined
         const estado = String(datos.estado || '').trim().toLowerCase();
