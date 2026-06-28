@@ -43,7 +43,7 @@ function stop(e){try{e.preventDefault();e.stopPropagation();if(e.stopImmediatePr
 // ══════════════════════════════════════════════
 var CART_KEY='dcPlazaCartV61';
 var SEL_KEY='dcPlazaCompraSeleccionada';
-var ORDER_KEYS=['dcPlazaOrdenPlazaEnProceso','dcPlazaCompraPlazaActiva','dcPlazaOrdenActivaV62'];
+var ORDER_KEYS=['dcPlazaOrdenActivaV62'];
 var HIST_KEYS=['dcPlazaComprasHistorial','dcPlazaOrdenesPlazaV62'];
 var LEGACY_CART_KEYS=['dcPlazaCarrito','dcPlazaCarritoEnProceso','dcPlazaCart','dc_plaza_cart','dcPlazaCompraProceso'];
 var META_KEYS=['dcPlazaCartV61Meta','dcPlazaB2AMeta','dcPlazaCartMetaV63'];
@@ -65,9 +65,7 @@ function cart(){
 }
 function saveCart(c){
   c=norm(c);
-  wj(CART_KEY,c); wj('dcPlazaCarrito',c); wj('dcPlazaCarritoEnProceso',c);
-  if(c.length){wj('dcPlazaCompraProceso',{id:'plaza_carrito_l14',tipo:'plaza_carrito',estado:'proceso',titulo:'Plaza Online',fecha:Date.now(),items:c,total:total(c)});}
-  else{rm('dcPlazaCompraProceso');}
+  wj(CART_KEY,c);
 }
 function clearCart(){
   wj(CART_KEY,[]); ['dcPlazaCarrito','dcPlazaCarritoEnProceso','dcPlazaCart','dc_plaza_cart'].forEach(function(k){wj(k,[]);});
@@ -824,9 +822,31 @@ function renderSeguimiento(ord){
   var items=norm(o.items||cart()), t=Number(o.total)||total(items);
   var el=document.getElementById('v-plaza-seguimiento-lista'); if(!el) return false;
   var rows=items.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:.5px solid #eee;"><div><div style="font-size:12px;font-weight:900;color:#111;line-height:1.25;">'+qty(x.cantidad)+'× '+esc(x.nombre)+'</div><div style="font-size:10px;color:#777;margin-top:2px;">'+money(num(x.precio))+' c/u</div></div><div style="font-size:12px;font-weight:900;color:#111;white-space:nowrap;">'+money(num(x.precio)*qty(x.cantidad))+'</div></div>';}).join('');
+  var estado=String((o.estado)||'en_proceso').toLowerCase();
+  var PASOS=['recibido','en_proceso','listo','en_camino','entregado'];
+  var pasoActual=0;
+  if(['aceptado','preparando','en_proceso'].indexOf(estado)!==-1) pasoActual=1;
+  if(estado==='listo') pasoActual=2;
+  if(['en_camino','repartidor_asignado','buscando_repartidor'].indexOf(estado)!==-1) pasoActual=3;
+  if(['entregado','recogido','finalizado','completado','anterior'].indexOf(estado)!==-1) pasoActual=4;
+  if(['cancelado','rechazado'].indexOf(estado)!==-1) pasoActual=-1;
+  function stepBg(n){return n<=pasoActual?'#20c76a':'#f0f2f3';}
+  function stepTx(n){return n<=pasoActual?'#111':'#99a1aa';}
+  var titulo=pasoActual===4?'¡Compra entregada!':pasoActual===-1?'Compra cancelada':'Compra recibida';
+  var sub=pasoActual===4?'Tu pedido fue entregado exitosamente.':pasoActual===-1?'Esta compra fue cancelada.':'Esperando confirmación del negocio';
+  var headBg=pasoActual===4?'#e8f9f0':pasoActual===-1?'#fff0f0':'#fff';
+  var headBorder=pasoActual===4?'#20c76a':pasoActual===-1?'#e53935':'#dfe5eb';
   el.innerHTML=
-    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:24px 14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.055);"><div style="font-size:34px;margin-bottom:8px;">📦</div><div style="font-size:17px;font-weight:900;color:#111;">Compra recibida</div><div style="font-size:12px;color:#777;margin-top:5px;">Esperando confirmación del negocio</div></div>'+
-    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:20px 14px;margin-top:14px;box-shadow:0 8px 20px rgba(0,0,0,.055);"><div style="display:grid;grid-template-columns:34px 1fr;row-gap:18px;align-items:center;"><div style="width:28px;height:28px;border-radius:50%;background:#20c76a;color:#fff;display:flex;align-items:center;justify-content:center;">📦</div><div style="font-size:13px;font-weight:900;color:#111;">Compra recibida</div><div style="width:28px;height:28px;border-radius:50%;background:#1A7AB5;color:#fff;display:flex;align-items:center;justify-content:center;">📋</div><div style="font-size:13px;font-weight:900;color:#111;">Preparando pedido</div><div style="width:28px;height:28px;border-radius:50%;background:#f0f2f3;display:flex;align-items:center;justify-content:center;">🛍️</div><div style="font-size:13px;font-weight:900;color:#99a1aa;">Listo</div><div style="width:28px;height:28px;border-radius:50%;background:#f0f2f3;display:flex;align-items:center;justify-content:center;">🚚</div><div style="font-size:13px;font-weight:900;color:#99a1aa;">En camino</div><div style="width:28px;height:28px;border-radius:50%;background:#f0f2f3;display:flex;align-items:center;justify-content:center;">🏠</div><div style="font-size:13px;font-weight:900;color:#99a1aa;">Entregado</div></div></div>'+
+    '<div style="background:'+headBg+';border:1.5px solid '+headBorder+';border-radius:16px;padding:24px 14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.055);"><div style="font-size:34px;margin-bottom:8px;">'+(pasoActual===4?'✅':pasoActual===-1?'❌':'📦')+'</div><div style="font-size:17px;font-weight:900;color:#111;">'+titulo+'</div><div style="font-size:12px;color:#777;margin-top:5px;">'+sub+'</div></div>'+
+    '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:20px 14px;margin-top:14px;box-shadow:0 8px 20px rgba(0,0,0,.055);">'+
+      '<div style="display:grid;grid-template-columns:34px 1fr;row-gap:18px;align-items:center;">'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+stepBg(0)+';color:#fff;display:flex;align-items:center;justify-content:center;">📦</div><div style="font-size:13px;font-weight:900;color:'+stepTx(0)+';">Compra recibida</div>'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+stepBg(1)+';color:#fff;display:flex;align-items:center;justify-content:center;">📋</div><div style="font-size:13px;font-weight:900;color:'+stepTx(1)+';">Preparando pedido</div>'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+stepBg(2)+';color:#fff;display:flex;align-items:center;justify-content:center;">🛍️</div><div style="font-size:13px;font-weight:900;color:'+stepTx(2)+';">Listo</div>'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+stepBg(3)+';color:#fff;display:flex;align-items:center;justify-content:center;">🚚</div><div style="font-size:13px;font-weight:900;color:'+stepTx(3)+';">En camino</div>'+
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+stepBg(4)+';color:#fff;display:flex;align-items:center;justify-content:center;">🏠</div><div style="font-size:13px;font-weight:900;color:'+stepTx(4)+';">Entregado</div>'+
+      '</div>'+
+    '</div>'+
     '<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:16px;padding:14px;margin-top:14px;box-shadow:0 8px 20px rgba(0,0,0,.055);"><div style="font-size:10px;font-weight:900;color:#999;letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;">Tu compra</div>'+rows+'<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:3px;"><div style="font-size:15px;font-weight:900;color:#111;">Total</div><div style="font-size:18px;font-weight:900;color:#111;">'+money(t)+'</div></div><div style="font-size:11px;color:#777;margin-top:12px;">Orden '+esc(o.id||'—')+' · '+fdate(o.fecha)+'</div></div>';
   return false;
 }
@@ -950,7 +970,7 @@ try{Object.defineProperty(window,'go',{value:dcGoOficial,writable:false,configur
     var txt=((item.innerText||item.textContent||'').toLowerCase());
     if(txt.indexOf('inicio')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-home','left');return;}
     if(txt.indexOf('plaza')!==-1&&txt.indexOf('mis')===-1){ev.preventDefault();ev.stopPropagation();window.go('v-plaza','left');return;}
-    if(txt.indexOf('mis compras')!==-1||txt.indexOf('compras')!==-1){ev.preventDefault();ev.stopPropagation();window._misComprasPlazaTab='proceso';window.go('v-mis-compras-plaza','right');setTimeout(function(){try{window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();}catch(e){}},120);return;}
+    if(txt.indexOf('mis compras')!==-1||txt.indexOf('compras')!==-1){ev.preventDefault();ev.stopPropagation();window._misComprasPlazaTab='proceso';window.go('v-mis-compras-plaza','right');return;}
     if(txt.indexOf('reservaciones')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-mi-agenda','right');setTimeout(function(){try{window._renderMiAgenda&&window._renderMiAgenda();}catch(e){}},200);return;}
     if(txt.indexOf('perfil')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-mipanel','right');setTimeout(function(){try{window.cargarMiPerfil&&window.cargarMiPerfil();}catch(e){}},180);return;}
   },true);

@@ -1139,35 +1139,12 @@ window.plazaCargarProductos = async function(uidNegocio, negocio, estOp) {
 var _misComprasPlazaTab = 'proceso';
 window.cambiarTabMisComprasPlaza = function(tab) {
   _misComprasPlazaTab = tab || 'proceso';
-  window.cargarMisComprasPlaza && window.cargarMisComprasPlaza();
+  window._misComprasPlazaTab = _misComprasPlazaTab;
+  try { if (typeof window.dcPlazaLimpieza15Render === 'function') window.dcPlazaLimpieza15Render(); } catch(e) {}
 };
 
-window.cargarMisComprasPlaza = async function() {
-  var el = document.getElementById('miscompras-plaza-lista');
-  var sub = document.getElementById('miscompras-plaza-sub');
-  var bProc = document.getElementById('miscompras-tab-proceso');
-  var bAnt  = document.getElementById('miscompras-tab-anteriores');
-  if (!el) return;
-  if (!_misComprasPlazaTab) _misComprasPlazaTab = 'proceso';
-  if (sub) sub.textContent = _misComprasPlazaTab === 'anteriores' ? 'Compras anteriores' : 'Compras en proceso';
-  if (bProc && bAnt) {
-    bProc.style.background = _misComprasPlazaTab === 'proceso' ? 'var(--blue)' : 'rgba(255,255,255,.18)';
-    bProc.style.color = '#fff';
-    bAnt.style.background = _misComprasPlazaTab === 'anteriores' ? 'var(--blue)' : 'rgba(255,255,255,.18)';
-    bAnt.style.color = '#fff';
-  }
-  try {
-    // Por ahora Plaza Online no genera orden de compra cerrada; dejamos ambas pestañas listas para conectar.
-    el.scrollTop = 0;
-    var esAnt = _misComprasPlazaTab === 'anteriores';
-    el.innerHTML = '<div style="padding:36px 20px;text-align:center;">'
-      + '<div style="font-size:42px;margin-bottom:12px;">'+(esAnt?'📦':'🛒')+'</div>'
-      + '<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:6px;">'+(esAnt?'Sin compras anteriores':'Sin compras en proceso')+'</div>'
-      + '<div style="font-size:12px;color:#777;line-height:1.5;">'+(esAnt?'Cuando finalices compras en Plaza Online, aparecerán aquí.':'Cuando compres productos en Plaza Online, aparecerán aquí.')+'</div>'
-      + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div class="si24">Error al cargar Mis compras: '+e.message+'</div>';
-  }
+window.cargarMisComprasPlaza = function() {
+  try { if (typeof window.dcPlazaLimpieza15Render === 'function') window.dcPlazaLimpieza15Render(); } catch(e) {}
 };
 
 
