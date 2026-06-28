@@ -1227,10 +1227,12 @@ window.cargarMisComprasPlaza = function() {
     if (lb) lb.textContent = nombre;
   }
   function firebaseError(code) {
-    if (code === 'auth/email-already-in-use') return '📧 Ese correo ya tiene cuenta. Usa "Ya tengo cuenta".';
-    if (code === 'auth/weak-password')        return '🔐 La contraseña debe tener mínimo 6 caracteres.';
-    if (code === 'auth/invalid-email')        return '📧 Ese correo no tiene formato válido.';
-    if (code === 'auth/invalid-credential')   return '❌ Correo o contraseña incorrectos.';
+    if (code === 'auth/email-already-in-use')    return '📧 Ese correo ya tiene cuenta. Usa "Ya tengo cuenta".';
+    if (code === 'auth/weak-password')           return '🔐 La contraseña debe tener mínimo 6 caracteres.';
+    if (code === 'auth/invalid-email')           return '📧 Ese correo no tiene formato válido.';
+    if (code === 'auth/invalid-credential')      return '❌ Correo o contraseña incorrectos.';
+    if (code === 'auth/network-request-failed')  return '⚠️ Sin conexión a internet. Verifica tu red e intenta de nuevo.';
+    if (!navigator.onLine)                       return '⚠️ Sin conexión a internet. Verifica tu red e intenta de nuevo.';
     return '❌ Error: ' + code;
   }
 
@@ -3207,13 +3209,19 @@ window.cargarMisComprasPlaza = function() {
         const snap = await getDocs(q);
         if (snap.empty) {
           btn.textContent='Entrar →'; btn.disabled=false;
-          err.style.display='block'; err.textContent='❌ Usuario no encontrado. ¿Intentas con tu correo?';
+          if (!navigator.onLine) {
+            err.style.display='block'; err.textContent='⚠️ Sin conexión a internet. Verifica tu red e intenta de nuevo.';
+          } else {
+            err.style.display='block'; err.textContent='❌ Usuario no encontrado. ¿Intentas con tu correo?';
+          }
           return;
         }
         correoLogin = snap.docs[0].data().correo;
       } catch(e2) {
         btn.textContent='Entrar →'; btn.disabled=false;
-        err.style.display='block'; err.textContent='❌ Error al buscar usuario: ' + e2.message;
+        var _offline2 = !navigator.onLine || (e2.code||'').indexOf('network') !== -1;
+        err.style.display='block';
+        err.textContent = _offline2 ? '⚠️ Sin conexión a internet. Verifica tu red e intenta de nuevo.' : '❌ Error al buscar usuario: ' + e2.message;
         return;
       }
     }
