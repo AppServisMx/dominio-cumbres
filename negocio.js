@@ -581,26 +581,6 @@ window.vnegGuardarProd = async function(){
     }catch(e){if(typeof toast==='function')toast('⚠️ Error: '+e.message);}
   };
 
-  // Inyectar card en home-stagger del vr-home — solo para usuarios tipo negocio
-  function _injectPlazaCard(){
-    var _tipo=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
-    if(_tipo!=='negocio') return;
-    var stagger=document.getElementById('home-stagger');
-    if(!stagger||document.getElementById('vr-ppn-home-card')) return;
-    var card=document.createElement('div');
-    card.id='vr-ppn-home-card';
-    card.innerHTML='<div class="sec-lbl">Plaza Online</div>'
-      +'<div onclick="window._vnegPlazaPedidos()" style="margin:0 14px 4px;background:linear-gradient(120deg,#0d2a3a,#1a5a7a);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
-      +'<div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏪</div>'
-      +'<div><div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;">Pedidos de Plaza Online</div>'
-      +'<div style="font-size:11px;color:rgba(255,255,255,.7);">Ver y gestionar mis pedidos</div></div>'
-      +'</div>';
-    var zona6=document.getElementById('home-oportunidad');
-    if(zona6) stagger.insertBefore(card,zona6); else stagger.appendChild(card);
-  }
-  // Intentar inyectar cuando el DOM esté listo, y también cuando se navega a vr-home
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_injectPlazaCard);
-  else _injectPlazaCard();
-  [200,800,1800].forEach(function(ms){setTimeout(_injectPlazaCard,ms);});
+  // Card "Pedidos de Plaza Online" eliminada de vr-home — pertenece solo a vn-home
 })();
 

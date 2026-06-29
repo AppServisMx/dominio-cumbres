@@ -3600,6 +3600,42 @@ window.renderHomeM2 = function() {
     scroll.innerHTML = html;
     // M2-G: poblar descubrimiento si el contenedor fue inyectado
     window.renderDescubrimiento && window.renderDescubrimiento('home-discover-list');
+    // Actualizar nav inferior según rol del operador
+    var nav = document.getElementById('v-home-nav');
+    if (nav) {
+      if (tipo === 'restaurante') {
+        nav.innerHTML =
+          '<div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb on">Inicio</div></div>'
+          + '<div class="ni" onclick="go(\'vr-home\',\'right\');navTo&&navTo(\'vr-pedidos\')">'
+          + '<div class="ni-ic">📦</div><div class="ni-lb">Pedidos</div></div>'
+          + '<div class="ni" onclick="go(\'vr-home\',\'right\');setTimeout(function(){navTo&&navTo(\'vr-menu\');},80)">'
+          + '<div class="ni-ic">✏️</div><div class="ni-lb">Menú</div></div>'
+          + '<div class="ni" onclick="go(\'vr-home\',\'right\');setTimeout(function(){navTo&&navTo(\'vr-notif\');},80)">'
+          + '<div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>'
+          + '<div class="ni" onclick="go(\'vr-home\',\'right\')">'
+          + '<div class="ni-ic">⚙️</div><div class="ni-lb">Config</div></div>';
+      } else if (tipo === 'negocio') {
+        nav.innerHTML =
+          '<div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb on">Inicio</div></div>'
+          + '<div class="ni" onclick="go(\'vn-home\',\'right\');setTimeout(function(){negTo&&negTo(\'vn-pedidos\');},80)">'
+          + '<div class="ni-ic">📦</div><div class="ni-lb">Pedidos</div></div>'
+          + '<div class="ni" onclick="go(\'vn-home\',\'right\');setTimeout(function(){negTo&&negTo(\'vn-menu\');},80)">'
+          + '<div class="ni-ic">✏️</div><div class="ni-lb">Productos</div></div>'
+          + '<div class="ni" onclick="go(\'vn-home\',\'right\');setTimeout(function(){negTo&&negTo(\'vn-promos\');},80)">'
+          + '<div class="ni-ic">📣</div><div class="ni-lb">Promos</div></div>'
+          + '<div class="ni" onclick="go(\'vn-home\',\'right\')">'
+          + '<div class="ni-ic">⚙️</div><div class="ni-lb">Config</div></div>';
+      } else if (tipo === 'proveedor') {
+        nav.innerHTML =
+          '<div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb on">Inicio</div></div>'
+          + '<div class="ni" onclick="go(\'v-mis-chats\',\'right\');setTimeout(cargarMisChats,200)">'
+          + '<div class="ni-ic">💬</div><div class="ni-lb">Chats</div></div>'
+          + '<div class="ni" onclick="go(\'v-mis-reportes\',\'right\');setTimeout(function(){window.cargarMisReportes&&window.cargarMisReportes();},300)">'
+          + '<div class="ni-ic">📋</div><div class="ni-lb">Solicitudes</div></div>'
+          + '<div class="ni" onclick="go(\'v-mipanel\',\'right\')">'
+          + '<div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>';
+      }
+    }
   };
 
 // ══════════════════════════════════════════════════════════════
