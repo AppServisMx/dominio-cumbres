@@ -771,7 +771,7 @@ window.vnegRenderPedidos = async function(){
     _vnegPedidosCache=[];
     snap.forEach(function(d){var p=d.data();p._id=d.id;_vnegPedidosCache.push(p);});
     _vnegPedidosCache.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
-    var G={pedidos:['en_proceso'],en_proceso:['preparando','listo'],entregados:['en_camino','entregado']};
+    var G={pedidos:['en_proceso'],en_proceso:['preparando','listo','en_camino'],entregados:['entregado']};
     var perm=G[_vnegPedTab]||[];
     var arr=_vnegPedidosCache.filter(function(p){return perm.indexOf(p.estado)!==-1;});
     var EST_LBL={'en_proceso':'📦 Nuevo','preparando':'👨‍💼 Preparando','listo':'✅ Listo','en_camino':'🏍️ En camino','entregado':'🎉 Entregado'};
