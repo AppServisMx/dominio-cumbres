@@ -2471,9 +2471,9 @@
         style="width:100%;background:#1FC26A;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
         Volver a Mi Panel
       </button>
-      <button onclick="go('v-mipanel','left')"
+      <button onclick="go('v-home','left')"
         style="width:100%;background:#f0f0f0;border:none;border-radius:14px;padding:12px;font-size:13px;font-weight:600;color:#555;cursor:pointer;font-family:'Inter',sans-serif;">
-        Volver a Mi Panel
+        Volver al Inicio
       </button>
     </div>
     <div style="height:10px;"></div>
@@ -2988,7 +2988,7 @@
             </div>
           </div>
           <div class="pill-row" style="padding:8px 0 0;">
-            <button class="chip on" id="tab-pedidos"     onclick="tabPedidos('pedidos',this)">🔴 Pedidos</button>
+            <button class="chip on" id="tab-pedidos"     onclick="tabPedidos('pedidos',this)">📦 Nuevos</button>
             <button class="chip"   id="tab-en_proceso"  onclick="tabPedidos('en_proceso',this)">👨‍🍳 En proceso</button>
             <button class="chip"   id="tab-entregados"  onclick="tabPedidos('entregados',this)">✅ Entregados</button>
           </div>
@@ -3652,7 +3652,7 @@
             </div>
           </div>
           <div class="pill-row" style="padding:8px 0 0;">
-            <button class="chip on" id="vntab-pedidos"     onclick="vnegTabPedidos('pedidos',this)">🔴 Pedidos</button>
+            <button class="chip on" id="vntab-pedidos"     onclick="vnegTabPedidos('pedidos',this)">📦 Nuevos</button>
             <button class="chip"   id="vntab-en_proceso"  onclick="vnegTabPedidos('en_proceso',this)">👨‍🍳 En proceso</button>
             <button class="chip"   id="vntab-entregados"  onclick="vnegTabPedidos('entregados',this)">✅ Entregados</button>
           </div>
@@ -3865,12 +3865,12 @@
       <div class="scr" style="padding:0 0 24px;background:#F7F5F2;">
         <!-- Selector de mes -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;">
-          <button id="vn-vrv-mes-prev" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8249;</button>
+          <button id="vn-vrv-mes-prev" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#F0EBF8;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(123,63,160,.18);">&#8249;</button>
           <div style="text-align:center;">
             <div id="vn-vrv-mes-label" style="font-size:16px;font-weight:800;color:#2a2a2a;">—</div>
             <div style="font-size:9px;color:#aaa;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:1px;">Resumen del mes</div>
           </div>
-          <button id="vn-vrv-mes-next" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8250;</button>
+          <button id="vn-vrv-mes-next" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#F0EBF8;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(123,63,160,.18);">&#8250;</button>
         </div>
 
         <!-- Tarjeta hero: Ventas del mes -->
