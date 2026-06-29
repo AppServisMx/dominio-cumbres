@@ -581,8 +581,10 @@ window.vnegGuardarProd = async function(){
     }catch(e){if(typeof toast==='function')toast('⚠️ Error: '+e.message);}
   };
 
-  // Inyectar card en home-stagger del vr-home
+  // Inyectar card en home-stagger del vr-home — solo para usuarios tipo negocio
   function _injectPlazaCard(){
+    var _tipo=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
+    if(_tipo!=='negocio') return;
     var stagger=document.getElementById('home-stagger');
     if(!stagger||document.getElementById('vr-ppn-home-card')) return;
     var card=document.createElement('div');

@@ -3529,15 +3529,15 @@ window.renderHomeM2 = function() {
 
       // Métricas HOY reales: Pedidos · Ventas · Calificación (se llenan tras render)
       html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 14px;margin-bottom:18px;">'
-        + '<div id="card-poraceptar" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'pedidos\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-poraceptar" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">🔴 Por aceptar</div></div>'
-        + '<div id="card-pedidoshoy" class="rhome-card" style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-pedidos" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">Pedidos hoy</div></div>'
-        + '<div id="card-enproceso" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'en_proceso\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-enproceso" style="font-size:20px;font-weight:800;color:#D63A2A;">0</div><div style="font-size:9px;color:#999;">👨‍🍳 En proceso</div></div>'
+        + '<div id="card-poraceptar" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'pedidos\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-poraceptar" style="font-size:20px;font-weight:800;color:#c8940a;">0</div><div style="font-size:9px;color:#999;">🔴 Por aceptar</div></div>'
+        + '<div id="card-pedidoshoy" class="rhome-card" style="background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-pedidos" style="font-size:20px;font-weight:800;color:#c8940a;">0</div><div style="font-size:9px;color:#999;">Pedidos hoy</div></div>'
+        + '<div id="card-enproceso" onclick="window._irPedidosRestTab&&window._irPedidosRestTab(\'en_proceso\')" class="rhome-card" style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 8px;text-align:center;"><div id="rhome-enproceso" style="font-size:20px;font-weight:800;color:#c8940a;">0</div><div style="font-size:9px;color:#999;">👨‍🍳 En proceso</div></div>'
         + '</div>';
 
       // Botón principal CENTRO OPERATIVO
       html += '<div style="padding:0 14px;margin-bottom:20px;">'
         + '<button onclick="go(\'vr-home\',\'right\')" '
-        + 'style="width:100%;background:linear-gradient(135deg,#7A1810,#D63A2A);border:none;border-radius:16px;padding:18px 14px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(214,58,42,.35);letter-spacing:.3px;">'
+        + 'style="width:100%;background:linear-gradient(135deg,#6B4200,#c8940a);border:none;border-radius:16px;padding:18px 14px;font-size:16px;font-weight:800;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 20px rgba(200,148,10,.35);letter-spacing:.3px;">'
         + '<span style="font-size:22px;">🚀</span> CENTRO OPERATIVO'
         + '</button>'
         + '</div>';
