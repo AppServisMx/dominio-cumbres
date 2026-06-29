@@ -578,8 +578,8 @@ window._calcMetricasNeg = async function(){
   var ledSet = function(cardId,on){ var c=document.getElementById(cardId); if(c) c.classList.toggle('led-on', !!on); };
   try {
     var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',user.uid)));
-    var GP_NUEVO=['nuevo'], GP_PROC=['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'];
+    var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidosPlaza'), _fb.where('negocioId','==',user.uid)));
+    var GP_NUEVO=['en_proceso'], GP_PROC=['preparando','listo','en_camino'];
     var nAcep=0,nProc=0,nHoy=0, ventaHoy=0, nSem=0, ventaSem=0;
     var hoy0=new Date(); hoy0.setHours(0,0,0,0); var t0=hoy0.getTime();
     var sem0=new Date(); sem0.setHours(0,0,0,0); sem0.setDate(sem0.getDate()-6); var ts0=sem0.getTime();
@@ -619,15 +619,27 @@ window.vnegRenderPedidos = async function(){
   cont.innerHTML='<div style="text-align:center;color:#aaa;padding:30px;font-size:12px;">Cargando…</div>';
   try{
     var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'),_fb.where('restauranteId','==',user.uid)));
-    var G={pedidos:['nuevo'],en_proceso:['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'],entregados:['entregado']};
+    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidosPlaza'),_fb.where('negocioId','==',user.uid),_fb.orderBy('fecha','desc')));
+    var G={pedidos:['en_proceso'],en_proceso:['preparando','listo','en_camino'],entregados:['entregado']};
     var perm=G[_vnegPedTab]||[]; var arr=[];
     snap.forEach(function(d){var p=d.data();p._id=d.id;if(perm.indexOf(p.estado)!==-1)arr.push(p);});
     arr.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
     if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin pedidos en esta categoría.</div>';return;}
+    var AVANCE_LBL={'en_proceso':'Marcar preparando →','preparando':'Marcar listo →','listo':'Marcar en camino →','en_camino':'Marcar entregado ✓'};
+    var AVANCE_SIG={'en_proceso':'preparando','preparando':'listo','listo':'en_camino','en_camino':'entregado'};
     cont.innerHTML=arr.map(function(p){
+      var est=String(p.estado||'en_proceso');
+      var sig=AVANCE_SIG[est]; var sigLbl=AVANCE_LBL[est];
       var items=(p.items||[]).map(function(it){return _resc(it.cantidad)+'x '+_resc(it.nombre);}).join(', ');
-      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;font-size:13px;">'+_resc(p.vecinoNombre||'Cliente')+'</span><span style="font-weight:800;color:#7B3FA0;">$'+_resc(p.total||0)+'</span></div><div style="font-size:12px;color:#666;">'+items+'</div></div>';
+      var fch=p.fecha?new Date(p.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'}):'';
+      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:800;font-size:13px;">'+_resc(p.clienteNombre||p.vecinoNombre||'Cliente')+'</span><span style="font-weight:800;color:#7B3FA0;">$'+_resc(p.total||0)+'</span></div>'
+        +'<div style="font-size:12px;color:#666;margin-bottom:4px;">'+items+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:'+(sig?'8':'0')+'px;">'
+        +'<span style="font-size:10px;background:#f0f0f0;border-radius:6px;padding:2px 7px;color:#555;font-weight:700;">'+_resc(est)+'</span>'
+        +'<span style="font-size:10px;color:#aaa;">'+fch+'</span></div>'
+        +(sig?'<button onclick="window._vnegAvanzarPlaza(\''+_resc(p._id)+'\',\''+_resc(sig)+'\')" style="width:100%;padding:9px;border:none;border-radius:10px;background:#1FC26A;color:#fff;font-size:11px;font-weight:900;font-family:inherit;cursor:pointer;">'+sigLbl+'</button>':'')
+        +'</div>';
     }).join('');
   }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error.</div>';}
 };
