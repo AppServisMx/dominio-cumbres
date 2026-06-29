@@ -612,6 +612,21 @@ window.vnegTabPedidos = function(tab, btn){
   if (btn) btn.classList.add('on');
   window.vnegRenderPedidos();
 };
+
+// Avanzar estado de un pedido Plaza desde vn-pedidos (no redirige a restaurante)
+window._vnegAvanzarPedVn = async function(docId, nuevoEstado) {
+  var _db = window._fbDb; if (!_db || !docId) return;
+  try {
+    var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    await _fb.updateDoc(_fb.doc(_db,'pedidosPlaza',docId), {
+      estado: nuevoEstado, actualizado: Date.now(),
+      historialEstados: _fb.arrayUnion({estado:nuevoEstado, fecha:Date.now()})
+    });
+    window.vnegRenderPedidos();
+    window._calcMetricasNeg && window._calcMetricasNeg();
+  } catch(e) { if(typeof toast==='function') toast('⚠️ Error: '+e.message); }
+};
+
 window.vnegRenderPedidos = async function(){
   var cont = document.getElementById('vn-ped-cont'); if(!cont) return;
   var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
@@ -625,23 +640,30 @@ window.vnegRenderPedidos = async function(){
     snap.forEach(function(d){var p=d.data();p._id=d.id;if(perm.indexOf(p.estado)!==-1)arr.push(p);});
     arr.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
     if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin pedidos en esta categoría.</div>';return;}
-    var AVANCE_LBL={'en_proceso':'Marcar preparando →','preparando':'Marcar listo →','listo':'Marcar en camino →','en_camino':'Marcar entregado ✓'};
+    var AVANCE_LBL={'en_proceso':'✅ Aceptar y preparar','preparando':'Marcar como listo →','listo':'Marcar en camino →','en_camino':'Marcar entregado ✓'};
     var AVANCE_SIG={'en_proceso':'preparando','preparando':'listo','listo':'en_camino','en_camino':'entregado'};
+    var EST_LBL={'en_proceso':'Nuevo','preparando':'Preparando','listo':'Listo','en_camino':'En camino','entregado':'Entregado'};
+    var EST_COL={'en_proceso':'#D97706','preparando':'#7B3FA0','listo':'#1a8a4a','en_camino':'#1a5a9a','entregado':'#555'};
     cont.innerHTML=arr.map(function(p){
       var est=String(p.estado||'en_proceso');
       var sig=AVANCE_SIG[est]; var sigLbl=AVANCE_LBL[est];
-      var items=(p.items||[]).map(function(it){return _resc(it.cantidad)+'x '+_resc(it.nombre);}).join(', ');
-      var fch=p.fecha?new Date(p.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'}):'';
-      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);">'
-        +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:800;font-size:13px;">'+_resc(p.clienteNombre||p.vecinoNombre||'Cliente')+'</span><span style="font-weight:800;color:#7B3FA0;">$'+_resc(p.total||0)+'</span></div>'
-        +'<div style="font-size:12px;color:#666;margin-bottom:4px;">'+items+'</div>'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:'+(sig?'8':'0')+'px;">'
-        +'<span style="font-size:10px;background:#f0f0f0;border-radius:6px;padding:2px 7px;color:#555;font-weight:700;">'+_resc(est)+'</span>'
-        +'<span style="font-size:10px;color:#aaa;">'+fch+'</span></div>'
-        +(sig?'<button onclick="window._vnegAvanzarPlaza(\''+_resc(p._id)+'\',\''+_resc(sig)+'\')" style="width:100%;padding:9px;border:none;border-radius:10px;background:#1FC26A;color:#fff;font-size:11px;font-weight:900;font-family:inherit;cursor:pointer;">'+sigLbl+'</button>':'')
+      var items=(p.items||[]).map(function(it){return _resc(it.cantidad)+'× '+_resc(it.nombre);}).join(', ');
+      var fch=p.fecha?new Date(p.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+      var estCol=EST_COL[est]||'#555'; var estLbl=EST_LBL[est]||est;
+      return '<div style="background:#fff;border-radius:14px;padding:14px 16px;margin:0 14px 10px;box-shadow:0 2px 8px rgba(0,0,0,.07);border-left:4px solid '+estCol+';">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">'
+        +'<div><div style="font-weight:800;font-size:13px;color:#111;">'+_resc(p.clienteNombre||p.vecinoNombre||'Cliente')+'</div>'
+        +'<div style="font-size:10px;color:#aaa;margin-top:1px;">'+fch+'</div></div>'
+        +'<div style="font-weight:900;font-size:15px;color:#5B2C8A;">$'+_resc(p.total||0)+'</div></div>'
+        +'<div style="font-size:12px;color:#555;margin-bottom:8px;line-height:1.4;">'+items+'</div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(sig?'10':'0')+'px;">'
+        +'<span style="font-size:10px;font-weight:800;color:'+estCol+';background:'+estCol+'1a;border-radius:20px;padding:3px 10px;">'+estLbl+'</span>'
+        +(p.entrega?'<span style="font-size:10px;color:#888;">'+_resc(p.entrega==='domicilio'?'🏠 A domicilio':'🏪 Recoger')+'</span>':'')
+        +'</div>'
+        +(sig?'<button onclick="window._vnegAvanzarPedVn(\''+_resc(p._id)+'\',\''+_resc(sig)+'\')" style="width:100%;padding:11px;border:none;border-radius:11px;background:linear-gradient(135deg,#5B2C8A,#7B3FA0);color:#fff;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;letter-spacing:.3px;">'+sigLbl+'</button>':'')
         +'</div>';
     }).join('');
-  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error.</div>';}
+  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error: '+_resc(e.message)+'</div>';}
 };
 
 window.vnegCrearCategoria = function(){
