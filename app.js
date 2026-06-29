@@ -3601,7 +3601,7 @@ window.renderHomeM2 = function() {
     // M2-G: poblar descubrimiento si el contenedor fue inyectado
     window.renderDescubrimiento && window.renderDescubrimiento('home-discover-list');
     // Actualizar nav inferior según rol del operador
-    var nav = document.getElementById('v-home-nav');
+    var nav = document.getElementById('v-home-nav') || document.querySelector('#v-home .nav');
     if (nav) {
       if (tipo === 'restaurante') {
         nav.innerHTML =
