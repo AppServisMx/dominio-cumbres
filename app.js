@@ -1139,7 +1139,7 @@ try{Object.defineProperty(window,'go',{value:dcGoOficial,writable:false,configur
       if(id==='v-mis-pedidos-food'&&(t.indexOf('pedido')!==-1||t.indexOf('mis pedido')!==-1)){setItem(item,'🔔','Alertas',function(){goTo('v-notificaciones','right',function(){try{window.renderNotificaciones&&window.renderNotificaciones();}catch(_){}});},'');}
       if(id==='v-mis-reportes'&&(t.indexOf('solicitud')!==-1||t.indexOf('mis solicitudes')!==-1)){setItem(item,'🔧','Servicios',function(){goTo('v-servicios','left');},'var(--green)');}
       if(id==='v-favoritos'&&t.indexOf('favoritos')!==-1){setItem(item,'🔧','Servicios',function(){goTo('v-servicios','left');},'');}
-      if(id==='v-notificaciones'&&t.indexOf('reservaciones')!==-1){setItem(item,'🏠','Inicio',function(){goTo('v-home','left');},'');}
+      // v-notificaciones conserva su nav original (Reservaciones en posición 4)
     });
   }
   function patchAll(){
@@ -2654,7 +2654,8 @@ window.cargarMembresia=async function(){
     lista.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:12px;">Cargando…</div>';
 
     var notifs = await (window.cargarNotificaciones ? window.cargarNotificaciones() : Promise.resolve([]));
-    notifs = (notifs||[]).filter(function(n){ var m=n.modulo||''; var t=n.tipo||''; return m!=='pedidos' && m!=='chat' && m!=='compra' && t!=='chat' && t!=='pedido' && t!=='compra'; });
+    // Campana = solo notificaciones de sistema/admin. Reservas, pedidos, proveedores, chats y compras van a sus secciones.
+    notifs = (notifs||[]).filter(function(n){ var m=n.modulo||''; var t=n.tipo||''; return m!=='pedidos' && m!=='chat' && m!=='compra' && m!=='reserva' && m!=='proveedor' && t!=='chat' && t!=='pedido' && t!=='compra' && t!=='reserva' && t!=='solicitud' && t!=='proveedor_interesado'; });
 
     if (!notifs || notifs.length === 0) {
       if (sub) sub.textContent = 'Sin notificaciones';
