@@ -3940,7 +3940,10 @@ window.renderHomeM2 = function() {
         '<div style="display:flex;">'
         + METRIC('0', 'Pedidos', 'panel-pedidos')
         + METRIC('$0', 'Gastado este mes', 'panel-gastado')
-        + METRIC('0', 'Favoritos', 'panel-favs')
+        + '<div style="flex:1;text-align:center;padding:10px 4px;cursor:pointer;" onclick="go(\'v-favoritos\',\'right\')">'
+        + '<div style="font-size:22px;font-weight:700;color:'+color+';" id="panel-favs">0</div>'
+        + '<div style="font-size:10px;color:#1a6fbf;margin-top:2px;text-decoration:underline;">Favoritos</div>'
+        + '</div>'
         + '</div>'
       );
     } else {
@@ -4023,9 +4026,12 @@ window.renderHomeM2 = function() {
 
     html += SEC('Cuenta');
     html += '<div style="background:#fff;border-radius:16px;border:.5px solid #e8e8e8;margin:0 14px 12px;overflow:hidden;">';
-    html += ACCION('💳','Métodos de pago',"go('vr-config','right')");
-    html += ACCION('🔔','Notificaciones',"go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300)");
-    if (tipo !== 'vecino') {
+    if (tipo === 'vecino') {
+      html += ACCION('👤','Mi Perfil',"go('v-mi-perfil','right');setTimeout(function(){window.cargarMiPerfilDetalle&&window.cargarMiPerfilDetalle();},300)");
+      html += ACCION('❤️','Mis favoritos',"go('v-favoritos','right')");
+      html += ACCION('📅','Mi Agenda',"go('v-mi-agenda','right');setTimeout(function(){window._initMiAgenda&&window._initMiAgenda();},200)");
+    } else {
+      html += ACCION('💳','Métodos de pago',"go('vr-config','right')");
       html += ACCION('⭐','Membresía y plan',"go('v-membresia','right');setTimeout(window.cargarMembresia,200)");
       if (tipo === 'proveedor') {
         html += ACCION('📅','Mis horarios',"go('v-agenda','right');setTimeout(function(){window._renderAgenda&&window._renderAgenda();},100)");
@@ -4036,9 +4042,7 @@ window.renderHomeM2 = function() {
         html += ACCION('📣','Crear promoción',"window.irACrearPromo&&window.irACrearPromo()");
       }
     }
-    if (tipo === 'vecino') {
-      html += ACCION('📅','Mi Agenda',"go('v-mi-agenda','right');setTimeout(function(){window._initMiAgenda&&window._initMiAgenda();},200)");
-    }
+    html += ACCION('🔔','Notificaciones',"go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300)");
     html += ACCION_LAST('🚪','Cerrar sesión','cerrarSesion()','#D63A2A');
     html += '</div>';
 
