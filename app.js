@@ -4049,6 +4049,10 @@ window.renderHomeM2 = function() {
     html += '<div style="height:8px;"></div>';
     scroll.innerHTML = html;
 
+    // Actualizar contador de favoritos con dato real desde localStorage
+    var panelFavs = document.getElementById('panel-favs');
+    if (panelFavs) panelFavs.textContent = String(window.getFavs ? window.getFavs().length : 0);
+
     // ── Firebase: poblar campos reales ──────────────────────────
     try {
       var user = window._fbAuth.currentUser;
@@ -5296,6 +5300,14 @@ window.cargarMisComprasPlaza = function() {
     // Actualizar botón si está visible
     var btn = document.getElementById('det-fav-btn');
     if (btn) btn.textContent = window.isFav(id) ? '❤️' : '🤍';
+    // Actualizar contador en Mi Panel si está visible
+    var panelFavs = document.getElementById('panel-favs');
+    if (panelFavs) panelFavs.textContent = String(window.getFavs().length);
+    // Refrescar lista si v-favoritos está activo
+    if (typeof cargarFavoritos === 'function') {
+      var favVista = document.getElementById('v-favoritos');
+      if (favVista && favVista.classList.contains('active')) cargarFavoritos();
+    }
   };
 
   window.addReciente = function(p) {
