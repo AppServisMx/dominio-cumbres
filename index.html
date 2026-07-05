@@ -1809,7 +1809,7 @@
     <!-- Info de límite -->
     <div style="background:#FFF8E1;border-radius:10px;padding:8px 12px;
       font-size:11px;color:#9A6800;margin-bottom:14px;line-height:1.5;">
-      👷 Hasta 4 proveedores pueden postularse a tu solicitud.
+      👷 Hasta 3 proveedores pueden postularse a tu solicitud.
       Podrás chatear con cada uno antes de decidir.
     </div>
 
@@ -1834,7 +1834,7 @@
     <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.7;margin-bottom:24px;">
       Tu solicitud ya está visible para proveedores verificados.<br>
       Cuando alguien se postule te avisaremos.<br><br>
-      <strong class="si04">Máximo 4 proveedores</strong> pueden postularse.<br>
+      <strong class="si04">Máximo 3 proveedores</strong> pueden postularse.<br>
       Podrás chatear con cada uno antes de contratar.
     </div>
     <button class="btn btn-green"
@@ -2823,7 +2823,7 @@
           <!-- ZONA 7 — Acceso Cómo me ve el cliente (icono qi) -->
           <div>
             <div class="sec-lbl">Mi perfil público</div>
-            <div onclick="navTo('vr-cmv')" style="margin:0 14px;background:linear-gradient(120deg,#0d3d24,#1a6640);border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 4px 18px rgba(31,194,106,.25);active:transform:scale(.98);">
+            <div onclick="(function(){var t=(localStorage.getItem('dcuserTipo')||'').toLowerCase();if(t==='proveedor'){go('v-prov-cmv','right');setTimeout(window.vprovCmvCargar,200);}else{navTo('vr-cmv');}})()" style="margin:0 14px;background:linear-gradient(120deg,#0d3d24,#1a6640);border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 4px 18px rgba(31,194,106,.25);">
               <div style="width:52px;height:52px;border-radius:14px;background:rgba(31,194,106,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
               <div style="flex:1;">
                 <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;">Cómo me ve el cliente</div>

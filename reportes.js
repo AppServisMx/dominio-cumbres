@@ -10,7 +10,7 @@
 
 // ── Constantes ──────────────────────────────────────────────
 
-const DC_MAX_POSTULANTES = 4;
+const DC_MAX_POSTULANTES = 3;
 
 const DC_CATEGORIAS = {
   plomero:      { ic: '💧', label: 'Plomería' },
@@ -69,7 +69,7 @@ function _badgePostulantes(total) {
   const lleno  = total >= DC_MAX_POSTULANTES;
   const color  = lleno ? '#D63A2A' : '#1A7AB5';
   const bg     = lleno ? '#FDECEA' : '#E8F0F8';
-  const texto  = lleno ? '🔒 Completo (4/4)' : `👷 ${total}/${DC_MAX_POSTULANTES} postulantes`;
+  const texto  = lleno ? `🔒 Completo (${DC_MAX_POSTULANTES}/${DC_MAX_POSTULANTES})` : `👷 ${total}/${DC_MAX_POSTULANTES} postulantes`;
   return `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${bg};color:${color};">${texto}</span>`;
 }
 
@@ -170,33 +170,70 @@ window.publicarReporte = async function() {
   const reporteId  = _generarReporteId();
 
   try {
-    const { setDoc, doc } = await import(
+    const { setDoc, doc, collection, addDoc, serverTimestamp } = await import(
       'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'
     );
 
-    await setDoc(doc(window._fbDb, 'reportes', reporteId), {
-      vecinoId:             uid,
-      vecinoNombre:         nombre,
-      categoria,
-      descripcion,
-      referencia,               // escrita por el usuario: "cerca de caseta", etc.
-      zona:                 zonaAutomatica, // tomada del perfil, sin intervención del usuario
-      estado:               'publicado',
-      postulantes:          [],
-      totalPostulantes:     0,
-      proveedorContratadoId: null,
-      imagenUrl:            '',
-      fechaCreacion:        new Date().toISOString(),
-      fechaActualizacion:   new Date().toISOString()
-    });
+    const esDirecto  = !!window._solicitudDirectaProvId;
+    const provId     = window._solicitudDirectaProvId     || null;
+    const provNombre = window._solicitudDirectaProvNombre || '';
 
-    if (btnEl) { btnEl.textContent = 'Publicar solicitud →'; btnEl.disabled = false; }
-    document.getElementById('sol-categoria').value   = '';
-    document.getElementById('sol-descripcion').value = '';
-    const refEl = document.getElementById('sol-referencia');
-    if (refEl) refEl.value = '';
-
-    if (typeof go === 'function') go('v-solicitud-enviada', 'right');
+    if (esDirecto && provId) {
+      // Contacto directo: crear chat con contexto, NO publicar reporte
+      const myName     = nombre || localStorage.getItem('dcuser') || 'Vecino';
+      const idsOrden   = [uid, provId].sort().join('_');
+      const chatId     = 'chat_' + idsOrden;
+      const primerMsg  = '📋 ' + categoria.toUpperCase() + '\n' + descripcion + (referencia ? '\n📍 ' + referencia : '');
+      await setDoc(doc(window._fbDb, 'chats', chatId), {
+        participantes:   [uid, provId],
+        tipo:            'directo',
+        categoria,
+        ultimoMsg:       descripcion,
+        ultimoNombre:    myName,
+        nombreContacto:  provNombre,
+        ultimoEmisor:    uid,
+        respondido:      false,
+        fecha:           Date.now()
+      }, { merge: true });
+      await addDoc(collection(window._fbDb, 'chats', chatId, 'mensajes'), {
+        texto:          primerMsg,
+        remitenteId:    uid,
+        remitenteNombre: myName,
+        timestamp:      serverTimestamp()
+      });
+      // Limpiar estado directo
+      window._solicitudDirectaProvId     = null;
+      window._solicitudDirectaProvNombre = '';
+      window._solicitudDirectaCategoria  = '';
+      if (btnEl) { btnEl.textContent = 'Enviar solicitud directa →'; btnEl.disabled = false; }
+      // Punto 4: guardar contexto para mostrar en el chat
+      window._chatContextoSolicitud = { categoria, descripcion, provNombre };
+      // Abrir el chat directamente
+      window._abrirChatDirecto && window._abrirChatDirecto(provId, provNombre, chatId);
+    } else {
+      // Solicitud pública normal
+      await setDoc(doc(window._fbDb, 'reportes', reporteId), {
+        vecinoId:             uid,
+        vecinoNombre:         nombre,
+        categoria,
+        descripcion,
+        referencia,
+        zona:                 zonaAutomatica,
+        estado:               'publicado',
+        postulantes:          [],
+        totalPostulantes:     0,
+        proveedorContratadoId: null,
+        imagenUrl:            '',
+        fechaCreacion:        new Date().toISOString(),
+        fechaActualizacion:   new Date().toISOString()
+      });
+      if (btnEl) { btnEl.textContent = 'Publicar solicitud →'; btnEl.disabled = false; }
+      document.getElementById('sol-categoria').value   = '';
+      document.getElementById('sol-descripcion').value = '';
+      const refEl = document.getElementById('sol-referencia');
+      if (refEl) refEl.value = '';
+      if (typeof go === 'function') go('v-solicitud-enviada', 'right');
+    }
 
   } catch (e) {
     console.error('publicarReporte error:', e.message);
@@ -570,7 +607,7 @@ window._postularEnReporte = async function(reporteId) {
     alert('Esta solicitud ya no está disponible.'); return;
   }
 
-  const _maxPost = (typeof DC_MAX_POSTULANTES !== 'undefined') ? DC_MAX_POSTULANTES : 4;
+  const _maxPost = (typeof DC_MAX_POSTULANTES !== 'undefined') ? DC_MAX_POSTULANTES : 3;
   if ((r.totalPostulantes || 0) >= _maxPost) {
     alert('Esta solicitud ya tiene el máximo de proveedores.'); return;
   }
@@ -663,7 +700,7 @@ window._cargarPostulantesVecino = async function(reporteId, postulantes, vecinoU
     'https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js'
   );
 
-  var html = '<div style="font-size:12px;font-weight:700;color:var(--text-caption);margin-bottom:8px;">Proveedores interesados (' + postulantes.length + '/' + (window.DC_MAX_POSTULANTES||4) + ')</div>';
+  var html = '<div style="font-size:12px;font-weight:700;color:var(--text-caption);margin-bottom:8px;">Proveedores interesados (' + postulantes.length + '/' + (window.DC_MAX_POSTULANTES||3) + ')</div>';
 
   for (var i = 0; i < postulantes.length; i++) {
     var provUid = postulantes[i];
@@ -787,7 +824,53 @@ window.iniciarFormularioSolicitud = async function() {
     return;
   }
 
-  // Mostrar perfil.zona exactamente como está en Firestore
+  const esDirecto   = !!window._solicitudDirectaProvId;
+  const provNombre  = window._solicitudDirectaProvNombre || '';
+  const provCat     = window._solicitudDirectaCategoria  || '';
+
+  // Ajustar header del formulario según modo
+  const subtitleEl = document.querySelector('#v-solicitud-nueva .si21');
+  const btnEl      = document.getElementById('sol-btn-enviar');
+  const infoBox    = document.querySelector('#v-solicitud-nueva .info-box');
+  const limiteBox  = document.querySelector('#v-solicitud-nueva .info-box + div + div + div + div + div');
+  const backBtn    = document.querySelector('#v-solicitud-nueva .btn-back');
+
+  if (esDirecto) {
+    if (subtitleEl) subtitleEl.textContent = 'Cuéntale directamente qué necesitas';
+    if (btnEl)      { btnEl.textContent = 'Enviar solicitud directa →'; }
+    if (infoBox)    infoBox.innerHTML = '📩 Este mensaje irá directamente a <strong>' + provNombre.replace(/</g,'&lt;') + '</strong>. Solo él lo verá.';
+    if (backBtn)    backBtn.onclick = function(){ go('v-serv-det','left'); };
+    // Pre-llenar categoría
+    const catSel = document.getElementById('sol-categoria');
+    if (catSel && provCat) catSel.value = provCat;
+    // Mostrar banner de proveedor seleccionado
+    var bannerEl = document.getElementById('sol-proveedor-banner');
+    if (!bannerEl) {
+      bannerEl = document.createElement('div');
+      bannerEl.id = 'sol-proveedor-banner';
+      bannerEl.style.cssText = 'background:#E8F5EE;border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;border:1px solid #C8E6C9;';
+      bannerEl.innerHTML = '<span style="font-size:20px;">🔧</span><div><div style="font-size:12px;font-weight:700;color:#0A4220;">Contacto directo</div><div style="font-size:11px;color:#1a7a45;">' + provNombre.replace(/</g,'&lt;') + '</div></div>';
+      const infoBoxRef = document.querySelector('#v-solicitud-nueva .info-box');
+      if (infoBoxRef) infoBoxRef.parentNode.insertBefore(bannerEl, infoBoxRef);
+    }
+  } else {
+    if (subtitleEl) subtitleEl.textContent = 'Proveedores verificados te contactarán';
+    if (btnEl)      btnEl.textContent = 'Publicar solicitud →';
+    if (infoBox)    infoBox.innerHTML = '🔒 Tu nombre nunca aparece públicamente. Solo los proveedores de tu categoría verán esta solicitud.';
+    if (backBtn)    backBtn.onclick = function(){ go('v-home','left'); };
+    const bannerEl = document.getElementById('sol-proveedor-banner');
+    if (bannerEl) bannerEl.remove();
+    const catSel = document.getElementById('sol-categoria');
+    if (catSel) catSel.value = '';
+  }
+
+  // Limpiar campos
+  const descEl = document.getElementById('sol-descripcion');
+  const refEl  = document.getElementById('sol-referencia');
+  if (descEl) descEl.value = '';
+  if (refEl)  refEl.value  = '';
+
+  // Mostrar perfil.zona
   const zonaEl = document.getElementById('sol-zona-perfil');
   if (zonaEl) {
     const z = (perfil && perfil.zona) ? String(perfil.zona).trim() : '';
