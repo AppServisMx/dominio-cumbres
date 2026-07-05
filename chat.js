@@ -763,8 +763,8 @@ function cargarFavoritos() {
     // Tap → abrir detalle según tipo
     div.onclick = () => {
       if (tipo === 'restaurante' && f.id) {
-        go('v-food','left');
-        setTimeout(function(){ window.dcFood_abrirRest && window.dcFood_abrirRest(f.id); }, 200);
+        if (window.dcFood_abrirRestFav) window.dcFood_abrirRestFav(f.datos || { _id: f.id });
+        else { go('v-food','left'); setTimeout(function(){ window.dcFood_abrirRest && window.dcFood_abrirRest(f.id); }, 200); }
       } else if (tipo === 'negocio' && f.id) {
         go('v-plaza','left');
         setTimeout(function(){ window.plazaAbrirComercio && window.plazaAbrirComercio(f.id); }, 200);

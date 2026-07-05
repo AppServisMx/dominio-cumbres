@@ -277,6 +277,15 @@ function _dcfRenderLista(docs) {
   setTimeout(function(){window._rpIniciarBotonesVecino&&window._rpIniciarBotonesVecino();},50);
 }
 
+/* ── Abrir restaurante desde Favoritos (con datos, sin pasar por lista) ── */
+window.dcFood_abrirRestFav = function(datos) {
+  if (!datos || !datos._id) return;
+  if (!_S.historial.some(function(x){ return x._id === datos._id; })) {
+    _S.historial.push(datos);
+  }
+  window.dcFood_abrirRest(datos._id);
+};
+
 /* ── Abrir restaurante ───────────────────────────────── */
 window.dcFood_abrirRest = async function(restId) {
   dcFood_scrollReset('v-food-det');
