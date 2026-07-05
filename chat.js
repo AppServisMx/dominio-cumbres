@@ -206,6 +206,7 @@ window.cargarMisChats = async function() {
           nombre: (d.nombres && d.nombres[myUid]) || d.nombreContacto || d.ultimoNombre || 'Usuario',
           ultimo: d.ultimoMsg,
           hora, ts,
+          tipo: d.tipo || (d.reporteId ? 'solicitud' : ''),
           noRespondido: d.ultimoEmisor !== myUid
         });
       } else {
@@ -254,9 +255,25 @@ window.cargarMisChats = async function() {
       var body = document.createElement('div');
       body.style.cssText = 'flex:1;min-width:0;';
 
+      var nomRow = document.createElement('div');
+      nomRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;';
+
       var nomEl = document.createElement('div');
-      nomEl.style.cssText = 'font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:2px;';
+      nomEl.style.cssText = 'font-size:13px;font-weight:700;color:var(--text-primary);';
       nomEl.textContent = r.nombre || 'Usuario';   // ← XSS-SAFE
+      nomRow.appendChild(nomEl);
+
+      if (r.tipo === 'directo') {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'font-size:9px;font-weight:700;background:#E3F0FF;color:#1565C0;border-radius:6px;padding:2px 6px;flex-shrink:0;';
+        badge.textContent = '🔵 Directo';
+        nomRow.appendChild(badge);
+      } else if (r.tipo === 'solicitud') {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'font-size:9px;font-weight:700;background:#E8F5EE;color:#1a7a45;border-radius:6px;padding:2px 6px;flex-shrink:0;';
+        badge.textContent = '🟢 Solicitud';
+        nomRow.appendChild(badge);
+      }
 
       var ultEl = document.createElement('div');
       ultEl.style.cssText = 'font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
@@ -266,7 +283,7 @@ window.cargarMisChats = async function() {
       horaEl.style.cssText = 'font-size:10px;color:var(--text-hint);flex-shrink:0;';
       horaEl.textContent = r.hora || '';
 
-      body.appendChild(nomEl);
+      body.appendChild(nomRow);
       body.appendChild(ultEl);
       card.appendChild(avatar);
       card.appendChild(body);
@@ -415,22 +432,42 @@ window.activarNotificacionesProveedor = async function() {
 // ============ FIN NOTIFICACIONES ============
 
 // ── Contactar proveedor moderno — busca chat existente antes de abrir ──
-window._contactarProveedorModerno = async function(btn) {
+window._contactarProveedorModerno = function(btn) {
   const p = window._proveedorActual || {};
   const provId = p.uid || p.id || p._id || '';
   const nombre = p.nombre || 'Proveedor';
+  if (!provId) return;
 
-  if (!provId) { return; }
+  // Overlay "¿Qué necesitas?"
+  var ov = document.createElement('div');
+  ov.id = 'dc-contactar-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;font-family:Inter,sans-serif;">'
+    +'<div style="font-size:16px;font-weight:800;color:#111;margin-bottom:4px;">💬 Contactar a '+nombre+'</div>'
+    +'<div style="font-size:12px;color:#888;margin-bottom:16px;">Describe brevemente lo que necesitas (opcional)</div>'
+    +'<textarea id="dc-contactar-ta" rows="3" placeholder="Ej: Necesito instalar un foco en la sala..." style="width:100%;box-sizing:border-box;border:1.5px solid #e0e0e0;border-radius:14px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;color:#111;"></textarea>'
+    +'<button id="dc-contactar-ok" style="width:100%;margin-top:12px;background:#1FC26A;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">Abrir chat →</button>'
+    +'<button onclick="document.getElementById(\'dc-contactar-overlay\').remove()" style="width:100%;margin-top:8px;background:none;border:none;font-size:13px;color:#aaa;cursor:pointer;font-family:inherit;">Cancelar</button>'
+    +'</div>';
+  document.body.appendChild(ov);
 
+  document.getElementById('dc-contactar-ok').onclick = async function() {
+    var texto = (document.getElementById('dc-contactar-ta').value || '').trim();
+    ov.remove();
+    await _cpModernoAbrir(provId, nombre, texto);
+  };
+};
+
+async function _cpModernoAbrir(provId, nombre, mensajeInicial) {
   const _auth = window._fbAuth;
   const _db   = window._fbDb;
   const myUid = _auth && _auth.currentUser && _auth.currentUser.uid;
 
-  if (!myUid || !_db) {
-    // Fallback seguro: abrir chat con configuración manual
-    window._chatProveedorId      = provId;
-    window._chatIdExacto         = null;
-    window._chatProveedorNombre  = nombre;
+  function _abrirChatUI(chatIdExacto) {
+    window._chatProveedorId     = provId;
+    window._chatIdExacto        = chatIdExacto || null;
+    window._chatProveedorNombre = nombre;
     const nom = document.getElementById('chat-prov-nombre');
     const ic  = document.getElementById('chat-prov-ic');
     const bk  = document.querySelector('#v-chat .btn-back');
@@ -439,56 +476,58 @@ window._contactarProveedorModerno = async function(btn) {
     if (bk)  bk.onclick = function(){ go('v-serv-det','left'); window.cerrarChat&&window.cerrarChat(); };
     go('v-chat','right');
     window.cargarMensajes && window.cargarMensajes();
-    return;
   }
 
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Buscando...'; }
+  if (!myUid || !_db) { _abrirChatUI(null); return; }
 
   try {
-    const { collection, getDocs, query, where } = window._fs;
+    const { collection, getDocs, query, where, doc, setDoc, addDoc, serverTimestamp } = window._fs;
     const q    = query(collection(_db, 'chats'), where('participantes', 'array-contains', myUid));
     const snap = await getDocs(q);
 
     let chatExistente = null;
-    snap.forEach(function(doc) {
-      const d = doc.data();
-      if (Array.isArray(d.participantes) && d.participantes.includes(provId)) {
-        chatExistente = { id: doc.id, nombre: (d.nombres && d.nombres[myUid]) || nombre };
+    snap.forEach(function(d) {
+      const data = d.data();
+      if (Array.isArray(data.participantes) && data.participantes.includes(provId)) {
+        chatExistente = { id: d.id, nombre: (data.nombres && data.nombres[myUid]) || nombre };
       }
     });
 
     if (chatExistente) {
-      window.abrirChatExacto(chatExistente.id, provId, chatExistente.nombre, 'v-serv-det');
-    } else {
-      window._chatProveedorId      = provId;
-      window._chatIdExacto         = null;
-      window._chatProveedorNombre  = nombre;
-      const nom = document.getElementById('chat-prov-nombre');
-      const ic  = document.getElementById('chat-prov-ic');
-      const bk  = document.querySelector('#v-chat .btn-back');
-      if (nom) nom.textContent = nombre;
-      if (ic)  ic.textContent  = '🔧';
-      if (bk)  bk.onclick = function(){ go('v-serv-det','left'); window.cerrarChat&&window.cerrarChat(); };
-      go('v-chat','right');
-      window.cargarMensajes && window.cargarMensajes();
+      _abrirChatUI(chatExistente.id);
+      return;
     }
+
+    // Chat nuevo — marcar como directo
+    var myName = localStorage.getItem('dcuser') || 'Vecino';
+    var idsOrdenados = [myUid, provId].sort().join('_');
+    var chatId = 'chat_' + idsOrdenados;
+    var chatDoc = {
+      participantes: [myUid, provId],
+      tipo: 'directo',
+      ultimoMsg: mensajeInicial || '(nuevo contacto)',
+      ultimoNombre: myName,
+      nombreContacto: nombre,
+      ultimoEmisor: myUid,
+      respondido: false,
+      fecha: Date.now()
+    };
+    await setDoc(doc(_db, 'chats', chatId), chatDoc, { merge: true });
+
+    if (mensajeInicial) {
+      await addDoc(collection(_db, 'chats', chatId, 'mensajes'), {
+        texto: mensajeInicial,
+        remitenteId: myUid,
+        remitenteNombre: myName,
+        timestamp: serverTimestamp()
+      });
+    }
+
+    _abrirChatUI(chatId);
   } catch(e) {
-    // Fallback: abrir chat directamente
-    window._chatProveedorId      = provId;
-    window._chatIdExacto         = null;
-    window._chatProveedorNombre  = nombre;
-    const nom = document.getElementById('chat-prov-nombre');
-    const ic  = document.getElementById('chat-prov-ic');
-    const bk  = document.querySelector('#v-chat .btn-back');
-    if (nom) nom.textContent = nombre;
-    if (ic)  ic.textContent  = '🔧';
-    if (bk)  bk.onclick = function(){ go('v-serv-det','left'); window.cerrarChat&&window.cerrarChat(); };
-    go('v-chat','right');
-    window.cargarMensajes && window.cargarMensajes();
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '💬 Contactar proveedor →'; }
+    _abrirChatUI(null);
   }
-};
+}
 // ── FIN contactar proveedor moderno ──────────────────────────
 
 /* NAVIGATION — v23: History API + botón Atrás nativo */
