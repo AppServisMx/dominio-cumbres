@@ -5295,7 +5295,7 @@ window.cargarMisComprasPlaza = function() {
       favs.splice(idx, 1); // quitar
     } else {
       // agregar sin duplicados
-      favs.unshift({ id:id, tipo:'proveedor', nombre:p.nombreNegocio||p.nombre||p.nombrePublico||'—',
+      favs.unshift({ id:id, tipo:p._favTipo||'proveedor', nombre:p.nombreNegocio||p.nombrePublico||p.nombre||'—',
                      categoria:p.categoria||'', descripcion:p.descripcion||'',
                      datos: p, fecha: Date.now() });
     }

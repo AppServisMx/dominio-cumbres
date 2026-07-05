@@ -712,28 +712,40 @@ function cargarFavoritos() {
     lista.innerHTML = '<div style="padding:30px 14px;text-align:center;">'
       + '<div style="font-size:40px;margin-bottom:10px;">❤️</div>'
       + '<div style="font-size:14px;font-weight:700;color:#222;margin-bottom:6px;">Todavía no tienes favoritos</div>'
-      + '<div style="font-size:12px;color:#888;line-height:1.5;">Toca 🤍 en cualquier proveedor<br>para guardarlo aquí.</div>'
+      + '<div style="font-size:12px;color:#888;line-height:1.5;">Toca 🤍 en cualquier restaurante, proveedor<br>o comercio para guardarlo aquí.</div>'
       + '</div>';
     return;
   }
 
-  const ICONOS = {plomero:'💧',electricista:'⚡',jardinero:'🌿',limpieza:'🧹',pintura:'🎨',ac:'❄️',cerrajero:'🔒',mascotas:'🐾',tecnologia:'🖥️',belleza:'💆',otro:'🔧'};
+  const ICONOS_PROV = {plomero:'💧',electricista:'⚡',jardinero:'🌿',limpieza:'🧹',pintura:'🎨',ac:'❄️',cerrajero:'🔒',mascotas:'🐾',tecnologia:'🖥️',belleza:'💆',otro:'🔧'};
+
+  // Config visual por tipo de módulo
+  const TIPO_CFG = {
+    restaurante: { bg:'#FFF8E6', color:'#c8940a', ic:'🍽️', lbl:'Restaurante', badgeBg:'#FFF0C0', badgeCol:'#9a6800' },
+    negocio:     { bg:'#F3EAF9', color:'#7B3FA0', ic:'🏪', lbl:'Plaza Online', badgeBg:'#EDD6F9', badgeCol:'#5a2080' },
+    proveedor:   { bg:'#E8F5EE', color:'#1a7a45', ic:'🔧', lbl:'Proveedor',    badgeBg:'#D4EDDA', badgeCol:'#155724' },
+  };
 
   lista.innerHTML = '<div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;padding:12px 14px 6px;">'
     + all.length + ' guardado' + (all.length !== 1 ? 's' : '') + '</div>';
 
-  all.forEach((f, idx) => {
-    const cat = (f.categoria||'otro').toLowerCase();
-    const ic  = ICONOS[cat] || '🔧';
+  all.forEach((f) => {
+    const tipo = f.tipo || 'proveedor';
+    const cfg  = TIPO_CFG[tipo] || TIPO_CFG.proveedor;
+    const cat  = (f.categoria||'').toLowerCase();
+    const ic   = tipo === 'proveedor' ? (ICONOS_PROV[cat] || '🔧') : cfg.ic;
+
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:.5px solid #f5f5f5;cursor:pointer;';
 
-    div.innerHTML = `
-      <div style="width:44px;height:44px;border-radius:14px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${ic}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">${window.dcEscHTML(f.nombre||'—')}</div>
-        <div style="font-size:11px;color:#888;">${window.dcEscHTML(f.categoria||'Proveedor')}</div>
-      </div>`;
+    div.innerHTML =
+      `<div style="width:46px;height:46px;border-radius:14px;background:${cfg.bg};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${ic}</div>`
+      + `<div style="flex:1;min-width:0;">`
+      + `<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:3px;">${window.dcEscHTML(f.nombre||'—')}</div>`
+      + `<div style="display:flex;align-items:center;gap:5px;">`
+      + `<span style="font-size:10px;font-weight:700;background:${cfg.badgeBg};color:${cfg.badgeCol};padding:2px 7px;border-radius:10px;">${cfg.lbl}</span>`
+      + (f.categoria ? `<span style="font-size:10px;color:#aaa;">${window.dcEscHTML(f.categoria)}</span>` : '')
+      + `</div></div>`;
 
     // Botón quitar
     const qBtn = document.createElement('button');
@@ -747,12 +759,18 @@ function cargarFavoritos() {
     };
     div.appendChild(qBtn);
 
-    // Tap → abrir detalle si hay datos reales
+    // Tap → abrir detalle según tipo
     div.onclick = () => {
-      if (f.datos && window.abrirDetalleProveedor) {
+      if (tipo === 'restaurante' && f.id) {
+        go('v-food','left');
+        setTimeout(function(){ window.dcFood_abrirRest && window.dcFood_abrirRest(f.id); }, 200);
+      } else if (tipo === 'negocio' && f.id) {
+        go('v-plaza','left');
+        setTimeout(function(){ window.plazaAbrirComercio && window.plazaAbrirComercio(f.id); }, 200);
+      } else if (f.datos && window.abrirDetalleProveedor) {
         window.abrirDetalleProveedor(f.datos);
         setTimeout(function(){
-          var back = document.querySelector('#v-serv-det #det-header button');
+          var back = document.querySelector('#v-serv-det #det-header button:not(#det-fav-btn)');
           if (back) back.onclick = function(){ go('v-favoritos','left'); setTimeout(cargarFavoritos,200); };
           var chatBack = document.querySelector('#v-chat .btn-back');
           if (chatBack) chatBack.onclick = function(){ go('v-serv-det','left'); cerrarChat&&cerrarChat(); };

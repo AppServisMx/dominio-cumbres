@@ -1021,7 +1021,7 @@
         <div class="title" id="dcf-det-nombre">—</div>
         <div class="sub" id="dcf-det-desc"></div>
       </div>
-      <button id="dcf-fav-btn" onclick="event.stopPropagation();window.toggleFav&&window.toggleFav(window._dcfRestActual||{})" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤍</button>
+      <button id="dcf-fav-btn" onclick="event.stopPropagation();if(window._dcfRestActual)window._dcfRestActual._favTipo='restaurante';window.toggleFav&&window.toggleFav(window._dcfRestActual||{})" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤍</button>
     </div>
     <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
       <span style="background:#fff;color:#1FC26A;font-size:12px;font-weight:800;padding:5px 12px;border-radius:20px;" id="dcf-det-estado">🟢 Activo</span>
@@ -2252,7 +2252,7 @@
         </div>
         <div class="si21" id="plaza-det-desc">Productos disponibles</div>
       </div>
-      <button id="plaza-fav-btn" onclick="event.stopPropagation();window.toggleFav&&window.toggleFav(window._dcPlazaStoreActual||{})" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤍</button>
+      <button id="plaza-fav-btn" onclick="event.stopPropagation();if(window._dcPlazaStoreActual)window._dcPlazaStoreActual._favTipo='negocio';window.toggleFav&&window.toggleFav(window._dcPlazaStoreActual||{})" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤍</button>
     </div>
     <div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap;">
       <button type="button" onclick="go('v-mis-compras-plaza','right');" style="border:none;background:#fff;color:var(--blue);font-size:12px;font-weight:900;padding:7px 13px;border-radius:20px;font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;display:inline-flex;align-items:center;gap:6px;">🛒 Mis compras</button>
