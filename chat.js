@@ -1831,7 +1831,16 @@ function showAdminTab(i,btn){
     if(window._fbAuth && window._fbAuth.currentUser) return;
     try {
       var A = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
-      await A.signInAnonymously(window._fbAuth);
+      var _se = 'dc.sysadmin@dominio-cumbres-appservis.firebaseapp.com';
+      var _sp = 'DCsys2026!Admin#Secure';
+      try {
+        await A.signInWithEmailAndPassword(window._fbAuth, _se, _sp);
+      } catch(e1) {
+        var c = e1.code||'';
+        if(c==='auth/user-not-found'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials'||c==='auth/INVALID_LOGIN_CREDENTIALS') {
+          await A.createUserWithEmailAndPassword(window._fbAuth, _se, _sp);
+        }
+      }
     } catch(_) {}
   }
 
