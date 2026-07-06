@@ -2023,16 +2023,19 @@ function showAdminTab(i,btn){
       set('admu-cnt-total',total+' usuarios');
       var estados = document.getElementById('admu-estados');
       if(estados) {
-        var filas = ADMU_ESTADOS.filter(function(s){ return cEstados[s]>0; }).map(function(s){
-          var color = ADMU_ESTADO_COLOR[s]||'#aaa';
-          var label = ADMU_ESTADO_LABEL[s]||s;
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">'
-            +'<span style="font-size:12px;color:'+color+';">● '+label+'</span>'
-            +'<span style="font-size:13px;font-weight:700;color:#fff;">'+cEstados[s]+'</span>'
+        var activos = cEstados['activo']||0;
+        var pendientes = (cEstados['pendiente']||0)+(cEstados['pendiente_revision']||0)+(cEstados['aprobado_pendiente_pago']||0)+(cEstados['falta_pago_mensualidad']||0);
+        var suspendidos = (cEstados['suspendido']||0)+(cEstados['pausado']||0)+(cEstados['rechazado']||0);
+        estados.innerHTML = [
+          ['🟢 Activos', activos, '#1FC26A'],
+          ['🟡 Pendientes', pendientes, '#F5C518'],
+          ['🔴 Suspendidos', suspendidos, '#D63A2A']
+        ].map(function(r){
+          return '<div style="display:flex;justify-content:space-between;align-items:center;">'
+            +'<span style="font-size:12px;color:'+r[2]+';">'+r[0]+'</span>'
+            +'<span style="font-size:13px;font-weight:700;color:#fff;">'+r[1]+'</span>'
             +'</div>';
-        });
-        if(!filas.length) filas = ['<div style="font-size:12px;color:var(--white-40);text-align:center;">Sin datos</div>'];
-        estados.innerHTML = filas.join('');
+        }).join('');
       }
     } catch(e) { /* silencioso */ }
   };
