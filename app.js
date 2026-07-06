@@ -3671,6 +3671,22 @@ window.renderHomeM2 = function() {
   window.cargarProveedores = async function(categoria) {
     const lista = document.getElementById('servicios-lista');
     if(!lista) return;
+    // Mostrar acceso directo CMV si el usuario logueado es proveedor
+    var _servCmvBanner = document.getElementById('serv-cmv-banner');
+    if ((localStorage.getItem('dcuserTipo')||'').toLowerCase() === 'proveedor') {
+      if (!_servCmvBanner) {
+        _servCmvBanner = document.createElement('div');
+        _servCmvBanner.id = 'serv-cmv-banner';
+        _servCmvBanner.onclick = function(){ go('v-prov-cmv','right'); setTimeout(window.vprovCmvCargar, 200); };
+        _servCmvBanner.style.cssText = 'margin:0 14px 10px;background:linear-gradient(120deg,#0d3d24,#1a6640);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;';
+        _servCmvBanner.innerHTML = '<div style="width:40px;height:40px;border-radius:10px;background:rgba(31,194,106,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;">👁</div>'
+          + '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#fff;">Cómo me ve el cliente</div><div style="font-size:11px;color:rgba(255,255,255,.65);">Edita tu perfil público</div></div>'
+          + '<div style="color:rgba(255,255,255,.5);font-size:20px;">›</div>';
+        lista.parentNode.insertBefore(_servCmvBanner, lista);
+      }
+    } else if (_servCmvBanner) {
+      _servCmvBanner.remove();
+    }
     lista.innerHTML = '<div class="si24">Cargando proveedores... ⏳</div>';
     try {
       const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
@@ -3679,7 +3695,7 @@ window.renderHomeM2 = function() {
       const docs = [];
       snap.forEach(d => {
         const p = d.data();
-        if(['activo','aprobado','aprobado_pendiente_pago'].indexOf(p.estado) !== -1) docs.push({id: d.id, ...p});
+        if(['activo','aprobado'].indexOf(p.estado) !== -1) docs.push({id: d.id, ...p});
       });
       const filtro = (categoria || 'todos').toLowerCase();
       // Actualizar el select desplegable

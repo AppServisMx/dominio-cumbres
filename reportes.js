@@ -827,7 +827,12 @@ window.iniciarFormularioSolicitud = async function() {
     if (infoBox)    infoBox.innerHTML = '📩 Este mensaje irá directamente a <strong>' + provNombre.replace(/</g,'&lt;') + '</strong>. Solo él lo verá.';
     if (backBtn)    backBtn.onclick = function(){ go('v-serv-det','left'); };
     const catSel = document.getElementById('sol-categoria');
-    if (catSel && provCat) catSel.value = provCat;
+    if (catSel) {
+      if (provCat) catSel.value = provCat;
+      catSel.disabled = true;
+      catSel.style.opacity = '0.6';
+      catSel.style.cursor = 'default';
+    }
     var bannerEl = document.getElementById('sol-proveedor-banner');
     if (!bannerEl) {
       bannerEl = document.createElement('div');
@@ -844,7 +849,7 @@ window.iniciarFormularioSolicitud = async function() {
     const bannerEl = document.getElementById('sol-proveedor-banner');
     if (bannerEl) bannerEl.remove();
     const catSel = document.getElementById('sol-categoria');
-    if (catSel) catSel.value = '';
+    if (catSel) { catSel.value = ''; catSel.disabled = false; catSel.style.opacity = ''; catSel.style.cursor = ''; }
   }
 
   // Limpiar campos de texto
