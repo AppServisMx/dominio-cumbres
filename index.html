@@ -21,7 +21,7 @@
 <!-- ====== FIN FIREBASE ====== -->
 
 <!-- ====== REPORTES ====== -->
-<script src="reportes.js?v=20260706i"></script>
+<script src="reportes.js?v=20260706j"></script>
 <!-- ====== FIN REPORTES ====== -->
 
 <link rel="stylesheet" href="style.css">
@@ -4570,31 +4570,36 @@
       </div>
     </div>
 
-    <!-- SUBFILTROS PROVEEDORES -->
+    <!-- PROVEEDORES — tabs + listado integrado -->
     <div id="admu-sub-prov" style="display:none;">
-      <button onclick="admuBack()" style="background:transparent;border:none;color:#1FC26A;font-size:13px;font-weight:700;cursor:pointer;padding:0 0 12px;font-family:'Inter',sans-serif;">‹ Volver</button>
-      <div style="font-size:12px;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Tipo de proveedor</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <div onclick="admuCargar('restaurante')" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;text-align:center;cursor:pointer;">
-          <div style="font-size:26px;margin-bottom:6px;">🍔</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;">Restaurantes</div>
-        </div>
-        <div onclick="admuCargar('negocio')" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;text-align:center;cursor:pointer;">
-          <div style="font-size:26px;margin-bottom:6px;">🏪</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;">Negocios</div>
-        </div>
-        <div onclick="admuCargar('servicio')" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;text-align:center;cursor:pointer;">
-          <div style="font-size:26px;margin-bottom:6px;">🔧</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;">Servicios</div>
-        </div>
-        <div onclick="admuCargar('ride')" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;text-align:center;cursor:pointer;">
-          <div style="font-size:26px;margin-bottom:6px;">🚗</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;">Ride</div>
-        </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <button onclick="admuBack()" style="background:transparent;border:none;color:#1FC26A;font-size:18px;font-weight:700;cursor:pointer;padding:0;font-family:'Inter',sans-serif;">‹</button>
+        <div style="font-size:14px;font-weight:700;color:#fff;">Proveedores</div>
+        <div style="width:28px;"></div>
       </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--card-border);margin-bottom:14px;overflow-x:auto;">
+        <button id="admu-tab-restaurante" onclick="admuTabProv('restaurante')" style="flex:1;background:transparent;border:none;border-bottom:2px solid #1FC26A;padding:10px 4px;font-size:11px;font-weight:700;color:#1FC26A;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">🍔 Restaurantes</button>
+        <button id="admu-tab-negocio" onclick="admuTabProv('negocio')" style="flex:1;background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">🏪 Negocios</button>
+        <button id="admu-tab-servicio" onclick="admuTabProv('servicio')" style="flex:1;background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">🔧 Servicios</button>
+        <button id="admu-tab-ride" onclick="admuTabProv('ride')" style="flex:1;background:transparent;border:none;border-bottom:2px solid transparent;padding:10px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">🚗 Ride</button>
+      </div>
+      <!-- Buscador proveedores -->
+      <div style="position:relative;margin-bottom:12px;">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;">🔍</span>
+        <input id="admu-search-prov" type="text" placeholder="Buscar..." oninput="admuFiltrarLista()" style="width:100%;box-sizing:border-box;background:#162A1D;border:1px solid var(--card-border);border-radius:12px;padding:10px 12px 10px 36px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+      </div>
+      <!-- Cabecera tabla -->
+      <div style="display:flex;padding:0 4px 6px;font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.4px;">
+        <div style="flex:1;">Nombre</div>
+        <div style="width:110px;text-align:center;">Estado</div>
+        <div style="width:36px;text-align:center;">Acc.</div>
+      </div>
+      <!-- Lista proveedores -->
+      <div id="admu-lista-prov" style="display:flex;flex-direction:column;gap:0;"></div>
     </div>
 
-    <!-- LISTADO -->
+    <!-- LISTADO VECINOS / ADMINS -->
     <div id="admu-lista-sec" style="display:none;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
         <button onclick="admuBack()" style="background:transparent;border:none;color:#1FC26A;font-size:18px;font-weight:700;cursor:pointer;padding:0;font-family:'Inter',sans-serif;">‹</button>
@@ -4798,7 +4803,7 @@
   </div>
 </div>
 
-<script src="chat.js?v=20260706i"></script>
+<script src="chat.js?v=20260706j"></script>
 
 
 <!-- ══ MI AGENDA (vecino) ══════════════════════════════════════
@@ -4814,7 +4819,7 @@
 
 <script src="negocio.js"></script>
 
-<script src="app.js?v=20260706i"></script>
+<script src="app.js?v=20260706j"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">

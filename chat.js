@@ -1588,11 +1588,21 @@ function showAdminTab(i,btn){
     if(target) target.style.display = 'block';
   }
 
+  window.admuTabProv = function(tipo) {
+    ['restaurante','negocio','servicio','ride'].forEach(function(t){
+      var btn = document.getElementById('admu-tab-'+t);
+      if(btn){ btn.style.borderBottomColor = t===tipo?'#1FC26A':'transparent'; btn.style.color = t===tipo?'#1FC26A':'rgba(255,255,255,.4)'; }
+    });
+    var s = document.getElementById('admu-search-prov'); if(s) s.value='';
+    admuCargar(tipo);
+  };
+
   window.admuSelTipo = function(tipo) {
     window._admuNavStack = [];
     if(tipo === 'proveedor') {
       window._admuNavStack.push('admu-home');
       admuShow('admu-sub-prov');
+      window.admuTabProv('restaurante');
     } else if(tipo === 'admin') {
       window._admuTipo = 'admin';
       window._admuNavStack.push('admu-home');
@@ -1604,19 +1614,25 @@ function showAdminTab(i,btn){
     }
   };
 
+  var ADMU_TIPOS_PROV = ['restaurante','negocio','servicio','ride'];
+
   window.admuCargar = async function(tipo) {
     window._admuTipo = tipo;
-    if(!window._admuNavStack.length) window._admuNavStack.push('admu-sub-prov');
-    admuShow('admu-lista-sec');
-    var titulos = { vecino:'Vecinos', restaurante:'Restaurantes', negocio:'Negocios', servicio:'Servicios', ride:'Ride' };
-    var t = document.getElementById('admu-lista-titulo');
-    if(t) t.textContent = titulos[tipo] || tipo;
-    var addBtn = document.getElementById('admu-add-admin-btn');
-    if(addBtn) addBtn.style.display = 'none';
-    var lista = document.getElementById('admu-lista');
+    var esProv = ADMU_TIPOS_PROV.indexOf(tipo) >= 0;
+    if(!window._admuNavStack.length) window._admuNavStack.push(esProv ? 'admu-sub-prov' : 'admu-home');
+    if(!esProv) {
+      admuShow('admu-lista-sec');
+      var titulos = { vecino:'Vecinos' };
+      var t = document.getElementById('admu-lista-titulo');
+      if(t) t.textContent = titulos[tipo] || tipo;
+      var addBtn = document.getElementById('admu-add-admin-btn');
+      if(addBtn) addBtn.style.display = 'none';
+      var search = document.getElementById('admu-search');
+      if(search) search.value = '';
+    }
+    var listaId = esProv ? 'admu-lista-prov' : 'admu-lista';
+    var lista = document.getElementById(listaId);
     if(lista) lista.innerHTML = '<div style="text-align:center;padding:24px;color:var(--white-50);font-size:13px;">Cargando... ⏳</div>';
-    var search = document.getElementById('admu-search');
-    if(search) search.value = '';
     try {
       var { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
       var tipoFirestore = tipo === 'servicio' ? 'proveedor' : tipo;
@@ -1632,7 +1648,8 @@ function showAdminTab(i,btn){
       var snap = await getDocs(q);
       window._admuDatos = [];
       snap.forEach(function(d){ window._admuDatos.push(Object.assign({uid:d.id}, d.data())); });
-      admuRenderLista(window._admuDatos);
+      if(ADMU_TIPOS_PROV.indexOf(tipo) >= 0) admuRenderListaProv(window._admuDatos);
+      else admuRenderLista(window._admuDatos);
     } catch(e) {
       if(lista) lista.innerHTML = '<div style="color:#D63A2A;font-size:12px;padding:10px;">Error: '+e.message+'</div>';
     }
@@ -1649,6 +1666,36 @@ function showAdminTab(i,btn){
     // Build datos from ADMIN_USERS
     window._admuDatos = Object.entries(ADMIN_USERS).map(function(e){ return { uid: e[0], nombre: '@'+e[0], rol: e[1].rol, tipo:'admin' }; });
     admuRenderListaAdmins(window._admuDatos);
+  }
+
+  function admuRenderListaProv(datos) {
+    var lista = document.getElementById('admu-lista-prov');
+    if(!lista) return;
+    if(!datos.length) { lista.innerHTML = '<div style="text-align:center;padding:24px;color:var(--white-50);font-size:13px;">Sin resultados</div>'; return; }
+    lista.innerHTML = '<div style="border-radius:14px;overflow:hidden;border:.5px solid var(--card-border);">'
+      + datos.map(function(u, i){
+        var estado = u.estado || 'pendiente_revision';
+        var color = ADMU_ESTADO_COLOR[estado] || '#aaa';
+        var label = ADMU_ESTADO_LABEL[estado] || estado.toUpperCase();
+        var opts = ADMU_ESTADOS.map(function(s){ return '<option value="'+s+'"'+(s===estado?' selected':'')+'>'+ADMU_ESTADO_LABEL[s]+'</option>'; }).join('');
+        var foto = u.foto||u.logoUrl||u.imagen||'';
+        var fotoHtml = foto
+          ? '<img src="'+foto+'" style="width:40px;height:40px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
+          : '<div style="width:40px;height:40px;border-radius:10px;background:#1A3A25;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏪</div>';
+        var borde = i < datos.length-1 ? 'border-bottom:1px solid rgba(255,255,255,.06);' : '';
+        return '<div style="background:var(--card-dark);'+borde+'padding:11px 12px;display:flex;align-items:center;gap:10px;">'
+          + fotoHtml
+          +'<div onclick="admuAbrirModal(\''+u.uid+'\')" style="flex:1;cursor:pointer;min-width:0;">'
+          +'<div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(u.nombre||u.negocio||u.email||u.uid)+'</div>'
+          +'</div>'
+          +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+          +'<div style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;"></div>'
+          +'<select onchange="admuCambiarEstado(\''+u.uid+'\',this.value)" style="background:#0C1A10;border:1px solid '+color+'40;border-radius:8px;color:'+color+';font-size:10px;font-weight:700;padding:4px 4px;font-family:\'Inter\',sans-serif;outline:none;cursor:pointer;max-width:90px;">'+opts+'</select>'
+          +'</div>'
+          +'<button onclick="admuEliminarUsuario(\''+u.uid+'\',\''+encodeURIComponent(u.nombre||u.email||u.uid)+'\')" style="background:#D63A2A18;border:1px solid #D63A2A50;border-radius:8px;padding:6px 8px;font-size:14px;color:#D63A2A;cursor:pointer;flex-shrink:0;">🗑</button>'
+          +'</div>';
+      }).join('')
+      + '</div>';
   }
 
   function admuRenderLista(datos) {
@@ -1691,17 +1738,29 @@ function showAdminTab(i,btn){
   }
 
   window.admuFiltrarLista = function() {
-    var q = (document.getElementById('admu-search').value || '').toLowerCase();
+    var esProv = ADMU_TIPOS_PROV.indexOf(window._admuTipo) >= 0;
+    var searchEl = document.getElementById(esProv ? 'admu-search-prov' : 'admu-search');
+    var q = ((searchEl && searchEl.value) || '').toLowerCase();
     var filtrado = window._admuDatos.filter(function(u){
       var nombre = (u.nombre||u.negocio||u.email||u.uid||'').toLowerCase();
       return !q || nombre.includes(q);
     });
-    if(window._admuTipo === 'admin') admuRenderListaAdmins(filtrado);
+    if(esProv) admuRenderListaProv(filtrado);
+    else if(window._admuTipo === 'admin') admuRenderListaAdmins(filtrado);
     else admuRenderLista(filtrado);
   };
 
+  async function admuEnsureAuth() {
+    if(window._fbAuth && window._fbAuth.currentUser) return;
+    try {
+      var A = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
+      await A.signInAnonymously(window._fbAuth);
+    } catch(_) {}
+  }
+
   window.admuCambiarEstado = async function(uid, nuevoEstado) {
     try {
+      await admuEnsureAuth();
       var { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
       await updateDoc(doc(window._fbDb,'usuarios',uid), { estado: nuevoEstado });
       var u = window._admuDatos.find(function(x){ return x.uid===uid; });
@@ -1713,6 +1772,7 @@ function showAdminTab(i,btn){
     var nombre = decodeURIComponent(nombreEnc);
     window._dcConfirmar('¿Eliminar usuario "'+nombre+'" definitivamente? Se borrará todo su contenido.', async function() {
       try {
+        await admuEnsureAuth();
         var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
         var S = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js");
         var db = window._fbDb;
@@ -1831,6 +1891,7 @@ function showAdminTab(i,btn){
   // Migrar vecinos con estado 'pendiente' → 'activo' en masa (una sola vez al cargar)
   window.admuMigrarVecinosPendientes = async function() {
     try {
+      await admuEnsureAuth();
       var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
       var q = F.query(F.collection(window._fbDb,'usuarios'), F.where('tipo','==','vecino'), F.where('estado','==','pendiente'));
       var snap = await F.getDocs(q);
