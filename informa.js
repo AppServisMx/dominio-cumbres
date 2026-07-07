@@ -407,8 +407,10 @@ window.inCargarMis = async function(){
 
 // ─── FLUJO CREAR ──────────────────────────────────────
 window.inIrCrear = function(tipo){
-  _inFormData = { tipo:tipo||'noticia', paso:1, titulo:'', descripcion:'', ubicacion:'', _imagenFiles:[] };
-  _inRenderPaso1();
+  // Sin tipo → mostrar paso 1 (selección de tipo, desde botón "+ Publicar" arriba)
+  // Con tipo → saltar directo a paso 2 (desde botones de pestaña)
+  _inFormData = { tipo:tipo||'noticia', paso:tipo?2:1, titulo:'', descripcion:'', ubicacion:'', _imagenFiles:[] };
+  if(tipo){ _inRenderPaso2(); } else { _inRenderPaso1(); }
   go('v-inf-crear','right');
 };
 
