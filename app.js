@@ -1049,6 +1049,7 @@ function _postHooks(id){
     if(id==='v-plaza-seguimiento'){setTimeout(function(){try{renderSeguimiento();}catch(_){}},45);}
     if(id==='vn-home'&&typeof window.dcNeg_resetStack==='function') window.dcNeg_resetStack();
     if(id==='v-favoritos'){window.__dcL33LastBeforeFav=window.__dcL33LastBeforeFav||'';}
+    if(id==='v-eventos'){setTimeout(function(){try{window.evCargarPortal&&window.evCargarPortal();}catch(_){}},60);}
     if(typeof window.__dcNavPatchAll==='function'){setTimeout(window.__dcNavPatchAll,35);setTimeout(window.__dcNavPatchAll,180);}
     _patchFavBack();
   }catch(_){}

@@ -2065,35 +2065,346 @@
     <div style="height:16px;"></div>
   </div>
 </div>
-<div class="view go-right" id="v-eventos">
-      <div class="eventos-hdr">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si69">
-          <button class="btn-back" onclick="go('v-home','left')">‹</button>
-          <div><div class="si13">🎪 Dominio Eventos</div><div class="si21">Actividades en tu zona</div></div>
-        </div>
-        <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;">
-          <div style="background:var(--purple);color:#fff;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;flex-shrink:0;">Todos</div>
-          <div class="si30">🏃 Deportes</div>
-          <div class="si30">🎵 Música</div>
-          <div class="si30">👶 Familiar</div>
-        </div>
+<!-- ══════════ DOMINIO EVENTOS — PORTAL ══════════ -->
+<div class="view go-right" id="v-eventos" style="flex-direction:column;background:#0D0D14;" onload="evCargarPortal()">
+  <div style="background:linear-gradient(160deg,#1A0A3C 0%,#0D0D14 100%);padding:12px 14px 0;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <button class="btn-back" onclick="go('v-home','left')">‹</button>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:16px;font-weight:800;color:#fff;line-height:1.1;">🎪 Dominio Eventos</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">Actividades en tu zona</div>
       </div>
-      <div class="scroll" style="padding:20px 14px;">
-        <div class="si73">
-          <div style="font-size:48px;margin-bottom:12px;">🎪</div>
-          <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">Sin eventos publicados aún</div>
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">Los eventos de la comunidad aprobados<br>por el administrador aparecerán aquí</div>
-        </div>
+      <button onclick="evAbrirMisEventos()" style="background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.4);border-radius:10px;color:#a78bfa;font-size:11px;font-weight:700;padding:7px 11px;cursor:pointer;font-family:inherit;flex-shrink:0;">📋 Mis eventos</button>
+    </div>
+    <!-- Buscador -->
+    <div style="position:relative;margin-bottom:12px;">
+      <input id="ev-search" type="text" placeholder="🔍  Buscar evento, lugar..." oninput="evBuscar()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:11px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+    </div>
+    <!-- Categorías -->
+    <div id="ev-cats" style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:14px;"></div>
+  </div>
+  <div class="scroll" style="padding:14px 14px 0;background:#0D0D14;">
+    <!-- Banner -->
+    <div id="ev-banner"></div>
+    <!-- Lista -->
+    <div id="ev-lista"></div>
+    <div style="height:20px;"></div>
+  </div>
+  <!-- FAB crear evento -->
+  <button onclick="evIniciarCrear()" style="position:fixed;bottom:76px;right:18px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;color:#fff;font-size:24px;box-shadow:0 6px 20px rgba(124,58,237,.5);cursor:pointer;z-index:200;display:flex;align-items:center;justify-content:center;">＋</button>
+  <div class="nav">
+    <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
+    <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
+    <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
+    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — DETALLE ══════════ -->
+<div class="view go-right" id="v-ev-det" style="flex-direction:column;background:#0D0D14;">
+  <div class="scroll" style="background:#0D0D14;">
+    <div id="ev-det-cont"></div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — ELEGIR TIPO ══════════ -->
+<div class="view go-right" id="v-ev-crear-tipo" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 20px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-back" onclick="go('v-eventos','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Crear Evento</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:20px 16px;background:#0D0D14;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:36px;margin-bottom:10px;">🎪</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;">¿Qué tipo de evento?</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;">Elige el tipo de evento que quieres crear</div>
+    </div>
+    <!-- Comunidad -->
+    <div onclick="evElegirTipo('normal')" style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.12);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;display:flex;gap:14px;align-items:center;">
+      <div style="width:52px;height:52px;border-radius:16px;background:rgba(124,58,237,.18);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">👥</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:4px;">Evento Comunidad</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;">Comparte un evento con tus vecinos.<br>Pasa por revisión antes de publicarse.</div>
       </div>
-      <div class="nav">
-        <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
-        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+      <div style="font-size:20px;color:rgba(255,255,255,.3);">›</div>
+    </div>
+    <!-- Premium -->
+    <div onclick="evElegirTipo('premium')" style="background:linear-gradient(135deg,rgba(245,197,24,.08),rgba(124,58,237,.06));border:1.5px solid rgba(245,197,24,.3);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;display:flex;gap:14px;align-items:center;">
+      <div style="width:52px;height:52px;border-radius:16px;background:rgba(245,197,24,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">⭐</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:4px;">Evento Premium <span style="background:#F5C518;color:#000;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px;vertical-align:middle;">$129</span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;">Aparece en el banner principal.<br>Máxima visibilidad en la comunidad.</div>
+      </div>
+      <div style="font-size:20px;color:rgba(255,255,255,.3);">›</div>
+    </div>
+    <!-- Oficial (admin) -->
+    <div onclick="evElegirTipo('oficial')" id="ev-tipo-oficial-btn" style="background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(91,33,182,.08));border:1.5px solid rgba(124,58,237,.4);border-radius:18px;padding:18px;cursor:pointer;display:flex;gap:14px;align-items:center;">
+      <div style="width:52px;height:52px;border-radius:16px;background:rgba(124,58,237,.25);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🛡️</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:4px;">Evento Oficial <span style="background:#7C3AED;color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:8px;vertical-align:middle;">ADMIN</span></div>
+        <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;">Solo administradores.<br>Se publica de inmediato sin revisión.</div>
+      </div>
+      <div style="font-size:20px;color:rgba(255,255,255,.3);">›</div>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — REGLAS ══════════ -->
+<div class="view go-right" id="v-ev-reglas" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 20px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-back" onclick="go('v-ev-crear-tipo','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Términos y condiciones</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:16px;background:#0D0D14;">
+    <div style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);border-radius:16px;padding:16px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">📋</div>
+      <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">Reglas de publicación</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.45);">Lee y acepta antes de continuar</div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.8;">
+        <div style="margin-bottom:10px;"><span style="color:#a78bfa;font-weight:700;">1. Contenido apropiado</span><br>Los eventos deben ser aptos para toda la comunidad. No se permite contenido ofensivo o inapropiado.</div>
+        <div style="margin-bottom:10px;"><span style="color:#a78bfa;font-weight:700;">2. Sin contacto directo</span><br>No incluyas teléfonos, correos, links ni redes sociales en la descripción. Todo contacto es a través de la plataforma.</div>
+        <div style="margin-bottom:10px;"><span style="color:#a78bfa;font-weight:700;">3. Información veraz</span><br>Los datos del evento (fecha, lugar, precio) deben ser exactos y actualizados.</div>
+        <div style="margin-bottom:10px;"><span style="color:#a78bfa;font-weight:700;">4. Imágenes permitidas</span><br>Solo imágenes relacionadas al evento. Máximo 3 MB por imagen.</div>
+        <div><span style="color:#a78bfa;font-weight:700;">5. Moderación</span><br>Dominio Cumbres se reserva el derecho de rechazar o retirar eventos que incumplan estas reglas.</div>
       </div>
     </div>
+    <button onclick="evAceptarReglas()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;margin-bottom:10px;">✓ Acepto y continuar →</button>
+    <button onclick="go('v-ev-crear-tipo','left')" style="width:100%;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;padding:10px;font-family:inherit;">Cancelar</button>
+    <div style="height:16px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — FORMULARIO ══════════ -->
+<div class="view go-right" id="v-ev-form" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 16px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <button class="btn-back" onclick="go('v-ev-reglas','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Crear Evento</div>
+    </div>
+    <!-- Stepper -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+      <div id="ev-sd-1" style="width:28px;height:28px;border-radius:50%;background:#7C3AED;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+      <div id="ev-sl-1" style="font-size:10px;font-weight:700;color:#fff;">Info</div>
+      <div style="flex:1;height:2px;background:rgba(255,255,255,.15);border-radius:2px;max-width:32px;"></div>
+      <div id="ev-sd-2" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.3);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+      <div id="ev-sl-2" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);">Detalles</div>
+      <div style="flex:1;height:2px;background:rgba(255,255,255,.15);border-radius:2px;max-width:32px;"></div>
+      <div id="ev-sd-3" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.3);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+      <div id="ev-sl-3" style="font-size:10px;font-weight:700;color:rgba(255,255,255,.3);">Imagen</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:16px;background:#0D0D14;">
+    <!-- PASO 1 -->
+    <div id="ev-step-1" class="ev-form-step">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px;">Información del evento</div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Título del evento *</div>
+        <input id="ev-titulo" type="text" placeholder="Ej. Carrera 5K Dominio Cumbres" oninput="evValidarCampo(this)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+        <div id="ev-titulo-err" style="display:none;font-size:11px;color:#D63A2A;margin-top:4px;"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Descripción *</div>
+        <textarea id="ev-desc" placeholder="Describe el evento con detalle..." rows="4" oninput="evValidarCampo(this)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;resize:none;"></textarea>
+        <div id="ev-desc-err" style="display:none;font-size:11px;color:#D63A2A;margin-top:4px;"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Categoría *</div>
+        <select id="ev-cat" style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;">
+          <option value="">Selecciona categoría</option>
+          <option>🎵 Música</option><option>🏃 Deportes</option><option>👶 Familiar</option>
+          <option>🍽️ Gastronomía</option><option>📚 Cursos</option><option>🐾 Mascotas</option>
+          <option>🎨 Cultura</option><option>🎭 Arte</option><option>🌿 Bienestar</option><option>🛒 Mercado</option>
+        </select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Tipo de evento *</div>
+        <select id="ev-tipo-ev" style="width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;">
+          <option value="">Selecciona tipo</option>
+          <option>Presencial</option><option>Virtual</option><option>Híbrido</option>
+          <option>Paseo / Excursión</option><option>Concurso</option><option>Taller</option>
+          <option>Exposición</option><option>Feria</option><option>Otro</option>
+        </select>
+      </div>
+      <button onclick="evSiguienteStep()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;">Siguiente →</button>
+    </div>
+    <!-- PASO 2 -->
+    <div id="ev-step-2" class="ev-form-step" style="display:none;">
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px;">Fecha, lugar y detalles</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Fecha *</div>
+          <input id="ev-fecha" type="date" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:12px;color:#fff;font-family:inherit;outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Hora inicio *</div>
+          <input id="ev-hora-i" type="time" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:12px;color:#fff;font-family:inherit;outline:none;" />
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Hora fin (opcional)</div>
+        <input id="ev-hora-f" type="time" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:12px;color:#fff;font-family:inherit;outline:none;" />
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Lugar *</div>
+        <input id="ev-lugar" type="text" placeholder="Ej. Cancha principal, Salón A..." oninput="evValidarCampo(this)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+        <div id="ev-lugar-err" style="display:none;font-size:11px;color:#D63A2A;margin-top:4px;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Precio (0 = gratis)</div>
+          <input id="ev-precio" type="number" min="0" placeholder="0" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Cupo (0 = ilimitado)</div>
+          <input id="ev-cupo" type="number" min="0" placeholder="0" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 12px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:6px;">Organizador (opcional)</div>
+        <input id="ev-org" type="text" placeholder="Nombre del organizador" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:inherit;outline:none;" />
+      </div>
+      <!-- Imagen -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:8px;">Imagen del evento (opcional, máx 3 MB)</div>
+        <label for="ev-img-input" style="display:block;cursor:pointer;">
+          <div id="ev-img-preview" style="display:none;height:140px;border-radius:14px;background:rgba(255,255,255,.05);border:2px dashed rgba(124,58,237,.4);overflow:hidden;"></div>
+          <div id="ev-img-label" style="height:100px;border-radius:14px;background:rgba(255,255,255,.04);border:2px dashed rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+            <div style="font-size:28px;">🖼️</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.4);">Toca para agregar imagen</div>
+          </div>
+        </label>
+        <input id="ev-img-input" type="file" accept="image/*" onchange="evSubirImagen(this)" style="display:none;" />
+      </div>
+      <button onclick="evSiguienteStep()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;">Vista previa →</button>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — PREVIEW ══════════ -->
+<div class="view go-right" id="v-ev-preview" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-back" onclick="go('v-ev-form','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Vista previa</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:16px;background:#0D0D14;">
+    <div id="ev-preview-cont"></div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="go('v-ev-form','left')" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:rgba(255,255,255,.6);font-size:13px;font-weight:700;padding:14px;cursor:pointer;font-family:inherit;">‹ Editar</button>
+      <button onclick="evContinuarDesdePreview()" style="flex:2;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:700;padding:14px;cursor:pointer;font-family:inherit;">Publicar →</button>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — PUBLICAR ══════════ -->
+<div class="view go-right" id="v-ev-publicar" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-back" onclick="go('v-ev-preview','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Opciones de publicación</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:20px 16px;background:#0D0D14;">
+    <div id="ev-pub-cont"></div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — ÉXITO ══════════ -->
+<div class="view go-right" id="v-ev-ok" style="flex-direction:column;background:#0D0D14;">
+  <div class="scroll" style="background:#0D0D14;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;">
+    <div style="text-align:center;padding:40px 28px;">
+      <div style="width:80px;height:80px;border-radius:50%;background:rgba(124,58,237,.18);border:2px solid rgba(124,58,237,.5);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;">🎉</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;">¡Listo!</div>
+      <div id="ev-ok-msg" style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:6px;"></div>
+      <div id="ev-ok-sub" style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:32px;"></div>
+      <button onclick="go('v-ev-mis','right');evCargarMisEventos();" style="width:100%;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.4);border-radius:14px;color:#a78bfa;font-size:14px;font-weight:700;padding:15px;cursor:pointer;font-family:inherit;margin-bottom:10px;">📋 Ver mis eventos</button>
+      <button onclick="go('v-eventos','left');evCargarPortal();" style="width:100%;background:transparent;border:none;color:rgba(255,255,255,.35);font-size:13px;cursor:pointer;padding:10px;font-family:inherit;">Volver al portal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ EV — MIS EVENTOS ══════════ -->
+<div class="view go-right" id="v-ev-mis" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 0;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <button class="btn-back" onclick="go('v-eventos','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Mis Eventos</div>
+      <button onclick="evIniciarCrear()" style="margin-left:auto;background:rgba(124,58,237,.18);border:1px solid rgba(124,58,237,.4);border-radius:10px;color:#a78bfa;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer;font-family:inherit;">＋ Crear</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:-1px;">
+      <button id="ev-mis-btn-activos" onclick="evMisTab('activos')" style="flex:1;background:#7C3AED;border:1px solid #7C3AED;border-radius:10px 10px 0 0;color:#fff;font-size:12px;font-weight:700;padding:9px 6px;cursor:pointer;font-family:inherit;transition:all .2s;">Activos</button>
+      <button id="ev-mis-btn-revision" onclick="evMisTab('revision')" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:10px 10px 0 0;color:rgba(255,255,255,.4);font-size:12px;font-weight:700;padding:9px 6px;cursor:pointer;font-family:inherit;transition:all .2s;">En revisión</button>
+      <button id="ev-mis-btn-pasados" onclick="evMisTab('pasados')" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:10px 10px 0 0;color:rgba(255,255,255,.4);font-size:12px;font-weight:700;padding:9px 6px;cursor:pointer;font-family:inherit;transition:all .2s;">Pasados</button>
+    </div>
+  </div>
+  <div class="scroll" style="background:#0D0D14;padding:14px 14px;">
+    <div id="ev-mis-activos"></div>
+    <div id="ev-mis-revision" style="display:none;"></div>
+    <div id="ev-mis-pasados" style="display:none;"></div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- ══════════ EV — IMPULSAR ══════════ -->
+<div class="view go-right" id="v-ev-impulsar" style="flex-direction:column;background:#0D0D14;">
+  <div style="background:linear-gradient(160deg,#1A0A3C,#0D0D14);padding:12px 14px 20px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-back" onclick="go('v-ev-mis','left')">‹</button>
+      <div style="font-size:15px;font-weight:800;color:#fff;">Destacar evento</div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:20px 16px;background:#0D0D14;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:40px;margin-bottom:10px;">🚀</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;">Impulsa tu evento</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;">Llega a más personas de tu comunidad</div>
+    </div>
+    <!-- Opción Banner -->
+    <div style="background:linear-gradient(135deg,rgba(245,197,24,.1),rgba(124,58,237,.06));border:1.5px solid rgba(245,197,24,.35);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="font-size:15px;font-weight:800;color:#fff;">⭐ Evento Premium</div>
+        <div style="font-size:18px;font-weight:800;color:#F5C518;">$129 MXN</div>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:14px;">Aparece en el banner principal del portal · Insignia Premium visible · Prioridad en resultados.</div>
+      <button onclick="alert('Próximamente: integración con pago en línea')" style="width:100%;background:linear-gradient(135deg,#F5C518,#e0a800);border:none;border-radius:12px;color:#000;font-size:13px;font-weight:800;padding:13px;cursor:pointer;font-family:inherit;">Contratar Premium →</button>
+    </div>
+    <!-- Opción 30 días -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="font-size:15px;font-weight:800;color:#fff;">🚀 Destacar 30 días</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;">$199 MXN</div>
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:14px;">Máxima exposición por un mes completo. Ideal para eventos de larga duración.</div>
+      <button onclick="alert('Próximamente: integración con pago en línea')" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;color:#fff;font-size:13px;font-weight:700;padding:13px;cursor:pointer;font-family:inherit;">Contratar 30 días →</button>
+    </div>
+    <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:12px;font-size:11px;color:rgba(255,255,255,.45);text-align:center;line-height:1.6;">
+      💬 Para más información escribe al administrador<br>desde el panel de soporte.
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
 
 <div class="view go-right" id="v-evento-det">
       <div style="background:linear-gradient(135deg,#4A1A70,#2a0a40);padding:12px 18px 18px;flex-shrink:0;">
@@ -4826,6 +5137,7 @@
 <script src="negocio.js"></script>
 
 <script src="app.js?v=20260706j"></script>
+<script type="module" src="eventos.js?v=20260706t"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">
