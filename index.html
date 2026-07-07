@@ -2342,7 +2342,7 @@
       <div style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px;">¡Listo!</div>
       <div id="ev-ok-msg" style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:6px;"></div>
       <div id="ev-ok-sub" style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:32px;"></div>
-      <button onclick="go('v-eventos','left');evCargarPortal();var v=document.getElementById('v-ev-ok');if(v)v.className='view go-right';" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;">Aceptar</button>
+      <button onclick="try{history.replaceState({viewId:'v-home'},'','');}catch(_){}go('v-eventos','left');evCargarPortal();setTimeout(function(){var v=document.getElementById('v-ev-ok');if(v)v.className='view go-right';},400);" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;">Aceptar</button>
     </div>
   </div>
 </div>

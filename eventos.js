@@ -666,6 +666,21 @@ window.evSubirImagen = function(input){
   reader.readAsDataURL(file);
 };
 
+async function evUploadImagenFondo(file){
+  if(!file) return '';
+  try {
+    var S = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js");
+    var uid = (window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid)||'anon';
+    var ext = (file.name.split('.').pop()||'jpg').toLowerCase();
+    var ref = S.ref(window._fbStorage,'eventos/'+uid+'_'+Date.now()+'.'+ext);
+    await S.uploadBytes(ref, file);
+    return await S.getDownloadURL(ref);
+  } catch(e){
+    console.error('[Dominio Eventos] Error subiendo imagen fondo:', e.message||e);
+    return '';
+  }
+}
+
 async function evUploadImagen(){
   if(!window._evFormData._imagenFile) return window._evFormData._imagenUrl||'';
   try {
@@ -673,7 +688,7 @@ async function evUploadImagen(){
     var uid = (window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid)||'anon';
     var ext = (window._evFormData._imagenFile.name.split('.').pop()||'jpg').toLowerCase();
     var ref = S.ref(window._fbStorage,'eventos/'+uid+'_'+Date.now()+'.'+ext);
-    var timeout = new Promise(function(_,reject){ setTimeout(function(){ reject(new Error('timeout')); }, 8000); });
+    var timeout = new Promise(function(_,reject){ setTimeout(function(){ reject(new Error('timeout')); }, 2000); });
     await Promise.race([S.uploadBytes(ref, window._evFormData._imagenFile), timeout]);
     return await S.getDownloadURL(ref);
   } catch(e){
@@ -1022,23 +1037,17 @@ window.evConfirmarCodigoPromo = async function(){
   var promoSnap = _evPromoActivo;
   _evMostrarOverlayCargando();
   var timedOut = false;
-  var timeoutId;
   var resultado = false;
   try {
     var savePromise = evGuardarEvento('en_revision','codigo_promocional', promoSnap, true, true)
       .catch(function(e){ console.error('[promo] evGuardarEvento threw:', e); return false; });
-    var timeoutPromise = new Promise(function(resolve){
-      timeoutId = setTimeout(function(){ timedOut=true; resolve(false); }, 12000);
-    });
     var minPromise = new Promise(function(r){ setTimeout(r, 2000); });
-    var saveResult = await Promise.race([savePromise, timeoutPromise]);
-    await minPromise;
-    resultado = saveResult;
+    var results = await Promise.all([savePromise, minPromise]);
+    resultado = results[0];
   } catch(e){
     console.error('[promo] error inesperado:', e);
     resultado = false;
   }
-  clearTimeout(timeoutId);
   _evOcultarOverlayCargando();
   if(resultado && resultado.id){
     _evPromoActivo = null;
@@ -1126,21 +1135,21 @@ async function evGuardarEvento(estado, tipoPub, promoData, sinAlert, noNav){
     var esDup = await evDetectarDuplicado(uid, d.titulo, d.fecha, d.lugar);
     if(esDup && estadoFinal==='publicado') estadoFinal='en_revision';
 
-    var imagenUrl = '';
+    var imagenUrl = window._evFormData._imagenUrl||'';
+    var _imagenFilePendiente = null;
     if(window._evFormData._imagenFile){
-      imagenUrl = await evUploadImagen();
-      if(!imagenUrl){
-        if(sinAlert){
-          // Flujo promo: CORS bloquea Storage → guardar sin imagen, no abortar
-          imagenUrl = '';
-        } else {
+      if(noNav){
+        // Flujo promo: guardar primero sin imagen, subir imagen en fondo después
+        _imagenFilePendiente = window._evFormData._imagenFile;
+        imagenUrl = '';
+      } else {
+        imagenUrl = await evUploadImagen();
+        if(!imagenUrl){
           alert('Error al subir la imagen. Intenta de nuevo.');
           if(btn){ btn.disabled=false; btn.textContent='Reintentar'; }
           return false;
         }
       }
-    } else {
-      imagenUrl = window._evFormData._imagenUrl||'';
     }
 
     var verificado = uid ? await evLeerVerificado(uid) : false;
@@ -1217,6 +1226,18 @@ async function evGuardarEvento(estado, tipoPub, promoData, sinAlert, noNav){
     } else {
       var docRef = await F.addDoc(F.collection(window._fbDb,'eventos'), data);
       eventoIdResultado = docRef.id;
+    }
+
+    // Subir imagen en fondo y actualizar doc cuando termine
+    if(_imagenFilePendiente){
+      (function(fileRef, docId){
+        evUploadImagenFondo(fileRef).then(function(url){
+          if(!url) return;
+          import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js").then(function(F){
+            F.updateDoc(F.doc(window._fbDb,'eventos',docId),{imagen:url}).catch(function(){});
+          }).catch(function(){});
+        });
+      })(_imagenFilePendiente, eventoIdResultado);
     }
 
     var msgPrincipal, msgSub;
