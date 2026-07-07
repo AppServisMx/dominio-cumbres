@@ -717,15 +717,6 @@ window.evContinuarDesdePreview = async function(){
   var auth = window._fbAuth && window._fbAuth.currentUser;
   var uid  = auth && auth.uid;
   if(uid){
-    var esAdmin = await evVerificarAdmin();
-    if(!esAdmin){
-      var uTipo = localStorage.getItem('dcuserTipo')||'vecino';
-      var limRes = await evVerificarLimiteActivos(uid, uTipo);
-      if(!limRes.ok){
-        alert('Has alcanzado el límite de '+limRes.limite+' evento(s) activo(s) para tu cuenta. Espera a que alguno finalice antes de publicar uno nuevo.');
-        return;
-      }
-    }
   }
   go('v-ev-publicar','right');
   evRenderPublicar();
