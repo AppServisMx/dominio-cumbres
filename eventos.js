@@ -18,12 +18,14 @@ var EV_ESTADOS = {
   cancelado:       { label:'Cancelado',          color:'#D63A2A', icon:'🚫' }
 };
 
-var EV_REGEX_PROHIBIDOS = [
-  /https?:\/\//i, /www\./i, /bit\.ly/i, /tinyurl/i,
-  /whatsapp/i, /t\.me\//i, /telegram\.me/i,
-  /instagram\.com/i, /facebook\.com/i,
-  /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
-  /\b\d{10,}\b/
+var EV_VALIDACIONES = [
+  { re: /https?:\/\//i,                                       msg: '⚠️ No se permiten links (http/https).' },
+  { re: /www\./i,                                             msg: '⚠️ No se permiten links (www).' },
+  { re: /bit\.ly|tinyurl|goo\.gl/i,                          msg: '⚠️ No se permiten links acortados.' },
+  { re: /whatsapp|t\.me\/|telegram\.me/i,                    msg: '⚠️ No se permiten links de mensajería (WhatsApp, Telegram).' },
+  { re: /instagram\.com|facebook\.com|tiktok\.com|twitter\.com|x\.com/i, msg: '⚠️ No se permiten links de redes sociales.' },
+  { re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,           msg: '⚠️ No se permiten correos electrónicos.' },
+  { re: /\b\d{10,}\b/,                                        msg: '⚠️ No se permiten números de teléfono.' }
 ];
 
 window._evDatos      = [];
@@ -47,12 +49,10 @@ function evImgHtml(url, size, radius, placeholder){
 }
 
 function evValidarTexto(txt){
-  for(var i=0;i<EV_REGEX_PROHIBIDOS.length;i++){
-    if(EV_REGEX_PROHIBIDOS[i].test(txt)) return false;
+  for(var i=0;i<EV_VALIDACIONES.length;i++){
+    if(EV_VALIDACIONES[i].re.test(txt)) return EV_VALIDACIONES[i].msg;
   }
-  var caps=(txt.match(/[A-ZÁÉÍÓÚ]/g)||[]).length;
-  if(caps > txt.length*0.65 && txt.length>12) return false;
-  return true;
+  return null;
 }
 
 function evIsAdmin(){
@@ -254,9 +254,10 @@ window.evValidarCampo = function(el){
   var val=el.value||'';
   var err=get(el.id+'-err');
   if(!val.trim()){ if(err){err.textContent='';err.style.display='none';} el.style.borderColor='rgba(255,255,255,.12)'; return; }
-  if(!evValidarTexto(val)){
+  var msg=evValidarTexto(val);
+  if(msg){
     el.style.borderColor='#D63A2A';
-    if(err){ err.textContent='⚠️ No se permiten links, teléfonos, correos ni contacto directo.'; err.style.display='block'; }
+    if(err){ err.textContent=msg; err.style.display='block'; }
   } else {
     el.style.borderColor='rgba(124,58,237,.4)';
     if(err){ err.textContent=''; err.style.display='none'; }
@@ -271,7 +272,8 @@ window.evSiguienteStep = function(){
     var cat=get('ev-cat')&&get('ev-cat').value;
     var tipoEv=get('ev-tipo-ev')&&get('ev-tipo-ev').value;
     if(!titulo||!desc||!cat||!tipoEv){ alert('Completa todos los campos requeridos.'); return; }
-    if(!evValidarTexto(titulo)||!evValidarTexto(desc)){ alert('El texto contiene información no permitida (links, teléfonos, etc.).'); return; }
+    var errTit=evValidarTexto(titulo); if(errTit){ alert(errTit); return; }
+    var errDesc=evValidarTexto(desc);  if(errDesc){ alert(errDesc); return; }
     window._evFormData.titulo=titulo; window._evFormData.descripcion=desc;
     window._evFormData.categoria=cat; window._evFormData.tipoEvento=tipoEv;
     evIrFormStep(2);
@@ -280,7 +282,7 @@ window.evSiguienteStep = function(){
     var lugar=(get('ev-lugar')&&get('ev-lugar').value||'').trim();
     var hi=get('ev-hora-i')&&get('ev-hora-i').value;
     if(!fecha||!lugar||!hi){ alert('Fecha, lugar y hora de inicio son obligatorios.'); return; }
-    if(!evValidarTexto(lugar)){ alert('El lugar contiene información no permitida.'); return; }
+    var errLug=evValidarTexto(lugar); if(errLug){ alert(errLug); return; }
     window._evFormData.fecha=fecha; window._evFormData.lugar=lugar;
     window._evFormData.horaInicio=hi;
     window._evFormData.horaFin=(get('ev-hora-f')&&get('ev-hora-f').value)||'';
