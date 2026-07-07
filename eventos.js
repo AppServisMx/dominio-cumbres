@@ -991,17 +991,56 @@ function evMostrarModalPromoOk(codigo, desc){
   document.body.appendChild(overlay);
 }
 
+function _evMostrarOverlayCargando(){
+  var ex = document.getElementById('ev-save-overlay');
+  if(ex) return;
+  var ov = document.createElement('div');
+  ov.id = 'ev-save-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:#0a0f0a;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
+  ov.innerHTML =
+    '<div style="animation:ev-spin 2s linear infinite;">'
+    +'<svg width="90" height="90" viewBox="0 0 106 106" fill="none">'
+    +'<defs><radialGradient id="bgl2" cx="40%" cy="35%" r="65%"><stop offset="0%" stop-color="#1E3A28"/><stop offset="100%" stop-color="#0C1A10"/></radialGradient></defs>'
+    +'<circle cx="53" cy="53" r="50" fill="url(#bgl2)"/>'
+    +'<circle cx="53" cy="53" r="49" fill="none" stroke="#1FC26A" stroke-width="1.5" stroke-dasharray="10 5" stroke-linecap="round"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#1FC26A"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(60 53 53)"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(120 53 53)"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#D63A2A" transform="rotate(180 53 53)"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#27AE60" transform="rotate(240 53 53)"/>'
+    +'<polygon points="53,14 57,32 53,28 49,32" fill="#F5C518" transform="rotate(300 53 53)"/>'
+    +'<circle cx="53" cy="53" r="14" fill="#0C1A10"/>'
+    +'<circle cx="53" cy="53" r="14" fill="none" stroke="#1FC26A" stroke-width="1"/>'
+    +'<polygon points="53,42 55,50 53,48 51,50" fill="#1FC26A"/>'
+    +'<polygon points="53,42 55,50 53,48 51,50" fill="#F5C518" transform="rotate(120 53 53)"/>'
+    +'<polygon points="53,42 55,50 53,48 51,50" fill="#D63A2A" transform="rotate(240 53 53)"/>'
+    +'<circle cx="53" cy="53" r="4" fill="#1FC26A"/>'
+    +'</svg></div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.55);letter-spacing:1px;">Guardando tu evento...</div>'
+    +'<style>#ev-save-overlay svg{filter:drop-shadow(0 0 18px rgba(31,194,106,.45));}@keyframes ev-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}</style>';
+  document.body.appendChild(ov);
+}
+function _evOcultarOverlayCargando(){
+  var ov = document.getElementById('ev-save-overlay');
+  if(ov) ov.remove();
+}
+
 window.evConfirmarCodigoPromo = async function(){
   if(!_evPromoActivo){ var m=document.getElementById('ev-promo-modal'); if(m)m.remove(); evMostrarOpciones(); return; }
-  var btn = document.getElementById('ev-promo-cont-btn');
-  var errEl = document.getElementById('ev-promo-modal-err');
-  if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
-  if(errEl){ errEl.style.display='none'; }
+  var modal = document.getElementById('ev-promo-modal');
+  if(modal) modal.remove();
+  _evMostrarOverlayCargando();
   var promoSnap = _evPromoActivo;
-  var eventoId = await evGuardarEvento('en_revision','codigo_promocional', promoSnap, true);
+  var timedOut = false;
+  var timeoutId;
+  var savePromise = evGuardarEvento('en_revision','codigo_promocional', promoSnap, true);
+  var timeoutPromise = new Promise(function(resolve){
+    timeoutId = setTimeout(function(){ timedOut=true; resolve(false); }, 30000);
+  });
+  var eventoId = await Promise.race([savePromise, timeoutPromise]);
+  clearTimeout(timeoutId);
+  _evOcultarOverlayCargando();
   if(eventoId){
-    var modal = document.getElementById('ev-promo-modal');
-    if(modal) modal.remove();
     if(!promoSnap.esMaster){
       var uid = window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid;
       await evConsumirCodigo(promoSnap, uid||'', eventoId);
@@ -1009,9 +1048,14 @@ window.evConfirmarCodigoPromo = async function(){
     _evPromoActivo = null;
     // evGuardarEvento ya llamó go('v-ev-ok') internamente
   } else {
-    // Falló → mostrar error inline en el modal, no cerrar ni redirigir
-    if(btn){ btn.disabled=false; btn.textContent='Reintentar'; }
-    if(errEl){ errEl.textContent='❌ Error al guardar. Verifica tu conexión e intenta de nuevo.'; errEl.style.display='block'; }
+    // Falló o timeout → mostrar modal de nuevo con error
+    evMostrarModalPromoOk(promoSnap.codigo, promoSnap.descripcion);
+    setTimeout(function(){
+      var errEl = document.getElementById('ev-promo-modal-err');
+      var btn   = document.getElementById('ev-promo-cont-btn');
+      if(errEl){ errEl.textContent = timedOut ? '❌ Tiempo agotado. Verifica tu conexión e intenta de nuevo.' : '❌ Error al guardar. Verifica tu conexión e intenta de nuevo.'; errEl.style.display='block'; }
+      if(btn){ btn.disabled=false; btn.textContent='Reintentar'; }
+    }, 50);
   }
 };
 
