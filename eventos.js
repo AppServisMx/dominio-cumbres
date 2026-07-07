@@ -63,6 +63,7 @@ var _evAdminCache  = null; // null=no verificado, true/false=resultado Firestore
 var _evBannerTimer = null;
 var _evBannerIdx   = 0;
 var _evBannerItems = [];
+var _evPromoActivo = null; // { codigo, tipo, descripcion, esMaster, docId }
 
 // ─── HELPERS ──────────────────────────────────────────
 function get(id){ return document.getElementById(id); }
@@ -485,6 +486,7 @@ window.evIniciarCrear = function(){
   if(!auth){ alert('Inicia sesión para crear un evento.'); return; }
   window._evFormData = {};
   window._evEditId   = null;
+  _evPromoActivo     = null;
   go('v-ev-crear-tipo','right');
 };
 
@@ -826,6 +828,24 @@ window.evMostrarOpciones = function(){
     +'<div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;margin-bottom:8px;">Máxima exposición · '+EV_PRECIOS.diasDestacado30+' días · Mejor valor.</div>'
     +'<div style="font-size:20px;font-weight:800;color:#fff;">$'+EV_PRECIOS.destacado30+' MXN</div>'
     +'</div>'
+    // ─── TARJETA CÓDIGO PROMOCIONAL ───────────────────────
+    +'<div style="background:rgba(255,255,255,.03);border:1px solid rgba(124,58,237,.22);border-radius:16px;padding:16px;margin-top:12px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'
+    +'<span style="font-size:15px;">🏷️</span>'
+    +'<span style="font-size:13px;font-weight:700;color:#fff;">¿Tienes código promocional?</span>'
+    +'</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.38);margin-bottom:12px;">Ingresa tu código para aplicar beneficios a esta publicación.</div>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<div style="flex:1;position:relative;">'
+    +'<span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;">🏷️</span>'
+    +'<input id="ev-promo-input" type="text" placeholder="Ejemplo: ABC123456" maxlength="9"'
+    +' style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:11px;color:#fff;font-size:13px;font-weight:700;padding:11px 10px 11px 34px;box-sizing:border-box;font-family:inherit;letter-spacing:1px;text-transform:uppercase;outline:none;"'
+    +' oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,\'\')"></div>'
+    +'<button onclick="evAplicarCodigoPromo()" style="background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:11px;color:#fff;font-size:12px;font-weight:700;padding:11px 14px;cursor:pointer;white-space:nowrap;font-family:inherit;">Aplicar código</button>'
+    +'</div>'
+    +'<div id="ev-promo-err" style="display:none;font-size:11px;color:#ff6b6b;margin-top:7px;"></div>'
+    +'</div>'
+    // ─── AVISO PAGO ────────────────────────────────────────
     +'<div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:12px;padding:10px;margin-top:16px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;line-height:1.6;">'
     +'⚠️ El pago se realiza por transferencia o en efectivo. Al confirmar, tu evento quedará en <strong>Pendiente de pago</strong> hasta que el administrador confirme el depósito.'
     +'</div>'
@@ -834,8 +854,167 @@ window.evMostrarOpciones = function(){
 
 window.evSeleccionarPlan = function(plan){
   var tipoPub = (plan==='premium'||plan==='destacado30') ? plan : 'normal';
-  evGuardarEvento('pendiente_pago', tipoPub);
+  evGuardarEvento('pendiente_pago', tipoPub, null);
 };
+
+// ─── SISTEMA DE CÓDIGOS PROMOCIONALES ─────────────────
+// Colección Firestore: codigosPromocionalesEventos
+// Campos: codigo, activo, usado, usoMultiple, usadoPor, eventoId,
+//         fechaCreacion, fechaVigencia, fechaUso, tipo, creadoPor, descripcion
+// tipos futuros: publicacion_gratuita | descuento_parcial | destacar_evento |
+//               impulsar_evento | evento_oficial | campana
+
+// Código maestro interno — no expuesto en texto plano
+var _EV_MP = 'QVlIMTUxMTE1'; // base64, no modificar
+
+function _evEsMasterCodigo(c){
+  try{ return typeof atob==='function' && atob(_EV_MP)===c; }catch(_){ return false; }
+}
+
+// Valida formato AAA999999 (3 letras + 6 números)
+function evValidarFormatoCodigo(c){
+  return /^[A-Z]{3}[0-9]{6}$/.test(c);
+}
+
+// Consulta Firestore para códigos normales (no master)
+async function evValidarCodigoFirestore(codigo){
+  try {
+    var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+    var snap = await F.getDocs(F.query(
+      F.collection(window._fbDb,'codigosPromocionalesEventos'),
+      F.where('codigo','==',codigo),
+      F.where('activo','==',true)
+    ));
+    if(snap.empty) return { valido:false, msg:'❌ Código promocional inválido.' };
+    var doc = null;
+    snap.forEach(function(d){ if(!doc) doc = Object.assign({_id:d.id}, d.data()); });
+    if(!doc) return { valido:false, msg:'❌ Código promocional inválido.' };
+    // Un solo uso: verificar si ya fue usado
+    if(!doc.usoMultiple && doc.usado){
+      return { valido:false, msg:'❌ Este código ya fue utilizado.' };
+    }
+    // Verificar vigencia (los códigos normales duran 7 días)
+    if(doc.fechaVigencia){
+      var vigencia = doc.fechaVigencia.toDate ? doc.fechaVigencia.toDate() : new Date(doc.fechaVigencia);
+      if(vigencia < new Date()){
+        return { valido:false, msg:'❌ Este código ha expirado.' };
+      }
+    }
+    return { valido:true, tipo:doc.tipo||'publicacion_gratuita', descripcion:doc.descripcion||'Publicación sin costo (pago exonerado)', docId:doc._id };
+  } catch(e){
+    console.error('[Dominio Eventos] evValidarCodigoFirestore:', e);
+    return { valido:false, msg:'❌ Error al verificar el código. Intenta de nuevo.' };
+  }
+}
+
+window.evAplicarCodigoPromo = async function(){
+  var input = get('ev-promo-input');
+  var errEl = get('ev-promo-err');
+  if(!input || !errEl) return;
+
+  var codigo = (input.value||'').trim().toUpperCase();
+
+  if(!codigo){
+    errEl.textContent='❌ Ingresa un código promocional.';
+    errEl.style.display='block'; return;
+  }
+  if(!evValidarFormatoCodigo(codigo)){
+    errEl.textContent='❌ El formato del código es incorrecto. Debe tener 3 letras + 6 números (Ej: ABC123456).';
+    errEl.style.display='block';
+    input.style.borderColor='#D63A2A'; return;
+  }
+  errEl.style.display='none';
+  input.style.borderColor='rgba(124,58,237,.4)';
+
+  // Código maestro interno: sin límite de uso, sin vigencia, sin registro en Firestore
+  if(_evEsMasterCodigo(codigo)){
+    _evPromoActivo = { codigo:codigo, tipo:'publicacion_gratuita', descripcion:'Publicación sin costo (pago exonerado)', esMaster:true };
+    evMostrarModalPromoOk(codigo, _evPromoActivo.descripcion);
+    return;
+  }
+
+  // Códigos normales: verificar en Firestore
+  errEl.textContent='Verificando código... ⏳';
+  errEl.style.color='rgba(255,255,255,.4)';
+  errEl.style.display='block';
+  var resultado = await evValidarCodigoFirestore(codigo);
+  errEl.style.color='#ff6b6b';
+  if(!resultado.valido){
+    errEl.textContent=resultado.msg;
+    errEl.style.display='block';
+    input.style.borderColor='#D63A2A'; return;
+  }
+  errEl.style.display='none';
+  _evPromoActivo = { codigo:codigo, tipo:resultado.tipo, descripcion:resultado.descripcion, esMaster:false, docId:resultado.docId };
+  evMostrarModalPromoOk(codigo, _evPromoActivo.descripcion);
+};
+
+function evMostrarModalPromoOk(codigo, desc){
+  var existing = document.getElementById('ev-promo-modal');
+  if(existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'ev-promo-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;';
+  overlay.innerHTML =
+    '<div style="background:#12121e;border:1px solid rgba(124,58,237,.35);border-radius:24px;padding:28px 22px;width:100%;max-width:360px;text-align:center;position:relative;">'
+    // Ícono check con decoración
+    +'<div style="position:relative;display:inline-block;margin-bottom:18px;">'
+    +'<div style="width:76px;height:76px;background:linear-gradient(135deg,#1FC26A,#16A357);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;color:#fff;font-weight:900;margin:0 auto;">✓</div>'
+    +'<div style="position:absolute;top:-6px;left:-10px;width:9px;height:9px;background:#7C3AED;border-radius:50%;"></div>'
+    +'<div style="position:absolute;top:2px;right:-8px;width:6px;height:6px;background:#F5C518;border-radius:50%;"></div>'
+    +'<div style="position:absolute;bottom:0;left:-14px;width:5px;height:5px;background:#1FC26A;border-radius:50%;"></div>'
+    +'<div style="position:absolute;top:-4px;right:-14px;width:4px;height:4px;background:#ff6b6b;border-radius:3px;transform:rotate(45deg);"></div>'
+    +'<div style="position:absolute;bottom:-4px;right:-6px;width:7px;height:7px;background:#a78bfa;border-radius:50%;"></div>'
+    +'</div>'
+    +'<div style="font-size:21px;font-weight:800;color:#fff;margin-bottom:7px;">¡Código aplicado!</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.45);line-height:1.55;margin-bottom:20px;">El código promocional se aplicó<br>correctamente a tu evento.</div>'
+    // Caja del código
+    +'<div style="background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;">'
+    +'<span style="font-size:17px;">🏷️</span>'
+    +'<span style="font-size:21px;font-weight:800;color:#fff;letter-spacing:2px;">'+evEsc(codigo)+'</span>'
+    +'</div>'
+    // Beneficio
+    +'<div style="background:rgba(31,194,106,.07);border:1px solid rgba(31,194,106,.22);border-radius:13px;padding:12px 14px;margin-bottom:10px;text-align:left;">'
+    +'<div style="font-size:12px;font-weight:700;color:#1FC26A;margin-bottom:5px;">✅ Beneficio aplicado</div>'
+    +'<div style="font-size:12px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:6px;"><span>✅</span><span>'+evEsc(desc||'Publicación sin costo (pago exonerado)')+'</span></div>'
+    +'</div>'
+    // Importante
+    +'<div style="background:rgba(100,181,246,.05);border:1px solid rgba(100,181,246,.18);border-radius:13px;padding:12px 14px;margin-bottom:20px;text-align:left;">'
+    +'<div style="font-size:12px;font-weight:700;color:#64B5F6;margin-bottom:4px;">ℹ️ Importante</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.42);line-height:1.65;">Tu evento será enviado a revisión y no se publicará de inmediato. Te notificaremos por alerta cuando el administrador lo revise.</div>'
+    +'</div>'
+    +'<button onclick="evConfirmarCodigoPromo()" style="width:100%;background:linear-gradient(135deg,#7C3AED,#5B21B6);border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;padding:16px;cursor:pointer;font-family:inherit;">Continuar</button>'
+    +'</div>';
+  document.body.appendChild(overlay);
+}
+
+window.evConfirmarCodigoPromo = async function(){
+  var modal = document.getElementById('ev-promo-modal');
+  if(modal) modal.remove();
+  if(!_evPromoActivo){ evMostrarOpciones(); return; }
+  // Guardar evento PRIMERO; marcar código como usado SOLO si el guardado fue exitoso
+  var eventoId = await evGuardarEvento('en_revision','codigo_promocional',_evPromoActivo);
+  if(eventoId && !_evPromoActivo.esMaster){
+    var uid = window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid;
+    await evConsumirCodigo(_evPromoActivo, uid||'', eventoId);
+  }
+  _evPromoActivo = null;
+};
+
+// Marca el código como utilizado en Firestore (solo códigos normales, no master)
+async function evConsumirCodigo(promo, uid, eventoId){
+  if(promo.esMaster||!promo.docId) return;
+  try {
+    var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+    await F.updateDoc(F.doc(window._fbDb,'codigosPromocionalesEventos',promo.docId),{
+      usado:    true,
+      usadoPor: uid||'',
+      eventoId: eventoId||'',
+      fechaUso: F.serverTimestamp()
+    });
+  } catch(e){ console.error('[Dominio Eventos] evConsumirCodigo:', e); }
+}
 
 window.evPublicarCortesia = async function(){
   var uid = window._fbAuth&&window._fbAuth.currentUser&&window._fbAuth.currentUser.uid;
@@ -843,12 +1022,12 @@ window.evPublicarCortesia = async function(){
   var disponibles = await evLeerCortesia(uid);
   if(disponibles<=0){ alert('Ya no tienes cortesías disponibles.'); evMostrarOpciones(); return; }
   // Guardar evento PRIMERO, descontar cortesía SOLO si el guardado tuvo éxito
-  var ok = await evGuardarEvento('en_revision','normal');
+  var ok = await evGuardarEvento('en_revision','normal',null);
   if(ok) await evDescontarCortesia(uid);
 };
 
 window.evPublicarDirecto = async function(estado, tipoPub){
-  await evGuardarEvento(estado, tipoPub);
+  await evGuardarEvento(estado, tipoPub, null);
 };
 
 // ─── ID PÚBLICO DEL EVENTO ────────────────────────────
@@ -867,8 +1046,8 @@ function evCalcFechasPremium(plan){
 }
 
 // ─── GUARDAR EVENTO ───────────────────────────────────
-// Retorna true si el guardado fue exitoso, false si falló
-async function evGuardarEvento(estado, tipoPub){
+// Retorna el ID del evento guardado (string) si fue exitoso, false si falló
+async function evGuardarEvento(estado, tipoPub, promoData){
   var btn = get('ev-pub-btn');
   if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
   var d       = window._evFormData;
@@ -900,7 +1079,8 @@ async function evGuardarEvento(estado, tipoPub){
     // Organizador verificado + plan pagado puede saltarse revisión al confirmar pago,
     // pero NO puede saltar el pago en sí. Eso lo gestiona el admin.
 
-    var esPremium = tipoPub==='premium'||tipoPub==='destacado30';
+    var esPromo   = !!(promoData && promoData.codigo);
+    var esPremium = !esPromo && (tipoPub==='premium'||tipoPub==='destacado30');
     var fechasPremium = esPremium ? evCalcFechasPremium(tipoPub) : { fechaInicioPremium:null, fechaFinPremium:null };
 
     var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
@@ -918,12 +1098,16 @@ async function evGuardarEvento(estado, tipoPub){
       cupo:         d.cupo||0,
       organizador:  d.organizador||'',
       imagen:       imagenUrl,
-      tipo:         tipoPub||d.tipo||'normal',
+      tipo:         esPromo ? 'normal' : (tipoPub||d.tipo||'normal'),
       esPremium:    esPremium,
       destacado:    false,
       destacadoHasta:       null,
-      apareceEnBanner:      tipoPub==='premium'||d.tipo==='oficial',
-      planDestacado:        tipoPub||'normal',
+      apareceEnBanner:      !esPromo && (tipoPub==='premium'||d.tipo==='oficial'),
+      planDestacado:        esPromo ? 'codigo_promocional' : (tipoPub||'normal'),
+      // Código promocional
+      codigoPromocional:    esPromo ? promoData.codigo : null,
+      requierePago:         !esPromo,
+      publicacionAutorizada: esPromo,
       fechaInicioPremium:   fechasPremium.fechaInicioPremium,
       fechaFinPremium:      fechasPremium.fechaFinPremium,
       estado:               estadoFinal,
@@ -953,6 +1137,7 @@ async function evGuardarEvento(estado, tipoPub){
       // Estadísticas
       stats: { vistas:0, interesados:0, confirmaciones:0, compartidos:0 }
     };
+    var eventoIdResultado;
     if(window._evEditId){
       delete data.creadoEn;
       delete data.eventoPublicId; // no sobreescribir ID público en edición
@@ -960,8 +1145,10 @@ async function evGuardarEvento(estado, tipoPub){
       delete data.eliminado;      // no tocar soft delete en edición normal
       data.actualizadoEn = ahora;
       await F.updateDoc(F.doc(window._fbDb,'eventos',window._evEditId), data);
+      eventoIdResultado = window._evEditId;
     } else {
-      await F.addDoc(F.collection(window._fbDb,'eventos'), data);
+      var docRef = await F.addDoc(F.collection(window._fbDb,'eventos'), data);
+      eventoIdResultado = docRef.id;
     }
 
     var msgPrincipal, msgSub;
@@ -978,7 +1165,7 @@ async function evGuardarEvento(estado, tipoPub){
     txt('ev-ok-msg', msgPrincipal);
     txt('ev-ok-sub', msgSub);
     go('v-ev-ok','right');
-    return true;
+    return eventoIdResultado; // string truthy = éxito
   } catch(e){
     console.error('[Dominio Eventos] Error evGuardarEvento:', e);
     alert('Error al guardar: '+e.message);
