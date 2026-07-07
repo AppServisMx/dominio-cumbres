@@ -930,7 +930,7 @@ window.evAplicarCodigoPromo = async function(){
   // Código maestro interno: sin límite de uso, sin vigencia, sin registro en Firestore
   if(_evEsMasterCodigo(codigo)){
     _evPromoActivo = { codigo:codigo, tipo:'publicacion_gratuita', descripcion:'Publicación sin costo (pago exonerado)', esMaster:true };
-    evMostrarModalPromoOk(codigo, _evPromoActivo.descripcion);
+    evConfirmarCodigoPromo();
     return;
   }
 
@@ -947,7 +947,7 @@ window.evAplicarCodigoPromo = async function(){
   }
   errEl.style.display='none';
   _evPromoActivo = { codigo:codigo, tipo:resultado.tipo, descripcion:resultado.descripcion, esMaster:false, docId:resultado.docId };
-  evMostrarModalPromoOk(codigo, _evPromoActivo.descripcion);
+  evConfirmarCodigoPromo();
 };
 
 function evMostrarModalPromoOk(codigo, desc){
@@ -1048,14 +1048,17 @@ window.evConfirmarCodigoPromo = async function(){
     _evPromoActivo = null;
     // evGuardarEvento ya llamó go('v-ev-ok') internamente
   } else {
-    // Falló o timeout → mostrar modal de nuevo con error
-    evMostrarModalPromoOk(promoSnap.codigo, promoSnap.descripcion);
+    // Falló o timeout → volver a pantalla de opciones con mensaje de error en el campo promo
+    _evPromoActivo = null;
+    evMostrarOpciones();
     setTimeout(function(){
-      var errEl = document.getElementById('ev-promo-modal-err');
-      var btn   = document.getElementById('ev-promo-cont-btn');
-      if(errEl){ errEl.textContent = timedOut ? '❌ Tiempo agotado. Verifica tu conexión e intenta de nuevo.' : '❌ Error al guardar. Verifica tu conexión e intenta de nuevo.'; errEl.style.display='block'; }
-      if(btn){ btn.disabled=false; btn.textContent='Reintentar'; }
-    }, 50);
+      var errEl = get('ev-promo-err');
+      if(errEl){
+        errEl.textContent = timedOut ? '❌ Tiempo agotado. Verifica tu conexión e intenta de nuevo.' : '❌ Error al guardar. Verifica tu conexión e intenta de nuevo.';
+        errEl.style.color = '#ff6b6b';
+        errEl.style.display = 'block';
+      }
+    }, 100);
   }
 };
 
