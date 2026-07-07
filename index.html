@@ -1639,117 +1639,160 @@
         <button class="btn btn-green" onclick="go('v-servicios','left')">Volver a Dominio Servicios</button>
       </div>
     </div>
-<div class="view go-right" id="v-informa">
-      <div class="info-hdr">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si07">
-          <button class="btn-back" onclick="go('v-home','left')">‹</button>
-          <div class="si03"><div class="si13">📰 Dominio Informa</div><div class="si21">Noticias · Proyectos · Reportes</div></div>
-          <button style="background:var(--white-12);border:none;border-radius:12px;padding:7px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;" onclick="go('v-informa-enviar','right')">+ Publicar</button>
-        </div>
-        <div class="tabs-row" id="informa-tabs">
-          <button class="tab-btn on" onclick="switchTab(0,this)">Noticias</button>
-          <button class="tab-btn" onclick="switchTab(1,this)">Proyectos</button>
-          <button class="tab-btn" onclick="switchTab(2,this)">Reportes</button>
-        </div>
+<!-- ══════════════════════════════════════════════════════════
+  DOMINIO INFORMA — Portal principal
+  Acceso: go('v-informa','right') → inCargarPortal()
+══════════════════════════════════════════════════════════ -->
+<div class="view go-right" id="v-informa" data-onenter="inCargarPortal">
+  <div class="info-hdr" style="flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back">‹</button>
+      <div class="si03">
+        <div class="si13">📰 Dominio Informa</div>
+        <div class="si21">Noticias · Proyectos · Reportes</div>
       </div>
-
-
-      <div class="scroll" id="informa-scroll">
-        <!-- NOTICIAS -->
-        <div class="tab-content show" id="tab-noticias">
-          <div class="si73">
-            <div class="si56">📰</div>
-            <div class="si57">Sin noticias publicadas aún</div>
-            <div class="si39">Las noticias aprobadas por el administrador aparecerán aquí</div>
-            <button onclick="go('v-informa-enviar','right')" style="margin-top:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Enviar noticia</button>
-          </div>
-          <div class="si14"></div>
-        </div>
-
-        <!-- PROYECTOS -->
-        <div class="tab-content" id="tab-proyectos">
-          <div style="background:var(--yellow-light);border-radius:10px;padding:8px 12px;font-size:10px;color:var(--yellow-text);margin:10px 14px 0;line-height:1.5;">💡 ¿Tienes info de un proyecto? Envíala — la revisamos antes de publicar</div>
-          <div class="si73">
-            <div class="si56">🏗️</div>
-            <div class="si57">Sin proyectos publicados aún</div>
-            <div class="si39">Los proyectos aprobados aparecerán aquí</div>
-            <button onclick="go('v-informa-enviar','right')" style="margin-top:14px;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Enviar proyecto</button>
-          </div>
-          <div class="si14"></div>
-        </div>
-
-        <!-- REPORTES -->
-        <div class="tab-content" id="tab-reportes">
-          <div style="background:var(--yellow-light);border-radius:10px;padding:8px 12px;font-size:10px;color:var(--yellow-text);margin:10px 14px 0;line-height:1.5;">🔒 Reportes revisados antes de publicarse. Tu nombre nunca aparece.</div>
-          <div class="si73">
-            <div class="si56">⚠️</div>
-            <div class="si57">Sin reportes publicados aún</div>
-            <div class="si39">Los reportes aprobados por el admin aparecerán aquí</div>
-            <button onclick="go('v-informa-enviar','right')" style="margin-top:14px;background:var(--red);color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">+ Enviar reporte</button>
-          </div>
-          <div class="si14"></div>
-        </div>
-      </div>
-
-      <div class="nav">
-        <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
-        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button id="in-admin-btn" onclick="go('v-inf-mis','right');window.inCargarMis&&window.inCargarMis();" style="display:none;background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:6px 10px;font-size:10px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">Mis pub.</button>
+        <button onclick="window.inIrCrear&&window.inIrCrear('noticia')" style="background:rgba(255,255,255,.18);border:none;border-radius:12px;padding:7px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">+ Publicar</button>
       </div>
     </div>
-<div class="view go-right" id="v-noticia-det">
-      <div style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si07">
-          <button class="btn-back" onclick="go('v-informa','left')">‹</button>
-          <div class="si37">Detalle</div>
-        </div>
+    <div class="tabs-row">
+      <button id="in-tab-noticia" class="tab-btn on" onclick="window.inCambiarTab('noticia')">Noticias</button>
+      <button id="in-tab-proyecto" class="tab-btn" onclick="window.inCambiarTab('proyecto')">Proyectos</button>
+      <button id="in-tab-reporte" class="tab-btn" onclick="window.inCambiarTab('reporte')">Reportes</button>
+    </div>
+  </div>
+
+  <div class="scroll" style="background:#F5F6F0;flex:1;">
+    <div id="in-cont-noticia" class="tab-content show" style="padding-top:10px;">
+      <div id="in-lista-noticias">
+        <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Cargando... ⏳</div>
       </div>
-      <div class="si27 scroll">
-        <div style="width:100%;height:120px;background:#E8F0F8;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:54px;margin-bottom:14px;">🏗️</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><span class="tag tag-n">Proyecto</span><span class="tag tag-g">✅ Aprobada por Admin</span></div>
-        <div style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:6px;line-height:1.3;">HEB Dominio Cumbres abre el 31 de marzo</div>
-        <div style="font-size:11px;color:var(--text-hint);margin-bottom:12px;">📅 Hace 2 días · 👁️ 1,240 vistas</div>
-        <div style="font-size:13px;color:#444;line-height:1.7;margin-bottom:14px;">El esperado HEB de Dominio Cumbres abrirá sus puertas el próximo 31 de marzo. La tienda contará con panadería, carnicería, farmacia y productos importados.<br><br>Horario: 7am a 11pm de lunes a domingo. Estacionamiento para más de 300 vehículos.</div>
-        <div style="background:var(--green-light);border-radius:12px;padding:10px 12px;font-size:11px;color:var(--green-dark);margin-bottom:12px;">✅ Información verificada y aprobada por el administrador antes de publicarse</div>
-        <div style="display:flex;gap:8px;">
-          <button style="flex:1;background:#E8F0F8;color:var(--navy);border:none;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">👍 Útil (234)</button>
-          <button style="flex:1;background:#F5F6F0;color:var(--text-caption);border:none;border-radius:12px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">📤 Compartir</button>
-        </div>
-        <div class="si14"></div>
+      <div style="height:16px;"></div>
+    </div>
+    <div id="in-cont-proyecto" class="tab-content" style="padding-top:10px;">
+      <div style="background:#FFF8E1;border-radius:10px;padding:8px 12px;font-size:10px;color:#7a5800;margin:0 14px 10px;line-height:1.5;">💡 ¿Tienes info de un proyecto? Envíala — la revisamos antes de publicar</div>
+      <div id="in-lista-proyectos">
+        <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Cargando... ⏳</div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+    <div id="in-cont-reporte" class="tab-content" style="padding-top:10px;">
+      <div style="background:#FFF8E1;border-radius:10px;padding:8px 12px;font-size:10px;color:#7a5800;margin:0 14px 10px;line-height:1.5;">🔒 Reportes revisados antes de publicarse. Tu nombre nunca aparece.</div>
+      <div id="in-lista-reportes">
+        <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Cargando... ⏳</div>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
+    <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
+    <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
+    <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
+  </div>
+</div>
+
+<!-- Detalle de publicación -->
+<div class="view go-right" id="v-inf-det">
+  <div id="in-det-hdr" style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back">‹</button>
+      <div class="si37">Detalle</div>
+    </div>
+  </div>
+  <div class="scroll" style="background:#F5F6F0;padding:14px;">
+    <div id="in-det-body">
+      <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Cargando... ⏳</div>
+    </div>
+  </div>
+</div>
+
+<!-- Mis publicaciones -->
+<div class="view go-right" id="v-inf-mis">
+  <div style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back">‹</button>
+      <div>
+        <div class="si37">Mis publicaciones</div>
+        <div class="si28">Tu historial</div>
+      </div>
+      <button onclick="window.inIrCrear&&window.inIrCrear('noticia')" style="background:rgba(255,255,255,.18);border:none;border-radius:12px;padding:7px 12px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">+ Nueva</button>
+    </div>
+  </div>
+  <div class="scroll" style="background:#F5F6F0;">
+    <div id="in-mis-lista">
+      <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Cargando... ⏳</div>
+    </div>
+  </div>
+</div>
+
+<!-- Crear publicación — pasos 1-3 en mismo contenedor -->
+<div class="view go-right" id="v-inf-crear">
+  <div style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back">‹</button>
+      <div id="in-crear-titulo" class="si37">📰 Nueva publicación</div>
+    </div>
+  </div>
+  <div class="scroll" style="background:#F5F6F0;padding:16px;">
+    <div id="in-crear-body">
+      <div style="text-align:center;padding:48px;color:#aaa;font-size:13px;">Iniciando... ⏳</div>
+    </div>
+  </div>
+</div>
+
+<!-- Vista previa -->
+<div class="view go-right" id="v-inf-preview">
+  <div style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="si07">
+      <button class="btn-back">‹</button>
+      <div>
+        <div class="si37">Vista previa</div>
+        <div class="si28">Así se verá tu publicación</div>
       </div>
     </div>
-<div class="view go-right" id="v-informa-enviar">
-      <div style="background:linear-gradient(135deg,#1a1f7a,#0a0f4a);padding:12px 18px 18px;flex-shrink:0;">
-        <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-        <div class="si07">
-          <button class="btn-back" onclick="go('v-informa','left')">‹</button>
-          <div><div class="si37">Enviar publicación</div><div class="si28">Revisión en 24-48 hrs</div></div>
-        </div>
-      </div>
-      <div class="si27 scroll">
-        <div style="background:var(--yellow-light);border-radius:12px;padding:10px 12px;font-size:11px;color:var(--yellow-text);margin-bottom:14px;line-height:1.6;">⏳ Todo lo que envíes será revisado por el administrador antes de publicarse.</div>
-        <div class="form-g"><label class="form-l">Tipo de publicación</label><select class="sel"><option>📰 Noticia de la zona</option><option>🏗️ Proyecto o desarrollo</option><option>⚠️ Reporte ciudadano</option></select></div>
-        <div class="form-g"><label class="form-l">Título</label><input class="inp" placeholder="Describe brevemente el tema..."></div>
-        <div class="form-g"><label class="form-l">Descripción</label><textarea class="inp" rows="4" placeholder="Más detalles..." style="resize:none;"></textarea></div>
-        <div class="form-g"><label class="form-l">Ubicación (opcional)</label><input class="inp" placeholder="Ej. Calle principal, entrada norte..."></div>
-        <div class="form-g"><label class="form-l">Foto (opcional)</label><div class="upload-box"><div class="si18">📷</div><div class="si19">Toca para subir foto</div></div></div>
-        <div style="background:var(--green-light);border-radius:12px;padding:10px 12px;font-size:11px;color:var(--green-dark);margin-bottom:14px;">🔒 Si es un reporte, tu nombre nunca aparecerá públicamente.</div>
-        <button class="btn btn-navy" onclick="go('v-informa-enviado','right')">Enviar para revisión →</button>
-        <div class="si34"></div>
+  </div>
+  <div class="scroll" style="background:#F5F6F0;">
+    <div style="background:#fff;border-radius:16px;margin:14px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);">
+      <div id="in-preview-body"></div>
+    </div>
+    <div style="padding:0 14px 14px;">
+      <div style="background:#FFF8E1;border-radius:12px;padding:10px 12px;font-size:11px;color:#7a5800;margin-bottom:14px;line-height:1.5;">⏳ El administrador revisará tu publicación antes de hacerla pública.</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="go('v-inf-crear','left')" style="flex:1;background:#f0f0f0;color:#555;border:none;border-radius:14px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">← Editar</button>
+        <button id="in-pub-btn" onclick="window.inPublicar&&window.inPublicar()" style="flex:2;background:#1a1f7a;color:#fff;border:none;border-radius:14px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Enviar para revisión</button>
       </div>
     </div>
-<div class="view go-right" id="v-informa-enviado">
-      <div class="success-wrap">
-        <div class="success-ic" style="border-color:var(--yellow);">⏳</div>
-        <div class="si36">¡Enviado!</div>
-        <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.7;margin-bottom:24px;">Tu publicación está en revisión.<br>El administrador la revisará en<br><strong class="si20">24-48 horas.</strong><br><br>Te avisamos por <strong class="si04">WhatsApp.</strong></div>
-        <button class="btn btn-green" onclick="go('v-informa','left')">Volver a Dominio Informa</button>
-      </div>
+  </div>
+</div>
+
+<!-- Éxito -->
+<div class="view go-right" id="v-inf-ok">
+  <div class="success-wrap">
+    <div class="success-ic" style="border-color:#1A7AB5;">📰</div>
+    <div class="si36">¡Enviado!</div>
+    <div style="font-size:12px;color:var(--white-50);text-align:center;line-height:1.7;margin-bottom:24px;">
+      Tu publicación está en revisión.<br>
+      El administrador la revisará en<br>
+      <strong class="si20">24-48 horas.</strong><br><br>
+      Te avisamos dentro de la app.
     </div>
+    <button class="btn btn-navy" onclick="try{history.replaceState({viewId:'v-informa'},'','');}catch(_){}go('v-informa','left');window.inCargarPortal&&window.inCargarPortal();">Volver a Dominio Informa</button>
+  </div>
+</div>
+
+<!-- IDs legacy — redirigen a nuevas vistas para no romper referencias existentes -->
+<div id="v-noticia-det" style="display:none;"></div>
+<div id="v-informa-enviar" style="display:none;"></div>
+<div id="v-informa-enviado" style="display:none;"></div>
 <!-- ══════════════════════════════════════════════════════════
   VISTA 1: Formulario — Nueva solicitud de servicio
   Acceso:   go('v-solicitud-nueva','right')
@@ -5143,6 +5186,7 @@
 
 <script src="app.js?v=20260706j"></script>
 <script type="module" src="eventos.js?v=20260706t"></script>
+<script type="module" src="informa.js?v=20260707a"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">
