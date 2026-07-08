@@ -4807,6 +4807,15 @@
         <div id="notif-alertas" class="si12 admin-notif">0</div>
       </div>
 
+      <!-- CENTRO DE CONTENIDO -->
+      <div class="admin-card" onclick="go('v-cnt-contenido','right')">
+        <div>
+          <div class="admin-card-ic" style="background:rgba(26,122,181,.2);">🌐</div>
+          <div class="admin-card-title">Contenido</div>
+          <div class="admin-card-sub">Informa · Eventos · Emergencias</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- CONFIGURACIÓN (ancho completo) -->
@@ -5187,6 +5196,302 @@
 <script src="app.js?v=20260706j"></script>
 <script type="module" src="eventos.js?v=20260706t"></script>
 <script type="module" src="informa.js?v=20260707e"></script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     CENTRO DE CONTENIDO — Admin module
+     ════════════════════════════════════════════════════════════════════════ -->
+
+<!-- CNT STYLES -->
+<style>
+/* ── shared dark-admin overrides for Contenido ── */
+#v-cnt-contenido,#v-cnt-informa,#v-cnt-lista,#v-cnt-edit,
+#v-cnt-eventos,#v-cnt-ev-edit,#v-cnt-emergencias,#v-cnt-emerg-edit {
+  background: var(--dark,#0C1A10);
+}
+/* ── Item cards ── */
+.cnt-item-card{display:flex;align-items:center;gap:12px;background:var(--card-dark,#111c13);border:.5px solid var(--card-border,rgba(255,255,255,.07));border-radius:14px;padding:11px 12px;margin-bottom:8px;cursor:pointer;position:relative;transition:background .15s;}
+.cnt-item-card:active{background:rgba(255,255,255,.05);}
+.cnt-item-img{width:52px;height:52px;border-radius:10px;background:rgba(255,255,255,.06);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cnt-item-info{flex:1;min-width:0;}
+.cnt-item-titulo{font-size:13px;font-weight:700;color:#fff;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cnt-item-meta{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;}
+.cnt-3dot{background:none;border:none;color:rgba(255,255,255,.35);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;font-family:inherit;}
+/* ── Filter tabs ── */
+.cnt-ftabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
+.cnt-ftabs::-webkit-scrollbar{display:none;}
+.cnt-ftab{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.08);border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;}
+.cnt-ftab.on{background:rgba(26,122,181,.25);border-color:#1A7AB5;color:#7ac8ff;}
+/* ── Search bar ── */
+.cnt-search{width:100%;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;box-sizing:border-box;}
+.cnt-search::placeholder{color:rgba(255,255,255,.3);}
+/* ── Context menu bottom sheet ── */
+#cnt-menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9700;display:none;align-items:flex-end;justify-content:center;}
+#cnt-menu-sheet{background:#1a1f1a;border-radius:20px 20px 0 0;padding:0 14px 32px;width:100%;max-width:430px;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.56,1);}
+.cnt-menu-row{padding:14px 6px;font-size:14px;font-weight:600;color:rgba(255,255,255,.75);border-top:.5px solid rgba(255,255,255,.06);cursor:pointer;font-family:'Inter',sans-serif;}
+.cnt-menu-row:active{opacity:.6;}
+.cnt-menu-row.ok{color:#1FC26A;}
+.cnt-menu-row.del{color:#D63A2A;}
+/* ── Edit form ── */
+.cnt-field-row{display:flex;gap:10px;padding:11px 0;border-bottom:.5px solid rgba(255,255,255,.06);align-items:flex-start;}
+.cnt-field-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px;min-width:80px;padding-top:2px;flex-shrink:0;}
+.cnt-field-val{font-size:13px;color:#fff;flex:1;line-height:1.4;}
+.cnt-field-edit{background:rgba(255,255,255,.05);border-radius:8px;padding:5px 8px;outline:none;border:.5px solid rgba(255,255,255,.08);}
+.cnt-field-edit:focus{border-color:rgba(26,122,181,.6);}
+.cnt-field-area{min-height:70px;white-space:pre-wrap;}
+/* ── Buttons ── */
+.cnt-btn-save{background:#1A7AB5;border:none;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;}
+.cnt-btn-ok{background:#1FC26A22;border:.5px solid #1FC26A55;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:700;color:#1FC26A;cursor:pointer;font-family:'Inter',sans-serif;}
+.cnt-btn-del{background:#D63A2A22;border:.5px solid #D63A2A55;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:700;color:#D63A2A;cursor:pointer;font-family:'Inter',sans-serif;}
+.cnt-btn-neu{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:10px;padding:9px 14px;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;}
+/* ── Form inputs ── */
+.cnt-form-group{margin-bottom:14px;}
+.cnt-form-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.cnt-form-input{width:100%;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;box-sizing:border-box;}
+.cnt-form-input:focus{border-color:rgba(26,122,181,.6);}
+select.cnt-form-input option{background:#1a1f1a;color:#fff;}
+/* ── Emergencias list ── */
+.cnt-emerg-row{display:flex;align-items:center;gap:10px;background:var(--card-dark,#111c13);border:.5px solid var(--card-border,rgba(255,255,255,.07));border-radius:14px;padding:12px 12px;margin-bottom:8px;}
+.cnt-emerg-num{font-size:12px;font-weight:800;color:rgba(255,255,255,.25);min-width:22px;text-align:center;}
+.cnt-emerg-drag{font-size:16px;color:rgba(255,255,255,.2);cursor:grab;line-height:1;}
+.cnt-emerg-ic{font-size:22px;width:36px;text-align:center;flex-shrink:0;}
+.cnt-emerg-info{flex:1;min-width:0;}
+.cnt-emerg-nombre{font-size:13px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cnt-emerg-desc{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cnt-emerg-badge{background:#1FC26A22;border:.5px solid #1FC26A55;color:#1FC26A;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.cnt-emerg-badge.inactivo{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.35);}
+/* ── Acciones rows in emergency edit ── */
+.cnt-accion-row{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.04);border-radius:10px;padding:8px 10px;margin-bottom:6px;}
+.cnt-accion-tipo{background:#0C1A10;border:.5px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 8px;font-size:11px;color:#fff;outline:none;font-family:'Inter',sans-serif;flex-shrink:0;}
+.cnt-accion-input{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.08);border-radius:8px;padding:5px 8px;font-size:12px;color:#fff;outline:none;font-family:'Inter',sans-serif;flex:1;min-width:0;}
+.cnt-accion-del{background:none;border:none;color:rgba(255,255,255,.3);font-size:14px;cursor:pointer;padding:0 4px;font-family:inherit;}
+/* ── Hub cards ── */
+.cnt-hub-card{display:flex;align-items:center;gap:16px;background:var(--card-dark,#111c13);border:.5px solid var(--card-border,rgba(255,255,255,.07));border-radius:18px;padding:18px 16px;cursor:pointer;transition:background .15s;}
+.cnt-hub-card:active{background:rgba(255,255,255,.04);}
+.cnt-hub-ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.cnt-hub-info{flex:1;}
+.cnt-hub-title{font-size:15px;font-weight:700;color:#fff;}
+.cnt-hub-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:3px;}
+.cnt-hub-arr{font-size:20px;color:rgba(255,255,255,.2);}
+/* ── Informa menu rows ── */
+.cnt-menu-item-row{display:flex;align-items:center;gap:14px;background:var(--card-dark,#111c13);border:.5px solid var(--card-border,rgba(255,255,255,.07));border-radius:14px;padding:14px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s;}
+.cnt-menu-item-row:active{background:rgba(255,255,255,.04);}
+.cnt-menu-item-ic{font-size:22px;width:36px;text-align:center;flex-shrink:0;}
+.cnt-menu-item-info{flex:1;}
+.cnt-menu-item-title{font-size:13px;font-weight:700;color:#fff;}
+.cnt-menu-item-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;}
+/* ── Toast ── */
+#cnt-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#1a1f1a;border:.5px solid rgba(255,255,255,.15);color:#fff;border-radius:20px;padding:10px 20px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;z-index:9800;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;}
+</style>
+
+<!-- v-cnt-contenido — HUB -->
+<div class="si23 view go-right" id="v-cnt-contenido">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-admin-panel','left')">‹</button>
+      <div><div class="hdr-title">Centro de Contenido</div><div class="hdr-sub">Gestión de publicaciones y emergencias</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:14px;">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <div class="cnt-hub-card" onclick="cntIrInforma()">
+        <div class="cnt-hub-ic" style="background:rgba(26,122,181,.2);">📰</div>
+        <div class="cnt-hub-info">
+          <div class="cnt-hub-title">Dominio Informa</div>
+          <div class="cnt-hub-sub">Noticias · Proyectos · Reportes ciudadanos</div>
+        </div>
+        <div class="cnt-hub-arr">›</div>
+      </div>
+
+      <div class="cnt-hub-card" onclick="cntIrEventos()">
+        <div class="cnt-hub-ic" style="background:rgba(124,58,237,.2);">🎉</div>
+        <div class="cnt-hub-info">
+          <div class="cnt-hub-title">Dominio Eventos</div>
+          <div class="cnt-hub-sub">Revisar y moderar eventos de la comunidad</div>
+        </div>
+        <div class="cnt-hub-arr">›</div>
+      </div>
+
+      <div class="cnt-hub-card" onclick="cntIrEmergencias()">
+        <div class="cnt-hub-ic" style="background:rgba(214,58,42,.2);">🚨</div>
+        <div class="cnt-hub-info">
+          <div class="cnt-hub-title">Centro de Emergencias</div>
+          <div class="cnt-hub-sub">Contactos y servicios de emergencia</div>
+        </div>
+        <div class="cnt-hub-arr">›</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- v-cnt-informa — INFORMA MENU -->
+<div class="si23 view go-right" id="v-cnt-informa">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-contenido','left')">‹</button>
+      <div><div class="hdr-title">Dominio Informa</div><div class="hdr-sub">Gestionar publicaciones</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:14px;">
+
+    <div class="cnt-menu-item-row" onclick="cntIrNoticias()">
+      <div class="cnt-menu-item-ic">📰</div>
+      <div class="cnt-menu-item-info">
+        <div class="cnt-menu-item-title">Noticias</div>
+        <div class="cnt-menu-item-sub">Publicaciones de noticias comunitarias</div>
+      </div>
+      <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
+    </div>
+
+    <div class="cnt-menu-item-row" onclick="cntIrProyectos()">
+      <div class="cnt-menu-item-ic">🏗️</div>
+      <div class="cnt-menu-item-info">
+        <div class="cnt-menu-item-title">Proyectos</div>
+        <div class="cnt-menu-item-sub">Proyectos comunitarios y obras</div>
+      </div>
+      <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
+    </div>
+
+    <div class="cnt-menu-item-row" onclick="cntIrReportes()">
+      <div class="cnt-menu-item-ic">⚠️</div>
+      <div class="cnt-menu-item-info">
+        <div class="cnt-menu-item-title">Reportes Ciudadanos</div>
+        <div class="cnt-menu-item-sub">Reportes enviados por vecinos</div>
+      </div>
+      <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
+    </div>
+
+    <div style="margin-top:8px;padding:14px;background:rgba(26,122,181,.08);border:.5px solid rgba(26,122,181,.2);border-radius:14px;">
+      <div style="font-size:11px;font-weight:700;color:#1A7AB5;margin-bottom:6px;">ℹ️ Publicaciones por vecinos</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.5;">Los vecinos envían contenido que aparece como <b style="color:rgba(255,255,255,.6);">"borrador"</b> o <b style="color:rgba(255,255,255,.6);">"revisión"</b>. Desde aquí puedes publicarlo, rechazarlo o editarlo antes de que sea visible en el portal.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- v-cnt-lista — LISTA GENÉRICA (Noticias / Proyectos / Reportes) -->
+<div class="si23 view go-right" id="v-cnt-lista">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-informa','left')">‹</button>
+      <div><div class="hdr-title" id="cnt-lista-titulo">Lista</div><div class="hdr-sub" id="cnt-lista-sub">Gestionar publicaciones</div></div>
+    </div>
+  </div>
+
+  <div style="padding:10px 14px 0;flex-shrink:0;">
+    <input class="cnt-search" placeholder="🔍  Buscar..." oninput="cntBuscarLista(this.value)" id="cnt-lista-search">
+  </div>
+
+  <div style="padding:10px 14px 0;flex-shrink:0;" id="cnt-ftabs">
+    <div class="cnt-ftabs">
+      <button class="cnt-ftab on" id="cnt-ftab-todas"      onclick="cntFiltrarLista('todas')">Todas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-publicado"  onclick="cntFiltrarLista('publicado')">Publicadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-programado" onclick="cntFiltrarLista('programado')">Programadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-borrador"   onclick="cntFiltrarLista('borrador')">Borradores</button>
+      <button class="cnt-ftab"    id="cnt-ftab-rechazado"  onclick="cntFiltrarLista('rechazado')">Rechazadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-pendiente"  onclick="cntFiltrarLista('pendiente')" style="display:none;">Pendientes</button>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding:10px 14px 14px;" id="cnt-lista-body">
+    <div style="padding:40px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>
+  </div>
+</div>
+
+<!-- v-cnt-edit — EDITAR ELEMENTO -->
+<div class="si23 view go-right" id="v-cnt-edit">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-lista','left')">‹</button>
+      <div><div class="hdr-title" id="cnt-edit-titulo">Editar</div><div class="hdr-sub" id="cnt-edit-sub">—</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:14px;" id="cnt-edit-body"></div>
+</div>
+
+<!-- v-cnt-eventos — EVENTOS ADMIN -->
+<div class="si23 view go-right" id="v-cnt-eventos" data-onenter="cntCargarEventos">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-contenido','left')">‹</button>
+      <div><div class="hdr-title">Dominio Eventos</div><div class="hdr-sub">Moderar y gestionar eventos</div></div>
+    </div>
+  </div>
+
+  <div style="padding:10px 14px 0;flex-shrink:0;">
+    <div class="cnt-ftabs">
+      <button class="cnt-ftab on"  id="cnt-ev-ftab-todas"      onclick="cntCargarEventos('todas')">Todos</button>
+      <button class="cnt-ftab"     id="cnt-ev-ftab-pendiente"  onclick="cntCargarEventos('pendiente')">Pendientes</button>
+      <button class="cnt-ftab"     id="cnt-ev-ftab-publicado"  onclick="cntCargarEventos('publicado')">Publicados</button>
+      <button class="cnt-ftab"     id="cnt-ev-ftab-rechazado"  onclick="cntCargarEventos('rechazado')">Rechazados</button>
+      <button class="cnt-ftab"     id="cnt-ev-ftab-finalizado" onclick="cntCargarEventos('finalizado')">Finalizados</button>
+    </div>
+  </div>
+
+  <div class="scroll" style="padding:10px 14px 14px;" id="cnt-ev-body">
+    <div style="padding:40px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>
+  </div>
+</div>
+
+<!-- v-cnt-ev-edit — VER / MODERAR EVENTO -->
+<div class="si23 view go-right" id="v-cnt-ev-edit">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-eventos','left')">‹</button>
+      <div><div class="hdr-title" id="cnt-ev-edit-titulo">Evento</div><div class="hdr-sub" id="cnt-ev-edit-sub">Detalle del evento</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:14px;" id="cnt-ev-edit-body"></div>
+</div>
+
+<!-- v-cnt-emergencias — LISTA EMERGENCIAS -->
+<div class="si23 view go-right" id="v-cnt-emergencias">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-contenido','left')">‹</button>
+      <div><div class="hdr-title">Centro de Emergencias</div><div class="hdr-sub">Contactos de emergencia activos</div></div>
+    </div>
+  </div>
+
+  <div style="padding:10px 14px 0;flex-shrink:0;display:flex;justify-content:flex-end;">
+    <button onclick="cntNuevaEmergencia()" style="background:#D63A2A;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">+ Agregar</button>
+  </div>
+
+  <div class="scroll" style="padding:10px 14px 14px;" id="cnt-emerg-body">
+    <div style="padding:40px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>
+  </div>
+</div>
+
+<!-- v-cnt-emerg-edit — EDITAR EMERGENCIA -->
+<div class="si23 view go-right" id="v-cnt-emerg-edit">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-cnt-emergencias','left')">‹</button>
+      <div><div class="hdr-title" id="cnt-emerg-edit-titulo">Editar Contacto</div><div class="hdr-sub" id="cnt-emerg-edit-sub">—</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:14px;" id="cnt-emerg-edit-body"></div>
+</div>
+
+<!-- Context menu overlay (shared) -->
+<div id="cnt-menu-overlay" onclick="cntCerrarMenu()">
+  <div id="cnt-menu-sheet" style="background:#1a1f1a;border-radius:20px 20px 0 0;padding:0 14px 32px;width:100%;max-width:430px;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.56,1);" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- Toast -->
+<div id="cnt-toast"></div>
+
+<!-- Script -->
+<script type="module" src="contenido.js?v=20260708a"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">
