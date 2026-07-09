@@ -5270,6 +5270,7 @@
     <div class="back-row">
       <button class="btn-back" onclick="go('v-cnt-informa','left')">‹</button>
       <div><div class="hdr-title" id="cnt-lista-titulo">Lista</div><div class="hdr-sub" id="cnt-lista-sub">Gestionar publicaciones</div></div>
+      <button id="cnt-btn-seleccionar" onclick="cntBulkActivar()" style="background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.12);border-radius:10px;padding:5px 11px;font-size:11px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;font-family:'Inter',sans-serif;margin-left:auto;flex-shrink:0;">Seleccionar</button>
     </div>
   </div>
 
@@ -5279,14 +5280,24 @@
 
   <div style="padding:10px 14px 0;flex-shrink:0;" id="cnt-ftabs">
     <div class="cnt-ftabs">
-      <button class="cnt-ftab on" id="cnt-ftab-todas"       onclick="cntFiltrarLista('todas')">Todas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-en_revision" onclick="cntFiltrarLista('en_revision')">En revisión</button>
-      <button class="cnt-ftab"    id="cnt-ftab-publicado"   onclick="cntFiltrarLista('publicado')">Publicadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-programado" onclick="cntFiltrarLista('programado')">Programadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-borrador"   onclick="cntFiltrarLista('borrador')">Borradores</button>
-      <button class="cnt-ftab"    id="cnt-ftab-rechazado"  onclick="cntFiltrarLista('rechazado')">Rechazadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-pendiente"  onclick="cntFiltrarLista('pendiente')" style="display:none;">Pendientes</button>
+      <button class="cnt-ftab on" id="cnt-ftab-todas"                onclick="cntFiltrarLista('todas')">Todas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-en_revision"          onclick="cntFiltrarLista('en_revision')">En revisión</button>
+      <button class="cnt-ftab"    id="cnt-ftab-publicado"            onclick="cntFiltrarLista('publicado')">Publicadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-programado"           onclick="cntFiltrarLista('programado')">Programadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-borrador"             onclick="cntFiltrarLista('borrador')">Borradores</button>
+      <button class="cnt-ftab"    id="cnt-ftab-rechazado"            onclick="cntFiltrarLista('rechazado')">Rechazadas</button>
+      <button class="cnt-ftab"    id="cnt-ftab-requiere_correccion"  onclick="cntFiltrarLista('requiere_correccion')">Corrección</button>
+      <button class="cnt-ftab"    id="cnt-ftab-eliminado"            onclick="cntFiltrarLista('eliminado')">🗑 Papelera</button>
+      <button class="cnt-ftab"    id="cnt-ftab-pendiente"            onclick="cntFiltrarLista('pendiente')" style="display:none;">Pendientes</button>
     </div>
+  </div>
+
+  <div id="cnt-bulk-bar" style="display:none;padding:8px 14px;background:rgba(26,122,181,.12);border-bottom:.5px solid rgba(26,122,181,.2);flex-shrink:0;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span id="cnt-bulk-count" style="font-size:12px;font-weight:700;color:#7ac8ff;flex:1;">0 seleccionados</span>
+    <button onclick="cntBulkPublicar()" style="background:#1FC26A22;border:.5px solid #1FC26A44;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#1FC26A;cursor:pointer;font-family:'Inter',sans-serif;">✓ Publicar</button>
+    <button onclick="cntBulkBorrador()" style="background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;">◷ Borrador</button>
+    <button onclick="cntBulkRechazar()" style="background:#D63A2A22;border:.5px solid #D63A2A44;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#D63A2A;cursor:pointer;font-family:'Inter',sans-serif;">✕ Rechazar</button>
+    <button onclick="cntBulkEliminar()" style="background:rgba(214,58,42,.08);border:.5px solid rgba(214,58,42,.2);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;color:#D63A2A;cursor:pointer;font-family:'Inter',sans-serif;">🗑</button>
   </div>
 
   <div class="scroll" style="padding:10px 14px 14px;background:var(--green-bg);" id="cnt-lista-body">
@@ -5373,6 +5384,10 @@
   </div>
   <div class="scroll" style="padding:14px;background:var(--green-bg);" id="cnt-emerg-edit-body"></div>
 </div>
+
+<!-- cnt-preview-overlay — Vista previa de publicación -->
+<div id="cnt-preview-overlay" style="display:none;position:absolute;inset:0;z-index:9700;"></div>
+
 </div>
   </div>
 </div>
