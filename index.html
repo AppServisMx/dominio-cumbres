@@ -5218,7 +5218,7 @@
 </div>
 
 <!-- v-cnt-informa — INFORMA MENU -->
-<div class="si23 view go-right" id="v-cnt-informa">
+<div class="si23 view go-right" id="v-cnt-informa" data-onenter="cntCargarConteos">
   <div class="admin-sub-hdr">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="back-row">
@@ -5234,6 +5234,7 @@
         <div class="cnt-menu-item-title">Noticias</div>
         <div class="cnt-menu-item-sub">Publicaciones de noticias comunitarias</div>
       </div>
+      <span id="cnt-badge-noticia" class="cnt-menu-badge" style="display:none;"></span>
       <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
     </div>
 
@@ -5243,6 +5244,7 @@
         <div class="cnt-menu-item-title">Proyectos</div>
         <div class="cnt-menu-item-sub">Proyectos comunitarios y obras</div>
       </div>
+      <span id="cnt-badge-proyecto" class="cnt-menu-badge" style="display:none;"></span>
       <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
     </div>
 
@@ -5252,6 +5254,7 @@
         <div class="cnt-menu-item-title">Reportes Ciudadanos</div>
         <div class="cnt-menu-item-sub">Reportes enviados por vecinos</div>
       </div>
+      <span id="cnt-badge-reporte" class="cnt-menu-badge" style="display:none;"></span>
       <span style="font-size:20px;color:rgba(255,255,255,.2);">›</span>
     </div>
 
@@ -5278,18 +5281,10 @@
     <input class="cnt-search" placeholder="🔍  Buscar..." oninput="cntBuscarLista(this.value)" id="cnt-lista-search">
   </div>
 
-  <div style="padding:10px 14px 0;flex-shrink:0;" id="cnt-ftabs">
-    <div class="cnt-ftabs">
-      <button class="cnt-ftab on" id="cnt-ftab-todas"                onclick="cntFiltrarLista('todas')">Todas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-en_revision"          onclick="cntFiltrarLista('en_revision')">En revisión</button>
-      <button class="cnt-ftab"    id="cnt-ftab-publicado"            onclick="cntFiltrarLista('publicado')">Publicadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-programado"           onclick="cntFiltrarLista('programado')">Programadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-borrador"             onclick="cntFiltrarLista('borrador')">Borradores</button>
-      <button class="cnt-ftab"    id="cnt-ftab-rechazado"            onclick="cntFiltrarLista('rechazado')">Rechazadas</button>
-      <button class="cnt-ftab"    id="cnt-ftab-requiere_correccion"  onclick="cntFiltrarLista('requiere_correccion')">Corrección</button>
-      <button class="cnt-ftab"    id="cnt-ftab-eliminado"            onclick="cntFiltrarLista('eliminado')">🗑 Papelera</button>
-      <button class="cnt-ftab"    id="cnt-ftab-pendiente"            onclick="cntFiltrarLista('pendiente')" style="display:none;">Pendientes</button>
-    </div>
+  <div style="padding:10px 14px 0;flex-shrink:0;">
+    <select id="cnt-filtro-select" class="cnt-filtro-sel" onchange="cntFiltrarLista(this.value)">
+      <option value="todas">Todas</option>
+    </select>
   </div>
 
   <div id="cnt-bulk-bar" style="display:none;padding:8px 14px;background:rgba(26,122,181,.12);border-bottom:.5px solid rgba(26,122,181,.2);flex-shrink:0;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -5328,14 +5323,14 @@
   </div>
 
   <div style="padding:10px 14px 0;flex-shrink:0;">
-    <div class="cnt-ftabs">
-      <button class="cnt-ftab on"  id="cnt-ev-ftab-todas"      onclick="cntCargarEventos('todas')">Todos</button>
-      <button class="cnt-ftab"     id="cnt-ev-ftab-pendiente"  onclick="cntCargarEventos('pendiente')">Pendientes</button>
-      <button class="cnt-ftab"     id="cnt-ev-ftab-publicado"  onclick="cntCargarEventos('publicado')">Publicados</button>
-      <button class="cnt-ftab"     id="cnt-ev-ftab-rechazado"  onclick="cntCargarEventos('rechazado')">Rechazados</button>
-      <button class="cnt-ftab"     id="cnt-ev-ftab-finalizado" onclick="cntCargarEventos('finalizado')">Finalizados</button>
-      <button class="cnt-ftab"     id="cnt-ev-ftab-eliminado"  onclick="cntCargarEventos('eliminado')">🗑 Papelera</button>
-    </div>
+    <select id="cnt-ev-filtro-select" class="cnt-filtro-sel" onchange="cntCargarEventos(this.value)">
+      <option value="todas">Todos</option>
+      <option value="pendiente">Pendientes</option>
+      <option value="publicado">Publicados</option>
+      <option value="rechazado">Rechazados</option>
+      <option value="finalizado">Finalizados</option>
+      <option value="eliminado">🗑 Papelera</option>
+    </select>
   </div>
 
   <div class="scroll" style="padding:10px 14px 14px;background:var(--green-bg);" id="cnt-ev-body">
@@ -5427,11 +5422,11 @@
 .cnt-item-titulo{font-size:13px;font-weight:700;color:#fff;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cnt-item-meta{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;}
 .cnt-3dot{background:none;border:none;color:rgba(255,255,255,.35);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;font-family:inherit;}
-/* ── Filter tabs ── */
-.cnt-ftabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;}
-.cnt-ftabs::-webkit-scrollbar{display:none;}
-.cnt-ftab{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.08);border-radius:20px;padding:5px 13px;font-size:11px;font-weight:600;color:rgba(255,255,255,.45);cursor:pointer;white-space:nowrap;font-family:'Inter',sans-serif;}
-.cnt-ftab.on{background:rgba(26,122,181,.25);border-color:#1A7AB5;color:#7ac8ff;}
+/* ── Filter dropdown ── */
+.cnt-filtro-sel{width:100%;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 36px 9px 14px;font-size:12px;font-weight:600;color:#fff;outline:none;font-family:'Inter',sans-serif;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,.4)' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.cnt-filtro-sel option{background:#0f1c14;color:#fff;}
+/* ── Conteo badge en menú Informa ── */
+.cnt-menu-badge{background:rgba(26,122,181,.3);color:#7ac8ff;border:.5px solid rgba(26,122,181,.5);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;margin-right:6px;}
 /* ── Search bar ── */
 .cnt-search{width:100%;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;box-sizing:border-box;}
 .cnt-search::placeholder{color:rgba(255,255,255,.3);}
@@ -5504,7 +5499,7 @@ select.cnt-form-input option{background:#1a1f1a;color:#fff;}
 <div id="cnt-toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,40,30,.95);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;z-index:9900;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;"></div>
 
 <!-- Script -->
-<script type="module" src="contenido.js?v=20260709d"></script>
+<script type="module" src="contenido.js?v=20260709f"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">

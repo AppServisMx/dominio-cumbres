@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260709e
+// CENTRO DE CONTENIDO — Admin Module v=20260709f
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -138,6 +138,29 @@ function _getItemsFiltrados(){
   return items;
 }
 
+// ── Conteos para menú Dominio Informa ────────────────────────────────────────
+window.cntCargarConteos = async function(){
+  var db = window._fbDb; if(!db) return;
+  try {
+    var F = await import(_FBFS);
+    var defs = [
+      { col: COL_NOTICIAS,  estado: 'en_revision', id: 'cnt-badge-noticia'  },
+      { col: COL_PROYECTOS, estado: 'en_revision', id: 'cnt-badge-proyecto' },
+      { col: COL_REPORTES,  estado: 'pendiente',   id: 'cnt-badge-reporte'  },
+    ];
+    defs.forEach(async function(d){
+      try {
+        var snap = await F.getCountFromServer(F.query(F.collection(db, d.col), F.where('estado','==',d.estado)));
+        var n = snap.data().count;
+        var el = get(d.id);
+        if(!el) return;
+        if(n > 0){ el.textContent = n; el.style.display = ''; }
+        else { el.style.display = 'none'; }
+      } catch(_){}
+    });
+  } catch(e){}
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // HUB
 // ══════════════════════════════════════════════════════════════════════════════
@@ -169,14 +192,27 @@ window.cntCargarLista = async function(){
   var h = get('cnt-lista-titulo'); if(h) h.textContent = m.label;
   var s = get('cnt-lista-sub');    if(s) s.textContent = m.sub;
 
-  var allTabs = ['todas','en_revision','publicado','programado','borrador','rechazado','pendiente','requiere_correccion','eliminado'];
-  allTabs.forEach(function(f){
-    var b = get('cnt-ftab-'+f); if(b) b.classList.toggle('on', f === _cntFiltro);
-  });
-  ['programado','borrador'].forEach(function(f){
-    var b = get('cnt-ftab-'+f); if(b) b.style.display = (_cntSec==='reporte')?'none':'';
-  });
-  var bp = get('cnt-ftab-pendiente'); if(bp) bp.style.display = (_cntSec==='reporte')?'':'none';
+  var sel = get('cnt-filtro-select');
+  if(sel){
+    var _opts = [
+      {v:'todas',              l:'Todas'},
+      {v:'en_revision',        l:'En revisión'},
+      {v:'publicado',          l:'Publicadas'},
+    ];
+    if(_cntSec === 'reporte'){
+      _opts.push({v:'pendiente',           l:'Pendientes'});
+    } else {
+      _opts.push({v:'programado',          l:'Programadas'});
+      _opts.push({v:'borrador',            l:'Borradores'});
+    }
+    _opts.push({v:'rechazado',             l:'Rechazadas'});
+    _opts.push({v:'requiere_correccion',   l:'Corrección'});
+    _opts.push({v:'eliminado',             l:'🗑 Papelera'});
+    sel.innerHTML = _opts.map(function(o){
+      return '<option value="'+o.v+'">'+o.l+'</option>';
+    }).join('');
+    sel.value = _cntFiltro;
+  }
 
   var btnBulk = get('cnt-btn-seleccionar');
   if(btnBulk) btnBulk.textContent = _cntBulkMode ? 'Cancelar' : 'Seleccionar';
@@ -687,9 +723,8 @@ window.cntCambiarEstadoLista = async function(id, estado){
 window.cntCargarEventos = async function(filtro){
   if(filtro !== undefined) _cntEvFiltro = filtro;
   var seq = ++_cntEvLoadSeq;
-  ['todas','pendiente','publicado','rechazado','finalizado','eliminado'].forEach(function(f){
-    var b = get('cnt-ev-ftab-'+f); if(b) b.classList.toggle('on', f===_cntEvFiltro);
-  });
+  var evSel = get('cnt-ev-filtro-select');
+  if(evSel) evSel.value = _cntEvFiltro;
   var listEl = get('cnt-ev-body');
   if(!listEl) return;
   listEl.innerHTML = '<div style="padding:30px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>';
