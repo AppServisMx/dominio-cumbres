@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260709f
+// CENTRO DE CONTENIDO — Admin Module v=20260709g
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -11,7 +11,7 @@ var COL_EMERG     = 'emergencias';
 var COL_BITACORA  = 'bitacoraContenido';
 
 var _cntSec      = 'noticia';
-var _cntFiltro   = 'todas';
+var _cntFiltro   = 'en_revision';
 var _cntItems    = [];
 var _cntEditing  = null;
 var _cntEmerg    = [];
@@ -19,10 +19,12 @@ var _cntEmergEdit= null;
 var _cntEvFiltro = 'todas';
 var _cntEvItems  = [];
 var _cntEvEditing= null;
-var _cntBulkMode = false;
-var _cntSelected = [];
-var _cntLoadSeq   = 0;  // race condition guard para cntCargarLista
-var _cntEvLoadSeq = 0;  // race condition guard para cntCargarEventos
+var _cntBulkMode  = false;
+var _cntSelected  = [];
+var _cntEditMode  = false; // modo edición en vista de ítem
+var _cntEvEditMode= false; // modo edición en vista de evento
+var _cntLoadSeq   = 0;
+var _cntEvLoadSeq = 0;
 
 function get(id){ return document.getElementById(id); }
 
@@ -177,9 +179,9 @@ var _secMeta = {
   reporte:  { label:'Reportes',  icon:'⚠️', col: COL_REPORTES,  sub:'Reportes ciudadanos' },
 };
 
-window.cntIrNoticias  = function(){ _cntSec='noticia';  _cntFiltro='todas'; _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
-window.cntIrProyectos = function(){ _cntSec='proyecto'; _cntFiltro='todas'; _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
-window.cntIrReportes  = function(){ _cntSec='reporte';  _cntFiltro='todas'; _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
+window.cntIrNoticias  = function(){ _cntSec='noticia';  _cntFiltro='en_revision'; _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
+window.cntIrProyectos = function(){ _cntSec='proyecto'; _cntFiltro='en_revision'; _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
+window.cntIrReportes  = function(){ _cntSec='reporte';  _cntFiltro='pendiente';   _cntBulkMode=false; _cntSelected=[]; _nav('v-cnt-lista'); window.cntCargarLista&&window.cntCargarLista(); };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // LISTA GENÉRICA
@@ -195,19 +197,17 @@ window.cntCargarLista = async function(){
   var sel = get('cnt-filtro-select');
   if(sel){
     var _opts = [
-      {v:'todas',              l:'Todas'},
-      {v:'en_revision',        l:'En revisión'},
-      {v:'publicado',          l:'Publicadas'},
+      {v:'en_revision', l:'🔵 En revisión'},
+      {v:'publicado',   l:'🟢 Publicadas'},
     ];
     if(_cntSec === 'reporte'){
-      _opts.push({v:'pendiente',           l:'Pendientes'});
+      _opts.push({v:'pendiente',  l:'🟡 Pendientes'});
     } else {
-      _opts.push({v:'programado',          l:'Programadas'});
-      _opts.push({v:'borrador',            l:'Borradores'});
+      _opts.push({v:'programado', l:'🟣 Programadas'});
     }
-    _opts.push({v:'rechazado',             l:'Rechazadas'});
-    _opts.push({v:'requiere_correccion',   l:'Corrección'});
-    _opts.push({v:'eliminado',             l:'🗑 Papelera'});
+    _opts.push({v:'rechazado',  l:'🔴 Rechazadas'});
+    _opts.push({v:'eliminado',  l:'🗑 Papelera'});
+    _opts.push({v:'todas',      l:'⚪ Todas'});
     sel.innerHTML = _opts.map(function(o){
       return '<option value="'+o.v+'">'+o.l+'</option>';
     }).join('');
@@ -368,24 +368,25 @@ window.cntAbrirItem = function(id){
   var it = _cntItems.find(function(x){ return x._id === id; });
   if(!it) return;
   _cntEditing = it;
+  _cntEditMode = false;
   _renderEdit(it);
   _nav('v-cnt-edit');
 };
 
 function _renderEdit(it){
   var m = _secMeta[_cntSec] || {};
-  var h = get('cnt-edit-titulo'); if(h) h.textContent = _cntSec==='reporte' ? 'Reporte Ciudadano' : 'Editar '+m.label.slice(0,-1);
+  var h = get('cnt-edit-titulo'); if(h) h.textContent = _cntSec==='reporte' ? 'Reporte Ciudadano' : (m.label||'Noticia').slice(0,-1)||'Noticia';
   var s = get('cnt-edit-sub');    if(s) s.textContent = (it.titulo||'').slice(0,45)||'—';
   var body = get('cnt-edit-body');
   if(!body) return;
 
   var imgs = it.imagenes||(it.imagen?[it.imagen]:[]);
   var imgHtml = imgs.length
-    ? imgs.map(function(u){ return '<img src="'+u+'" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:.5px solid rgba(255,255,255,.1);" onerror="this.style.display=\'none\'">'; }).join('')
-    : '<div style="width:80px;height:80px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:28px;">'+(m.icon||'📄')+'</div>';
+    ? '<img src="'+imgs[0]+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;margin-bottom:14px;" onerror="this.style.display=\'none\'">'
+    : '<div style="width:56px;height:56px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:12px;">'+(m.icon||'📄')+'</div>';
 
   var stats = it.estadisticas || {};
-  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0;">'
+  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;">'
     +_statChip('👁',''+( stats.visitas||it.visitas||0),'vistas')
     +_statChip('↗',''+( stats.compartidos||it.compartidos||0),'comp.')
     +_statChip('🖱',''+( stats.clics||it.clics||0),'clics')
@@ -394,16 +395,49 @@ function _renderEdit(it){
     +'</div>';
 
   var esEliminado = it.estado === 'eliminado';
-  var btnsHtml = esEliminado
-    ? '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
-        +(cntPuedeEditar()?'<button onclick="cntRestaurarItem(\''+it._id+'\')" class="cnt-btn-ok">↩ Restaurar</button>':'')
-      +'</div>'
-    : '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
-        +(cntPuedePublicar()&&it.estado!=='publicado'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'publicado\')" class="cnt-btn-ok">✓ Publicar</button>':'')
-        +(cntPuedeEditar()&&_cntSec!=='reporte'&&it.estado!=='borrador'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'borrador\')" class="cnt-btn-neu">◷ Borrador</button>':'')
-        +(cntPuedeEditar()&&it.estado!=='rechazado'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'rechazado\')" class="cnt-btn-del">✕ Rechazar</button>':'')
-      +'</div>';
 
+  // ── Contenido: modo lectura (vista previa) o modo edición ──
+  var contentHtml;
+  if(!esEliminado && _cntEditMode && cntPuedeEditar()){
+    contentHtml =
+      '<div class="cnt-field-row"><div class="cnt-field-lbl">Título</div>'
+      +'<div class="cnt-field-val cnt-field-edit cnt-field-area" contenteditable="true" id="cnt-ef-titulo">'+_esc(it.titulo||'')+'</div></div>'
+      +'<div class="cnt-field-row"><div class="cnt-field-lbl">Descripción</div>'
+      +'<div class="cnt-field-val cnt-field-edit cnt-field-area" contenteditable="true" id="cnt-ef-desc">'+_esc(it.descripcion||'')+'</div></div>'
+      +'<div style="margin-top:12px;display:flex;gap:8px;">'
+        +'<button onclick="cntGuardarEdicion(\''+it._id+'\')" class="cnt-btn-save" style="flex:1;">💾 Guardar cambios</button>'
+        +'<button onclick="_cntEditMode=false;_renderEdit(_cntEditing)" style="background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.12);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:inherit;">✕</button>'
+      +'</div>';
+  } else {
+    // Vista como la vería el público
+    contentHtml =
+      '<div style="font-size:17px;font-weight:700;color:#fff;line-height:1.3;margin:12px 0 8px;">'+_esc(it.titulo||'Sin título')+'</div>'
+      +(it.descripcion?'<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:12px;white-space:pre-wrap;">'+_esc(it.descripcion)+'</div>':'')
+      +(it.ubicacion?'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:4px;">📍 '+_esc(it.ubicacion)+'</div>':'')
+      +(it.autorNombre?'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:4px;">✍️ '+_esc(it.autorNombre)+'</div>':'')
+      +'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-bottom:4px;">📅 '+_fmt(it.creadoEn)+'</div>'
+      +(it.publicadoEn?'<div style="font-size:12px;color:rgba(31,194,106,.5);">🟢 Publicado '+_fmtDT(it.publicadoEn)+'</div>':'')
+      +(it.observacionesAdmin?'<div style="margin-top:10px;padding:10px;background:rgba(245,197,24,.06);border:.5px solid rgba(245,197,24,.15);border-radius:10px;">'
+          +'<div style="font-size:10px;font-weight:700;color:#e09000;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Observaciones</div>'
+          +'<div style="font-size:12px;color:rgba(255,255,255,.5);white-space:pre-wrap;">'+_esc(it.observacionesAdmin)+'</div>'
+        +'</div>':'');
+  }
+
+  // ── Botones principales: Publicar primero ──
+  var btnsHtml;
+  if(esEliminado){
+    btnsHtml = '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">'
+      +(cntPuedeEditar()?'<button onclick="cntRestaurarItem(\''+it._id+'\')" class="cnt-btn-ok">↩ Restaurar</button>':'')
+      +'</div>';
+  } else {
+    btnsHtml = '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">'
+      +(cntPuedePublicar()&&it.estado!=='publicado'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'publicado\')" class="cnt-btn-ok">✓ Publicar</button>':'')
+      +(cntPuedeEditar()&&it.estado!=='rechazado'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'rechazado\')" class="cnt-btn-del">✕ Rechazar</button>':'')
+      +(cntPuedeEditar()&&_cntSec!=='reporte'&&it.estado!=='borrador'?'<button onclick="cntCambiarEstado(\''+it._id+'\',\'borrador\')" class="cnt-btn-neu">◷ Borrador</button>':'')
+      +'</div>';
+  }
+
+  // ── Acciones secundarias ──
   var progHtml = !esEliminado
     ? '<div id="cnt-prog-section" style="display:none;margin-top:10px;background:rgba(124,58,237,.1);border-radius:12px;padding:12px;">'
         +'<div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">📅 Publicar el día</div>'
@@ -422,35 +456,29 @@ function _renderEdit(it){
 
   var accionesHtml = !esEliminado
     ? '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">'
-        +'<button onclick="cntVistaPrevia(\''+it._id+'\')" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:inherit;">👁 Vista previa</button>'
-        +(_cntSec!=='reporte'&&cntPuedePublicar()?'<button onclick="cntMostrarProgramar(\''+it._id+'\')" style="background:rgba(124,58,237,.15);border:.5px solid rgba(124,58,237,.3);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#a78bfa;cursor:pointer;font-family:inherit;">📅 Programar</button>':'')
-        +(cntPuedeEditar()?'<button onclick="cntSolicitarCorreccion(\''+it._id+'\')" style="background:rgba(245,197,24,.1);border:.5px solid rgba(245,197,24,.2);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#e09000;cursor:pointer;font-family:inherit;">📝 Solicitar corrección</button>':'')
+        +(!_cntEditMode&&cntPuedeEditar()?'<button onclick="cntModoEditar()" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.75);cursor:pointer;font-family:inherit;">✏️ Editar</button>':'')
+        +(_cntSec!=='reporte'&&cntPuedePublicar()?'<button onclick="cntMostrarProgramar()" style="background:rgba(124,58,237,.15);border:.5px solid rgba(124,58,237,.3);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#a78bfa;cursor:pointer;font-family:inherit;">📅 Programar</button>':'')
+        +(cntPuedeEditar()?'<button onclick="cntSolicitarCorreccion()" style="background:rgba(245,197,24,.1);border:.5px solid rgba(245,197,24,.2);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#e09000;cursor:pointer;font-family:inherit;">📝 Solicitar corrección</button>':'')
         +(cntPuedeEditar()?'<button onclick="cntDuplicar(\''+it._id+'\')" style="background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:inherit;">⧉ Duplicar</button>':'')
         +(cntPuedeEliminar()?'<button onclick="cntSoftDelete(\''+it._id+'\')" style="background:rgba(214,58,42,.1);border:.5px solid rgba(214,58,42,.2);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#D63A2A;cursor:pointer;font-family:inherit;">🗑 Papelera</button>':'')
       +'</div>'
     : '';
 
   body.innerHTML =
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'+imgHtml+'</div>'
+    imgHtml
     +'<div class="cnt-field-row"><div class="cnt-field-lbl">Estado</div><div class="cnt-field-val" id="cnt-ef-estado-badge">'+_estadoBadge(it.estado||'—')+'</div></div>'
     +statsHtml
-    +(!esEliminado&&cntPuedeEditar()
-      ? '<div class="cnt-field-row"><div class="cnt-field-lbl">Título</div>'
-          +'<div class="cnt-field-val cnt-field-edit cnt-field-area" contenteditable="true" id="cnt-ef-titulo">'+_esc(it.titulo||'')+'</div></div>'
-          +'<div class="cnt-field-row"><div class="cnt-field-lbl">Descripción</div>'
-          +'<div class="cnt-field-val cnt-field-edit cnt-field-area" contenteditable="true" id="cnt-ef-desc">'+_esc(it.descripcion||'')+'</div></div>'
-      : '<div class="cnt-field-row"><div class="cnt-field-lbl">Título</div><div class="cnt-field-val">'+_esc(it.titulo||'—')+'</div></div>')
-    +(it.ubicacion?'<div class="cnt-field-row"><div class="cnt-field-lbl">Ubicación</div><div class="cnt-field-val">'+_esc(it.ubicacion)+'</div></div>':'')
-    +(it.autorNombre?'<div class="cnt-field-row"><div class="cnt-field-lbl">Autor</div><div class="cnt-field-val">'+_esc(it.autorNombre)+'</div></div>':'')
-    +'<div class="cnt-field-row"><div class="cnt-field-lbl">Fecha</div><div class="cnt-field-val">'+_fmt(it.creadoEn)+'</div></div>'
-    +(it.publicadoEn?'<div class="cnt-field-row"><div class="cnt-field-lbl">Publicado</div><div class="cnt-field-val">'+_fmtDT(it.publicadoEn)+'</div></div>':'')
-    +(it.observacionesAdmin?'<div class="cnt-field-row"><div class="cnt-field-lbl">Observaciones</div><div class="cnt-field-val" style="color:#e09000;font-size:12px;white-space:pre-wrap;">'+_esc(it.observacionesAdmin)+'</div></div>':'')
-    +(!esEliminado&&cntPuedeEditar()?'<div style="margin-top:16px;"><button onclick="cntGuardarEdicion(\''+it._id+'\')" class="cnt-btn-save">💾 Guardar cambios</button></div>':'')
+    +contentHtml
     +btnsHtml
     +accionesHtml
     +progHtml
     +corrHtml;
 }
+
+window.cntModoEditar = function(){
+  _cntEditMode = true;
+  if(_cntEditing) _renderEdit(_cntEditing);
+};
 
 window.cntGuardarEdicion = async function(id){
   if(!cntPuedeEditar()){ _showToast('Sin permiso'); return; }
@@ -776,7 +804,8 @@ window.cntAbrirEvento = function(id){
   var it = _cntEvItems.find(function(x){ return x._id===id; });
   if(!it) return;
   _cntEvEditing = it;
-  _cntEditing   = it; // shared para vista previa
+  _cntEditing   = it;
+  _cntEvEditMode = false;
   _renderEvEdit(it);
   _nav('v-cnt-ev-edit');
 };
@@ -785,13 +814,13 @@ function _renderEvEdit(it){
   var h = get('cnt-ev-edit-titulo'); if(h) h.textContent = it.nombre||it.titulo||'Evento';
   var s = get('cnt-ev-edit-sub');    if(s) s.textContent = _fmt(it.creadoEn);
   var body = get('cnt-ev-edit-body'); if(!body) return;
-  var imgs = it.imagenes||(it.imagen?[it.imagen]:[]);
-  var imgHtml = imgs.length
-    ? imgs.map(function(u){ return '<img src="'+u+'" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:.5px solid rgba(255,255,255,.1);" onerror="this.style.display=\'none\'">'; }).join('')
-    : '<div style="width:80px;height:80px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:28px;">🎉</div>';
+  var imgs = it.imagenes||(it.imagen?[it.imagen]:[it.portada||'']);
+  var imgHtml = imgs[0]
+    ? '<img src="'+imgs[0]+'" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px;margin-bottom:14px;" onerror="this.style.display=\'none\'">'
+    : '<div style="width:56px;height:56px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:12px;">🎉</div>';
 
   var stats = it.estadisticas || {};
-  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:14px 0;">'
+  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0;">'
     +_statChip('👁',''+( stats.visitas||it.visitas||0),'vistas')
     +_statChip('↗',''+( stats.compartidos||it.compartidos||0),'comp.')
     +_statChip('🖱',''+( stats.clics||it.clics||0),'clics')
@@ -828,7 +857,6 @@ function _renderEvEdit(it){
 
   var accionesHtml = !esEliminado
     ? '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">'
-        +'<button onclick="cntVistaPreviaEv(\''+it._id+'\')" style="background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.12);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:inherit;">👁 Vista previa</button>'
         +(cntPuedePublicar()?'<button onclick="cntMostrarProgramarEv()" style="background:rgba(124,58,237,.15);border:.5px solid rgba(124,58,237,.3);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#a78bfa;cursor:pointer;font-family:inherit;">📅 Programar</button>':'')
         +(cntPuedeEditar()?'<button onclick="cntSolicitarCorreccionEv()" style="background:rgba(245,197,24,.1);border:.5px solid rgba(245,197,24,.2);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:#e09000;cursor:pointer;font-family:inherit;">📝 Solicitar corrección</button>':'')
         +(cntPuedeEditar()?'<button onclick="cntDuplicarEvento(\''+it._id+'\')" style="background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);border-radius:10px;padding:7px 12px;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:inherit;">⧉ Duplicar</button>':'')
@@ -836,17 +864,24 @@ function _renderEvEdit(it){
       +'</div>'
     : '';
 
+  // Contenido en vista previa (layout público)
+  var previewContent =
+    '<div style="font-size:17px;font-weight:700;color:#fff;line-height:1.3;margin:12px 0 8px;">'+_esc(it.nombre||it.titulo||'Sin nombre')+'</div>'
+    +(it.descripcion?'<div style="font-size:13px;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:12px;white-space:pre-wrap;">'+_esc(it.descripcion)+'</div>':'')
+    +(it.fecha?'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:4px;">📅 '+_fmt(it.fecha)+'</div>':'')
+    +((it.lugar||it.ubicacion)?'<div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:4px;">📍 '+_esc(it.lugar||it.ubicacion)+'</div>':'')
+    +(it.organizadorNombre?'<div style="font-size:12px;color:rgba(255,255,255,.25);margin-bottom:4px;">🎪 '+_esc(it.organizadorNombre)+'</div>':'')
+    +(it.publicadoEn?'<div style="font-size:12px;color:rgba(31,194,106,.5);">🟢 Publicado '+_fmtDT(it.publicadoEn)+'</div>':'')
+    +(it.observacionesAdmin?'<div style="margin-top:10px;padding:10px;background:rgba(245,197,24,.06);border:.5px solid rgba(245,197,24,.15);border-radius:10px;">'
+        +'<div style="font-size:10px;font-weight:700;color:#e09000;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;">Observaciones</div>'
+        +'<div style="font-size:12px;color:rgba(255,255,255,.5);white-space:pre-wrap;">'+_esc(it.observacionesAdmin)+'</div>'
+      +'</div>':'');
+
   body.innerHTML =
-    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">'+imgHtml+'</div>'
+    imgHtml
     +'<div class="cnt-field-row"><div class="cnt-field-lbl">Estado</div><div class="cnt-field-val" id="cnt-ev-estado-badge">'+_estadoBadge(it.estado||'pendiente')+'</div></div>'
     +statsHtml
-    +'<div class="cnt-field-row"><div class="cnt-field-lbl">Nombre</div><div class="cnt-field-val">'+_esc(it.nombre||it.titulo||'—')+'</div></div>'
-    +'<div class="cnt-field-row"><div class="cnt-field-lbl">Descripción</div><div class="cnt-field-val" style="white-space:pre-wrap;font-size:12px;line-height:1.5;">'+_esc(it.descripcion||'—')+'</div></div>'
-    +(it.fecha?'<div class="cnt-field-row"><div class="cnt-field-lbl">Fecha</div><div class="cnt-field-val">'+_fmt(it.fecha)+'</div></div>':'')
-    +((it.lugar||it.ubicacion)?'<div class="cnt-field-row"><div class="cnt-field-lbl">Lugar</div><div class="cnt-field-val">'+_esc(it.lugar||it.ubicacion)+'</div></div>':'')
-    +(it.organizadorNombre?'<div class="cnt-field-row"><div class="cnt-field-lbl">Organizador</div><div class="cnt-field-val">'+_esc(it.organizadorNombre)+'</div></div>':'')
-    +(it.publicadoEn?'<div class="cnt-field-row"><div class="cnt-field-lbl">Publicado</div><div class="cnt-field-val">'+_fmtDT(it.publicadoEn)+'</div></div>':'')
-    +(it.observacionesAdmin?'<div class="cnt-field-row"><div class="cnt-field-lbl">Observaciones</div><div class="cnt-field-val" style="color:#e09000;font-size:12px;white-space:pre-wrap;">'+_esc(it.observacionesAdmin)+'</div></div>':'')
+    +previewContent
     +btnsHtml
     +accionesHtml
     +progHtml
