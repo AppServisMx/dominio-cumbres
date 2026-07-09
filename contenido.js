@@ -167,7 +167,7 @@ window.cntCargarConteos = async function(){
 // HUB
 // ══════════════════════════════════════════════════════════════════════════════
 window.cntIrInforma     = function(){ _nav('v-cnt-informa'); };
-window.cntIrEventos     = function(){ _nav('v-cnt-eventos'); window.cntCargarEventos&&window.cntCargarEventos(); };
+window.cntIrEventos     = function(){ _cntEvFiltro='en_revision'; _nav('v-cnt-eventos'); window.cntCargarEventos&&window.cntCargarEventos(); };
 window.cntIrEmergencias = function(){ _nav('v-cnt-emergencias'); window.cntCargarEmergencias&&window.cntCargarEmergencias(); };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -728,6 +728,8 @@ window.cntMenuItem = function(id){
     +'<div class="cnt-menu-row" onclick="cntAbrirItem(\''+id+'\');cntCerrarMenu()">✏️ Ver / Editar</div>'
     +(cntPuedePublicar()&&it.estado!=='publicado'?'<div class="cnt-menu-row ok" onclick="cntCambiarEstadoLista(\''+id+'\',\'publicado\')">✓ Publicar</div>':'')
     +(cntPuedeEditar()&&it.estado!=='rechazado'?'<div class="cnt-menu-row del" onclick="cntCambiarEstadoLista(\''+id+'\',\'rechazado\')">✕ Rechazar</div>':'')
+    +(_cntSec!=='reporte'&&cntPuedePublicar()?'<div class="cnt-menu-row prog" onclick="cntAbrirItem(\''+id+'\');cntCerrarMenu();setTimeout(function(){cntMostrarProgramar();},350)">📅 Programar</div>':'')
+    +(cntPuedeEditar()?'<div class="cnt-menu-row corr" onclick="cntAbrirItem(\''+id+'\');cntCerrarMenu();setTimeout(function(){cntSolicitarCorreccion();},350)">📝 Solicitar corrección</div>':'')
     +(cntPuedeEliminar()?'<div class="cnt-menu-row del" onclick="cntSoftDeleteLista(\''+id+'\')">🗑 Mover a papelera</div>':'');
   overlay.style.display = 'flex';
   setTimeout(function(){ sheet.style.transform='translateY(0)'; }, 10);
@@ -1057,6 +1059,8 @@ window.cntMenuEvento = function(id){
     +'<div class="cnt-menu-row" onclick="cntAbrirEvento(\''+id+'\');cntCerrarMenu()">✏️ Ver / Editar</div>'
     +(cntPuedePublicar()&&it.estado!=='publicado'?'<div class="cnt-menu-row ok" onclick="cntCambiarEstadoEvLista(\''+id+'\',\'publicado\')">✓ Publicar</div>':'')
     +(cntPuedeEditar()&&it.estado!=='rechazado'?'<div class="cnt-menu-row del" onclick="cntCambiarEstadoEvLista(\''+id+'\',\'rechazado\')">✕ Rechazar</div>':'')
+    +(cntPuedePublicar()?'<div class="cnt-menu-row prog" onclick="cntAbrirEvento(\''+id+'\');cntCerrarMenu();setTimeout(function(){cntMostrarProgramarEv();},350)">📅 Programar</div>':'')
+    +(cntPuedeEditar()?'<div class="cnt-menu-row corr" onclick="cntAbrirEvento(\''+id+'\');cntCerrarMenu();setTimeout(function(){cntSolicitarCorreccionEv();},350)">📝 Solicitar corrección</div>':'')
     +(cntPuedeEliminar()?'<div class="cnt-menu-row del" onclick="cntSoftDeleteEventoLista(\''+id+'\')">🗑 Mover a papelera</div>':'');
   overlay.style.display = 'flex';
   setTimeout(function(){ sheet.style.transform='translateY(0)'; }, 10);
