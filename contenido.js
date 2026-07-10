@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260710f
+// CENTRO DE CONTENIDO — Admin Module v=20260710g
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -105,6 +105,12 @@ async function _cargarCol(col, filtro){
   var db = window._fbDb;
   if(!db) return { err:'Sin conexión a Firebase (_fbDb no disponible)' };
   var auth = window._fbAuth;
+  if(auth && !auth.currentUser){
+    await new Promise(function(resolve){
+      var unsub = auth.onAuthStateChanged(function(u){ unsub(); resolve(u); });
+      setTimeout(function(){ resolve(null); }, 4000);
+    });
+  }
   if(auth && auth.currentUser){ try { await auth.currentUser.getIdToken(true); } catch(_){} }
   try {
     var F = await import(_FBFS);
