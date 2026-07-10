@@ -405,7 +405,7 @@ function _renderEdit(it){
   // ── Vista previa pública ──
   var imgHtml = imgs.length
     ? '<img src="'+imgs[0]+'" style="width:100%;height:200px;object-fit:cover;border-radius:16px;margin-bottom:14px;" onerror="this.style.display=\'none\'">'
-    : '<div style="width:100%;height:100px;border-radius:16px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:14px;">'+(m.icon||'📄')+'</div>';
+    : '';
 
   var metaLine = '';
   if(it.creadoEn || it.ubicacion){
@@ -463,13 +463,6 @@ function _renderEdit(it){
       +'</div>'
     : '';
 
-  var stats = it.estadisticas || {};
-  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;">'
-    +_statChip('👁',''+( stats.visitas||it.visitas||0),'vistas')
-    +_statChip('↗',''+( stats.compartidos||it.compartidos||0),'comp.')
-    +_statChip('❤️',''+( stats.favoritos||it.favoritos||0),'favs')
-    +'</div>';
-
   body.innerHTML =
     imgHtml
     +'<div style="font-size:18px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:6px;">'+_esc(it.titulo||'Sin título')+'</div>'
@@ -480,8 +473,7 @@ function _renderEdit(it){
     +btnsHtml
     +accionesHtml
     +progHtml
-    +corrHtml
-    +statsHtml;
+    +corrHtml;
 }
 
 window.cntModoEditar = function(){
@@ -848,7 +840,7 @@ function _renderEvEdit(it){
   // ── Vista previa pública (igual a como lo ve el usuario) ──
   var imgHtml = imgs[0]
     ? '<img src="'+imgs[0]+'" style="width:100%;height:200px;object-fit:cover;border-radius:16px;margin-bottom:14px;" onerror="this.style.display=\'none\'">'
-    : '<div style="width:100%;height:100px;border-radius:16px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:48px;margin-bottom:14px;">🎉</div>';
+    : '';
 
   var metaLine = '<div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px;">'
     +(it.fecha?'📅 '+_fmt(it.fecha):'')
@@ -902,13 +894,6 @@ function _renderEvEdit(it){
       +'</div>'
     : '';
 
-  var stats = it.estadisticas || {};
-  var statsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;">'
-    +_statChip('👁',''+( stats.visitas||it.visitas||0),'vistas')
-    +_statChip('↗',''+( stats.compartidos||it.compartidos||0),'comp.')
-    +_statChip('❤️',''+( stats.favoritos||it.favoritos||0),'favs')
-    +'</div>';
-
   body.innerHTML =
     imgHtml
     +'<div style="font-size:18px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:6px;">'+_esc(it.nombre||it.titulo||'Sin nombre')+'</div>'
@@ -919,8 +904,7 @@ function _renderEvEdit(it){
     +btnsHtml
     +accionesHtml
     +progHtml
-    +corrHtml
-    +statsHtml;
+    +corrHtml;
 }
 
 window.cntCambiarEstadoEv = async function(id, estado){
