@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260710b
+// CENTRO DE CONTENIDO — Admin Module v=20260710c
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -101,29 +101,23 @@ async function _guardarBitacora(col, id, accion, antes, despues){
 }
 
 // ── Firestore query con fallback ──────────────────────────────────────────────
-async function _cargarCol(col){
+async function _cargarCol(col, filtro){
   var db = window._fbDb;
   if(!db) return { err:'Sin conexión a Firebase (_fbDb no disponible)' };
-  var auth = window._fbAuth;
-  // Si no hay currentUser, esperar máximo 3s
-  if(auth && !auth.currentUser){
-    await new Promise(function(res){
-      var unsub = auth.onAuthStateChanged(function(u){ unsub(); res(u); });
-      setTimeout(function(){ res(null); }, 3000);
-    });
-  }
-  if(!auth || !auth.currentUser){
-    return { err:'permission-denied: Sesión no iniciada' };
-  }
-  // Forzar renovación del token para garantizar claims actualizados
-  try { await auth.currentUser.getIdToken(true); } catch(_){}
   try {
     var F = await import(_FBFS);
     var snap;
     try {
-      snap = await F.getDocs(F.query(F.collection(db,col), F.orderBy('creadoEn','desc'), F.limit(200)));
+      var q;
+      if(filtro){
+        q = F.query(F.collection(db,col), F.where('estado','==',filtro), F.orderBy('creadoEn','desc'), F.limit(80));
+      } else {
+        q = F.query(F.collection(db,col), F.orderBy('creadoEn','desc'), F.limit(80));
+      }
+      snap = await F.getDocs(q);
     } catch(e1){
-      snap = await F.getDocs(F.collection(db,col));
+      var q2 = F.query(F.collection(db,col), F.limit(80));
+      snap = await F.getDocs(q2);
     }
     return snap.docs.map(function(d){ return Object.assign({_id:d.id}, d.data()); });
   } catch(e){
@@ -156,7 +150,7 @@ window.cntCargarConteos = async function(){
   ];
   defs.forEach(async function(d){
     try {
-      var res = await _cargarCol(d.col);
+      var res = await _cargarCol(d.col, d.estado);
       if(res && !res.err){
         var n = res.filter(function(it){ return it.estado === d.estado; }).length;
         var el = get(d.id);
@@ -228,14 +222,14 @@ window.cntCargarLista = async function(){
   if(!listEl) return;
   listEl.innerHTML = '<div style="padding:30px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>';
 
-  var res = await _cargarCol(m.col);
+  var filtroFs = (_cntFiltro === 'todas') ? null : _cntFiltro;
+  var res = await _cargarCol(m.col, filtroFs);
   if(seq !== _cntLoadSeq) return; // descarta respuesta de carga anterior
 
   if(res && res.err){
-    var _esPermisos = res.err && res.err.toLowerCase().indexOf('permission') !== -1;
     listEl.innerHTML = '<div style="padding:30px 20px;text-align:center;"><div style="font-size:28px;margin-bottom:10px;">⚠️</div>'
-      +'<div style="color:#D63A2A;font-size:12px;font-weight:700;">'+(_esPermisos?'Sesión expirada':'Error al cargar datos')+'</div>'
-      +'<div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:6px;line-height:1.5;">'+(_esPermisos?'Cierra sesión y vuelve a entrar como admin.':_esc(res.err))+'</div></div>';
+      +'<div style="color:#D63A2A;font-size:12px;font-weight:700;">Error al cargar datos</div>'
+      +'<div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:6px;line-height:1.5;">'+_esc(res.err)+'</div></div>';
     return;
   }
 
@@ -782,7 +776,8 @@ window.cntCargarEventos = async function(filtro){
   if(!listEl) return;
   listEl.innerHTML = '<div style="padding:30px;text-align:center;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>';
 
-  var res = await _cargarCol(COL_EVENTOS);
+  var f2 = (_cntEvFiltro === 'todas') ? null : _cntEvFiltro;
+  var res = await _cargarCol(COL_EVENTOS, f2);
   if(seq !== _cntEvLoadSeq) return; // descarta respuesta de carga anterior
 
   if(res && res.err){
