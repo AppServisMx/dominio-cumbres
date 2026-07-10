@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260709h
+// CENTRO DE CONTENIDO — Admin Module v=20260710i
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -82,10 +82,22 @@ function _statChip(icon, val, label){
 
 function _uid(){ return (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : '(sin_sesion)'; }
 
-// ── Permisos (punto 8) ────────────────────────────────────────────────────────
-window.cntPuedeEditar    = function(){ return true; };
-window.cntPuedePublicar  = function(){ return true; };
-window.cntPuedeEliminar  = function(){ return true; };
+// ── Permisos reales basados en sesión admin ────────────────────────────────────
+window.cntPuedeEditar    = function(){ return !!(window._adminRol); };
+window.cntPuedePublicar  = function(){ return !!(window._adminRol); };
+window.cntPuedeEliminar  = function(){ return !!(window._adminRol); };
+
+// ── Garantizar sesión Firebase Auth para Firestore ───────────────────────────
+async function _cntEnsureFirebaseAuth(){
+  var auth = window._fbAuth;
+  if(!auth) return;
+  if(auth.currentUser) return;
+  // Esperar por si Firebase está restaurando la sesión persistida
+  await new Promise(function(res){
+    var t = setTimeout(function(){ res(null); }, 2000);
+    var unsub = auth.onAuthStateChanged(function(u){ clearTimeout(t); unsub(); res(u); });
+  });
+}
 
 // ── Bitácora (puntos 1 y 10) ──────────────────────────────────────────────────
 async function _guardarBitacora(col, id, accion, antes, despues){
@@ -104,18 +116,8 @@ async function _guardarBitacora(col, id, accion, antes, despues){
 async function _cargarCol(col, filtro){
   var db = window._fbDb;
   if(!db) return { err:'Sin conexión a Firebase (_fbDb no disponible)' };
-  var auth = window._fbAuth;
-  // Esperar a que Firebase Auth restaure la sesión (hasta 6s)
-  if(auth && !auth.currentUser){
-    await new Promise(function(res){
-      var t = setTimeout(function(){ res(null); }, 6000);
-      var unsub = auth.onAuthStateChanged(function(u){ clearTimeout(t); unsub(); res(u); });
-    });
-  }
-  // Forzar renovación del token
-  if(auth && auth.currentUser){
-    try { await auth.currentUser.getIdToken(true); } catch(_){}
-  }
+  // Garantizar sesión Firebase Auth antes de consultar
+  await _cntEnsureFirebaseAuth();
   async function _exec(){
     var F = await import(_FBFS);
     var snap;
@@ -135,6 +137,7 @@ async function _cargarCol(col, filtro){
   try {
     return await _exec();
   } catch(e){
+    console.error('[CNT] Error leyendo colección', { coleccion: col, filtro: filtro, uid: _uid(), code: e.code, message: e.message });
     return { err: e.message || 'Error Firestore' };
   }
 }

@@ -1373,7 +1373,7 @@ function showAdminTab(i,btn){
 
   // ─── PANEL ADMIN ────────────────────────────────────────
   const ADMIN_USERS = {
-    'DominioCumbres2026': { pass: 'appl1225', rol: 'maestro' }
+    'DominioCumbres2026': { pass: 'appl1225', rol: 'maestro', fbEmail: 'appservis2@gmail.com' }
     // Para agregar más admins:
     // 'usuarioJunior':   { pass: 'su_pass', rol: 'junior' }
     // 'usuarioPremium':  { pass: 'su_pass', rol: 'premium' }
@@ -1445,17 +1445,40 @@ function showAdminTab(i,btn){
     }
   };
 
-  window.entrarAdmin = function() {
+  window.entrarAdmin = async function() {
     const usr = document.getElementById('admin-usr-input').value.trim();
     const p   = document.getElementById('admin-pass-input').value;
     const err = document.getElementById('admin-pass-err');
     const cuenta = ADMIN_USERS[usr];
-    if (!cuenta || cuenta.pass !== p) {
+    if (!cuenta) {
       err.style.display = 'block';
       err.textContent = '❌ Usuario o contraseña incorrectos';
       return;
     }
     err.style.display = 'none';
+    try {
+      const { signInWithEmailAndPassword, signOut } = await import(
+        "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js"
+      );
+      await signInWithEmailAndPassword(window._fbAuth, cuenta.fbEmail, p);
+      const uid = window._fbAuth.currentUser.uid;
+      const { getDoc, doc } = await import(
+        "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js"
+      );
+      const snap = await getDoc(doc(window._fbDb, 'usuarios', uid));
+      const data = snap.exists() ? snap.data() : {};
+      const esAdmin = data.esAdmin === true || data.rol === 'maestro' || data.rol === 'admin';
+      if (!esAdmin) {
+        await signOut(window._fbAuth);
+        err.style.display = 'block';
+        err.textContent = '⛔ Esta cuenta no tiene permisos de administrador';
+        return;
+      }
+    } catch(fbErr) {
+      err.style.display = 'block';
+      err.textContent = '❌ Contraseña incorrecta o error de autenticación';
+      return;
+    }
     window._adminRol = cuenta.rol;
     window._adminUsr = usr;
     // Show loading then go to panel
@@ -1485,7 +1508,11 @@ function showAdminTab(i,btn){
     }, 1000);
   };
 
-  window.cerrarSesionAdmin = function() {
+  window.cerrarSesionAdmin = async function() {
+    try {
+      const { signOut } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
+      await signOut(window._fbAuth);
+    } catch(_) {}
     window._adminRol = null;
     window._adminUsr = null;
     document.getElementById('admin-usr-input').value = '';
