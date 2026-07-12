@@ -216,6 +216,30 @@
 
       if (snap.exists()) {
         const datos = snap.data();
+
+        // Bloquear acceso de cuentas administrativas en el login de vecinos/proveedores.
+        // Se verifica esAdmin===true (campo booleano) Y como fallback los roles de admin,
+        // para cubrir cuentas creadas antes de que existiera el campo esAdmin.
+        var _esAdmin = datos.esAdmin === true
+          || datos.rol === 'maestro'
+          || datos.rol === 'senior'
+          || datos.rol === 'junior'
+          || datos.rol === 'premium';
+        if (_esAdmin) {
+          const { signOut: _soAdm } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
+          await _soAdm(auth).catch(function(){});
+          if (window._dcAlerta) {
+            window._dcAlerta('Esta cuenta es administrativa.\nIngresa desde el Panel de Administrador.');
+          } else {
+            var _ov = document.createElement('div');
+            _ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+            _ov.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;"><div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:20px;line-height:1.5;">Esta cuenta es administrativa.<br>Ingresa desde el Panel de Administrador.</div><button style="width:100%;background:#1FC26A;color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;" onclick="this.closest(\'[style*=fixed]\').remove()">Aceptar</button></div>';
+            document.body.appendChild(_ov);
+            _ov.onclick = function(e){ if(e.target===_ov) _ov.remove(); };
+          }
+          return;
+        }
+
         window.setNombre && window.setNombre(datos.nombre || datos.nombreNegocio || correoLogin);
 
         // Normalizar estado para evitar errores por espacios, mayúsculas o undefined

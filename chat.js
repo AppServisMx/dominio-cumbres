@@ -1381,9 +1381,9 @@ function showAdminTab(i,btn){
 
   // ── Permisos por rol ────────────────────────────────────────
   var _ADMIN_PERMISOS = {
-    maestro: ['ver_solicitudes','gestionar_usuarios','gestionar_admins','gestionar_contenido','ver_monetizacion','ver_analytics','ver_publicaciones','ver_alertas','ver_configuracion','crear_admin','suspender_admin'],
-    senior:  ['ver_solicitudes','gestionar_usuarios','gestionar_contenido','ver_monetizacion','ver_analytics','ver_publicaciones','ver_alertas'],
-    junior:  ['ver_solicitudes','gestionar_usuarios']
+    maestro: ['ver_solicitudes','gestionar_usuarios','gestionar_admins','gestionar_contenido','ver_monetizacion','ver_analytics','ver_publicaciones','ver_alertas','ver_configuracion','crear_admin','suspender_admin','cambiar_password_admin','cambiar_correo_admin','eliminar_admin','reactivar_admin'],
+    senior:  ['ver_solicitudes','gestionar_usuarios','gestionar_contenido','ver_publicaciones','ver_alertas'],
+    junior:  ['ver_solicitudes','gestionar_usuarios','gestionar_contenido']
   };
   window.adminPuede = function(permiso) {
     var rol = window._adminRol || 'junior';
@@ -1749,7 +1749,15 @@ function showAdminTab(i,btn){
       var q = query(collection(window._fbDb,'usuarios'), where('esAdmin','==',true));
       var snap = await getDocs(q);
       window._admuDatos = [];
+      var { doc: _docFn, updateDoc: _updFn } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
       snap.forEach(function(d){ window._admuDatos.push(Object.assign({ uid: d.id }, d.data())); });
+      // Auto-migrar rol "premium" → "senior" en Firestore
+      window._admuDatos.forEach(function(u){
+        if(u.rol === 'premium') {
+          u.rol = 'senior';
+          _updFn(_docFn(window._fbDb,'usuarios',u.uid), { rol: 'senior' }).catch(function(){});
+        }
+      });
       admuRenderListaAdmins(window._admuDatos);
     } catch(e) {
       if(lista) lista.innerHTML = '<div style="color:#D63A2A;font-size:12px;padding:10px;">Error: '+e.message+'</div>';
@@ -1911,10 +1919,27 @@ function showAdminTab(i,btn){
         var ultimoAcceso = u.ultimoAcceso ? new Date(u.ultimoAcceso.seconds*1000).toLocaleDateString('es-MX') : '—';
         var creadoPor = u.creadoPor || '—';
 
+        var miUid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
+        var esMiPropiaTarjeta = u.uid === miUid;
         var botonesAccion = '';
-        if(esMaestro) {
-          botonesAccion = '<span style="font-size:10px;color:rgba(255,255,255,.3);">Cuenta maestra</span>';
-        } else if(esMaestroActual) {
+        if(esMiPropiaTarjeta && esMaestro) {
+          // Maestro viendo su propia tarjeta: Detalle + Cambiar contraseña + Cambiar correo
+          botonesAccion = '<div style="display:flex;gap:6px;margin-top:8px;">'
+            + '<button onclick="admuVerDetalleAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;">🔍 Detalle</button>'
+            + '<button onclick="admuCambiarPassAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(100,181,246,.1);border:1px solid rgba(100,181,246,.3);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#64B5F6;cursor:pointer;font-family:\'Inter\',sans-serif;">🔑 Contraseña</button>'
+            + '<button onclick="admuCambiarCorreoAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(100,181,246,.07);border:1px solid rgba(100,181,246,.2);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#90CAF9;cursor:pointer;font-family:\'Inter\',sans-serif;">✉ Correo</button>'
+            + '</div>';
+        } else if(esMiPropiaTarjeta && !esMaestro) {
+          // Junior/Senior viendo su propia tarjeta: sin botones
+          botonesAccion = '';
+        } else if(esMaestro && !esMiPropiaTarjeta) {
+          // Otro Maestro: solo detalle, sin acciones (no se puede suspender ni eliminar a otro Maestro)
+          botonesAccion = '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;">'
+            + '<button onclick="admuVerDetalleAdmin(\''+u.uid+'\')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;">🔍 Detalle</button>'
+            + '<span style="font-size:10px;color:rgba(255,255,255,.3);">Cuenta maestra</span>'
+            + '</div>';
+        } else if(esMaestroActual && !esMaestro) {
+          // Maestro viendo tarjeta de junior/senior: acciones completas
           var btnSusp = activo
             ? '<button onclick="admuSuspenderAdmin(\''+u.uid+'\')" style="flex:1;background:#F5A62314;border:1px solid #F5A62340;border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#F5A623;cursor:pointer;font-family:\'Inter\',sans-serif;">⏸ Suspender</button>'
             : '<button onclick="admuReactivarAdmin(\''+u.uid+'\')" style="flex:1;background:#1FC26A14;border:1px solid #1FC26A40;border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#1FC26A;cursor:pointer;font-family:\'Inter\',sans-serif;">✅ Reactivar</button>';
@@ -1922,9 +1947,11 @@ function showAdminTab(i,btn){
             + '<button onclick="admuVerDetalleAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;">🔍 Detalle</button>'
             + btnSusp
             + '<button onclick="admuCambiarPassAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(100,181,246,.1);border:1px solid rgba(100,181,246,.3);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#64B5F6;cursor:pointer;font-family:\'Inter\',sans-serif;">🔑 Contraseña</button>'
+            + '<button onclick="admuCambiarCorreoAdmin(\''+u.uid+'\')" style="flex:1;background:rgba(100,181,246,.07);border:1px solid rgba(100,181,246,.2);border-radius:8px;padding:7px 0;font-size:11px;font-weight:700;color:#90CAF9;cursor:pointer;font-family:\'Inter\',sans-serif;">✉ Correo</button>'
             + '<button onclick="admuEliminarAdmin(\''+u.uid+'\')" style="background:#D63A2A14;border:1px solid #D63A2A40;border-radius:8px;padding:7px 10px;font-size:13px;color:#D63A2A;cursor:pointer;flex-shrink:0;">🗑</button>'
             + '</div>';
         } else {
+          // Junior/Senior viendo tarjeta de otro: solo Detalle
           botonesAccion = '<div style="margin-top:8px;">'
             + '<button onclick="admuVerDetalleAdmin(\''+u.uid+'\')" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;">🔍 Ver detalle</button>'
             + '</div>';
@@ -1958,8 +1985,14 @@ function showAdminTab(i,btn){
     var searchEl = document.getElementById(esProv ? 'admu-search-prov' : 'admu-search');
     var q = ((searchEl && searchEl.value) || '').toLowerCase();
     var filtrado = window._admuDatos.filter(function(u){
+      if(!q) return true;
+      if(window._admuTipo === 'admin') {
+        var usr = (u.usuario||'').toLowerCase();
+        var correo = (u.correo||u.email||'').toLowerCase();
+        return usr.includes(q) || correo.includes(q);
+      }
       var nombre = (u.nombre||u.negocio||u.email||u.uid||'').toLowerCase();
-      return !q || nombre.includes(q);
+      return nombre.includes(q);
     });
     if(esProv) admuRenderListaProv(filtrado);
     else if(window._admuTipo === 'admin') admuRenderListaAdmins(filtrado);
@@ -2032,16 +2065,20 @@ function showAdminTab(i,btn){
   };
 
   window.admuSuspenderAdmin = function(uid) {
+    var miUid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
+    if(uid === miUid) { _dcAlerta('No puedes suspender tu propia cuenta.'); return; }
+    var u = window._admuDatos.find(function(x){ return x.uid===uid; });
+    var rolNorm = u ? ((u.rol === 'premium') ? 'senior' : (u.rol||'junior')) : '';
+    if(rolNorm === 'maestro') { _dcAlerta('No se puede suspender una cuenta Maestro.'); return; }
     window._dcConfirmar('¿Suspender a este administrador? No podrá iniciar sesión hasta ser reactivado.', async function() {
       try {
         var { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
         await updateDoc(doc(window._fbDb,'usuarios',uid), { activo: false });
-        var u = window._admuDatos.find(function(x){ return x.uid===uid; });
         if(u) u.activo = false;
         admuRenderListaAdmins(window._admuDatos);
         var toast = document.getElementById('admin-toast');
         if(toast){ toast.textContent='⏸ Administrador suspendido'; toast.style.display='block'; setTimeout(function(){ toast.style.display='none'; },3000); }
-      } catch(e) { alert('Error: '+e.message); }
+      } catch(e) { _dcAlerta('Error: '+e.message); }
     });
   };
 
@@ -2077,7 +2114,32 @@ function showAdminTab(i,btn){
       ['Último acceso', ultimoAcceso],
       ['UID Firebase',  '<span style="font-size:10px;word-break:break-all;opacity:.6;">'+uid+'</span>']
     ];
+    var esMaestroActual = window._adminRol === 'maestro';
+    var rolNorm = (u.rol === 'premium') ? 'senior' : (u.rol || 'junior');
+    var esMaestroTarget = rolNorm === 'maestro';
+    var miUid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
+    var esMiCuenta = uid === miUid;
+    var activo = u.activo !== false;
+    // Botones de acción dentro del detalle (solo para Maestro)
+    var botonesDetalle = '';
+    if(esMaestroActual && esMiCuenta && esMaestroTarget) {
+      botonesDetalle = '<div style="display:flex;gap:8px;margin-top:16px;">'
+        + '<button onclick="admuCambiarPassAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:rgba(100,181,246,.1);border:1px solid rgba(100,181,246,.3);border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#64B5F6;cursor:pointer;font-family:\'Inter\',sans-serif;">🔑 Cambiar contraseña</button>'
+        + '<button onclick="admuCambiarCorreoAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:rgba(100,181,246,.07);border:1px solid rgba(100,181,246,.2);border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#90CAF9;cursor:pointer;font-family:\'Inter\',sans-serif;">✉ Cambiar correo</button>'
+        + '</div>';
+    } else if(esMaestroActual && !esMaestroTarget && !esMiCuenta) {
+      var btnSuspDet = activo
+        ? '<button onclick="admuSuspenderAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:#F5A62314;border:1px solid #F5A62340;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#F5A623;cursor:pointer;font-family:\'Inter\',sans-serif;">⏸ Suspender</button>'
+        : '<button onclick="admuReactivarAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:#1FC26A14;border:1px solid #1FC26A40;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#1FC26A;cursor:pointer;font-family:\'Inter\',sans-serif;">✅ Reactivar</button>';
+      botonesDetalle = '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">'
+        + btnSuspDet
+        + '<button onclick="admuCambiarPassAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:rgba(100,181,246,.1);border:1px solid rgba(100,181,246,.3);border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#64B5F6;cursor:pointer;font-family:\'Inter\',sans-serif;">🔑 Contraseña</button>'
+        + '<button onclick="admuCambiarCorreoAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="flex:1;background:rgba(100,181,246,.07);border:1px solid rgba(100,181,246,.2);border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#90CAF9;cursor:pointer;font-family:\'Inter\',sans-serif;">✉ Correo</button>'
+        + '<button onclick="admuEliminarAdmin(\''+uid+'\');this.closest(\'[data-admudet]\').remove();" style="width:100%;background:#D63A2A14;border:1px solid #D63A2A40;border-radius:12px;padding:13px;font-size:13px;font-weight:700;color:#D63A2A;cursor:pointer;font-family:\'Inter\',sans-serif;">🗑 Eliminar cuenta</button>'
+        + '</div>';
+    }
     var ov = document.createElement('div');
+    ov.setAttribute('data-admudet','1');
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
     ov.innerHTML = '<div style="background:#111E14;border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:20px 20px 36px;max-height:85vh;overflow-y:auto;">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">'
@@ -2090,7 +2152,8 @@ function showAdminTab(i,btn){
             + '<span style="font-size:12px;color:#fff;font-weight:600;text-align:right;max-width:65%;">'+r[1]+'</span>'
             + '</div>';
         }).join('')
-      + '<button id="_admuDetAcept" style="width:100%;background:#1FC26A;color:#000;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;margin-top:20px;">Aceptar</button>'
+      + botonesDetalle
+      + '<button id="_admuDetAcept" style="width:100%;background:#1FC26A;color:#000;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;margin-top:16px;">Aceptar</button>'
       + '</div>';
     document.body.appendChild(ov);
     function cerrar(){ if(ov.parentNode) document.body.removeChild(ov); }
@@ -2099,11 +2162,10 @@ function showAdminTab(i,btn){
     ov.onclick = function(e){ if(e.target===ov) cerrar(); };
   };
 
-  // Cambiar contraseña de administrador — envía enlace de restablecimiento
+  // Cambiar contraseña de administrador — Cloud Function con Firebase Admin SDK
   window.admuCambiarPassAdmin = function(uid) {
     var u = window._admuDatos.find(function(x){ return x.uid===uid; });
     if(!u) return;
-    var correo = u.correo || u.email || '';
     var ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
     ov.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'
@@ -2128,42 +2190,61 @@ function showAdminTab(i,btn){
       if(p1.length < 6) { errEl.style.display='block'; errEl.textContent='La contraseña debe tener mínimo 6 caracteres.'; return; }
       if(p1 !== p2) { errEl.style.display='block'; errEl.textContent='Las contraseñas no coinciden.'; return; }
       var btn = ov.querySelector('#_cpOk');
-      btn.disabled = true; btn.textContent = 'Enviando...';
+      btn.disabled = true; btn.textContent = 'Guardando...';
       try {
-        var { sendPasswordResetEmail } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
-        await sendPasswordResetEmail(window._fbAuth, correo);
+        var { getApp: _getApp } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var fns = getFunctions(_getApp(), 'us-central1');
+        var fn = httpsCallable(fns, 'adminCambiarPassword');
+        var _res = await fn({ uidObjetivo: uid, nuevaPassword: p1 });
+        if (!_res || !_res.data || _res.data.ok !== true) {
+          throw new Error('La función no confirmó el cambio. Verifica la consola.');
+        }
         cerrar();
-        _dcAlerta('Se envió un enlace de restablecimiento al correo ' + correo + '. El administrador debe abrirlo para activar su nueva contraseña.');
+        // Mostrar contraseña nueva una sola vez con botón Copiar
+        var ovExito = document.createElement('div');
+        ovExito.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+        ovExito.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'
+          + '<div style="font-size:15px;font-weight:700;color:#1FC26A;margin-bottom:12px;">✅ Contraseña actualizada</div>'
+          + '<div style="font-size:13px;color:#555;margin-bottom:12px;">La nueva contraseña de <strong>@'+(u.usuario||uid)+'</strong> es:</div>'
+          + '<div id="_cpMostrar" style="background:#f5f5f5;border-radius:12px;padding:14px 16px;font-size:18px;font-weight:700;color:#1a1a1a;letter-spacing:2px;text-align:center;margin-bottom:12px;">'+p1+'</div>'
+          + '<button id="_cpCopiar" style="width:100%;background:#1a1a1a;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:10px;">📋 Copiar contraseña</button>'
+          + '<button id="_cpExCerrar" style="width:100%;background:#f0f0f0;color:#555;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;">Cerrar</button>'
+          + '</div>';
+        document.body.appendChild(ovExito);
+        ovExito.querySelector('#_cpCopiar').onclick = function() {
+          navigator.clipboard.writeText(p1).then(function(){
+            ovExito.querySelector('#_cpCopiar').textContent = '✅ ¡Copiado!';
+          }).catch(function(){
+            ovExito.querySelector('#_cpCopiar').textContent = p1;
+          });
+        };
+        ovExito.querySelector('#_cpExCerrar').onclick = function(){ if(ovExito.parentNode) document.body.removeChild(ovExito); };
+        ovExito.onclick = function(e){ if(e.target===ovExito && ovExito.parentNode) document.body.removeChild(ovExito); };
       } catch(e) {
         btn.disabled = false; btn.textContent = 'Guardar';
         errEl.style.display = 'block';
-        errEl.textContent = 'Error: ' + (e.message || e.code);
+        var msg = (e.details && e.details.message) || e.message || (e.code||'');
+        errEl.textContent = 'Error: ' + msg;
       }
     };
   };
 
-  // Eliminar administrador — borra Firestore; la cuenta Auth queda sin acceso
+  // Eliminar administrador — Cloud Function con Firebase Admin SDK
   window.admuEliminarAdmin = function(uid) {
     var u = window._admuDatos.find(function(x){ return x.uid===uid; });
     if(!u) return;
     var rolNorm = (u.rol === 'premium') ? 'senior' : (u.rol || 'junior');
-    if(rolNorm === 'maestro') {
-      _dcAlerta('No es posible eliminar la cuenta Maestro.');
-      return;
-    }
-    if(uid === (window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid)) {
-      _dcAlerta('No puedes eliminar tu propia cuenta de administrador.');
-      return;
-    }
+    if(rolNorm === 'maestro') { _dcAlerta('No es posible eliminar la cuenta Maestro.'); return; }
+    var miUid = window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.uid;
+    if(uid === miUid) { _dcAlerta('No puedes eliminar tu propia cuenta.'); return; }
     var ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
     ov.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'
       + '<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">Eliminar administrador</div>'
       + '<div style="font-size:13px;color:#555;line-height:1.5;margin-bottom:20px;">'
-      + 'Se eliminará completamente:<br>'
+      + 'Se eliminará completamente de Firebase Auth y base de datos:<br>'
       + '<strong style="color:#1a1a1a;">@' + (u.usuario||uid) + '</strong><br><br>'
-      + '• Registro en base de datos<br>'
-      + '• Permisos administrativos<br><br>'
       + '<strong style="color:#D63A2A;">Esta acción no puede deshacerse.</strong>'
       + '</div>'
       + '<div style="display:flex;gap:10px;">'
@@ -2178,8 +2259,10 @@ function showAdminTab(i,btn){
       var btn = ov.querySelector('#_elOk');
       btn.disabled = true; btn.textContent = 'Eliminando...';
       try {
-        var F = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-        await F.deleteDoc(F.doc(window._fbDb,'usuarios',uid));
+        var { getApp: _getApp2 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions: _gf2, httpsCallable: _hc2 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var fn = _hc2(_gf2(_getApp2(), 'us-central1'), 'adminEliminarCuenta');
+        await fn({ uidObjetivo: uid });
         window._admuDatos = window._admuDatos.filter(function(x){ return x.uid !== uid; });
         cerrar();
         admuRenderListaAdmins(window._admuDatos);
@@ -2187,7 +2270,57 @@ function showAdminTab(i,btn){
         if(toast){ toast.textContent='🗑 Administrador eliminado'; toast.style.display='block'; setTimeout(function(){ toast.style.display='none'; },3000); }
       } catch(e) {
         btn.disabled = false; btn.textContent = 'Eliminar';
-        _dcAlerta('Error al eliminar: ' + e.message);
+        var msg = (e.details && e.details.message) || e.message || (e.code||'');
+        _dcAlerta('Error al eliminar: ' + msg);
+      }
+    };
+  };
+
+  // Cambiar correo de administrador — Cloud Function con Firebase Admin SDK
+  window.admuCambiarCorreoAdmin = function(uid) {
+    var u = window._admuDatos.find(function(x){ return x.uid===uid; });
+    if(!u) return;
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+    ov.innerHTML = '<div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;max-width:480px;width:100%;">'
+      + '<div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">Cambiar correo</div>'
+      + '<div style="font-size:13px;color:#555;margin-bottom:6px;">@' + (u.usuario||uid) + '</div>'
+      + '<div style="font-size:12px;color:#888;margin-bottom:12px;">Correo actual: ' + (u.correo||u.email||'—') + '</div>'
+      + '<input id="_ccCorreo1" type="email" placeholder="Nuevo correo electrónico" autocomplete="off" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e0e0e0;font-size:14px;font-family:\'Inter\',sans-serif;outline:none;margin-bottom:10px;box-sizing:border-box;">'
+      + '<input id="_ccCorreo2" type="email" placeholder="Confirmar nuevo correo" autocomplete="off" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e0e0e0;font-size:14px;font-family:\'Inter\',sans-serif;outline:none;margin-bottom:10px;box-sizing:border-box;">'
+      + '<div id="_ccErr" style="display:none;color:#D63A2A;font-size:12px;margin-bottom:10px;font-weight:600;"></div>'
+      + '<div style="display:flex;gap:10px;margin-top:4px;">'
+      + '<button id="_ccCan" style="flex:1;background:#f0f0f0;color:#555;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;">Cancelar</button>'
+      + '<button id="_ccOk" style="flex:1;background:#1FC26A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">Guardar</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    function cerrar(){ if(ov.parentNode) document.body.removeChild(ov); }
+    ov.querySelector('#_ccCan').onclick = cerrar;
+    ov.onclick = function(e){ if(e.target===ov) cerrar(); };
+    ov.querySelector('#_ccOk').onclick = async function() {
+      var c1 = ov.querySelector('#_ccCorreo1').value.trim();
+      var c2 = ov.querySelector('#_ccCorreo2').value.trim();
+      var errEl = ov.querySelector('#_ccErr');
+      errEl.style.display = 'none';
+      var emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if(!c1 || !emailRx.test(c1)) { errEl.style.display='block'; errEl.textContent='Ingresa un correo válido.'; return; }
+      if(c1 !== c2) { errEl.style.display='block'; errEl.textContent='Los correos no coinciden.'; return; }
+      var btn = ov.querySelector('#_ccOk');
+      btn.disabled = true; btn.textContent = 'Guardando...';
+      try {
+        var { getApp: _getApp3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions: _gf3, httpsCallable: _hc3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var fn = _hc3(_gf3(_getApp3(), 'us-central1'), 'adminCambiarCorreo');
+        await fn({ uidObjetivo: uid, nuevoCorreo: c1 });
+        // Actualizar cache local
+        if(u) { u.correo = c1; u.email = c1; }
+        cerrar();
+        _dcAlerta('✅ Correo actualizado correctamente.');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Guardar';
+        var msg = (e.details && e.details.message) || e.message || (e.code||'');
+        errEl.style.display = 'block';
+        errEl.textContent = 'Error: ' + msg;
       }
     };
   };
