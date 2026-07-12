@@ -81,17 +81,23 @@ exports.adminCambiarCorreo = functions.https.onCall(async (data, context) => {
   try {
     const existente = await admin.auth().getUserByEmail(nuevoCorreo);
     if (existente.uid !== uidObjetivo) {
-      throw new functions.https.HttpsError("already-exists", "Ese correo ya está registrado por otra cuenta.");
+      throw new functions.https.HttpsError("already-exists", "Ese correo ya está registrado.");
     }
   } catch (e) {
-    if (e.code !== "auth/user-not-found" && e.errorInfo && e.errorInfo.code !== "auth/user-not-found") {
-      if (e instanceof functions.https.HttpsError) throw e;
-      // correo libre, continuar
-    }
+    if (e instanceof functions.https.HttpsError) throw e;
+    // auth/user-not-found u otro error → correo libre, continuar
   }
 
   // 1. Actualizar Authentication
-  await admin.auth().updateUser(uidObjetivo, { email: nuevoCorreo });
+  try {
+    await admin.auth().updateUser(uidObjetivo, { email: nuevoCorreo });
+  } catch (authErr) {
+    const code = authErr.code || "";
+    if (code === "auth/email-already-exists" || code === "auth/email-already-in-use") {
+      throw new functions.https.HttpsError("already-exists", "Ese correo ya está registrado.");
+    }
+    throw new functions.https.HttpsError("internal", "Error al actualizar correo: " + authErr.message);
+  }
 
   // 2. Actualizar Firestore
   try {
@@ -140,6 +146,35 @@ exports.adminEliminarCuenta = functions.https.onCall(async (data, context) => {
   await admin.auth().deleteUser(uidObjetivo);
 
   // 2. Eliminar de Firestore
+  await db.collection("usuarios").doc(uidObjetivo).delete();
+
+  return { ok: true };
+});
+
+// ── adminEliminarUsuario ──────────────────────────────────────────────────────
+// Elimina un vecino o proveedor de Firebase Authentication y Firestore.
+// Solo el Maestro activo puede invocarla.
+exports.adminEliminarUsuario = functions.https.onCall(async (data, context) => {
+  await verificarMaestroActivo(context);
+
+  const { uidObjetivo } = data;
+  if (!uidObjetivo) {
+    throw new functions.https.HttpsError("invalid-argument", "Falta el UID del usuario.");
+  }
+  if (uidObjetivo === context.auth.uid) {
+    throw new functions.https.HttpsError("permission-denied", "No puedes eliminar tu propia cuenta.");
+  }
+
+  // Eliminar de Firebase Authentication (tolerar si ya no existe)
+  try {
+    await admin.auth().deleteUser(uidObjetivo);
+  } catch (e) {
+    if (e.code !== "auth/user-not-found") {
+      throw new functions.https.HttpsError("internal", "Error al eliminar de Authentication: " + e.message);
+    }
+  }
+
+  // Eliminar de Firestore
   await db.collection("usuarios").doc(uidObjetivo).delete();
 
   return { ok: true };
