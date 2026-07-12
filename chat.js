@@ -2056,10 +2056,15 @@ function showAdminTab(i,btn){
           var list2 = await S.listAll(listRef2);
           await Promise.all(list2.items.map(function(item){ return S.deleteObject(item); }));
         }catch(_){}
-        // Borrar documento principal
-        await F.deleteDoc(F.doc(db,'usuarios',uid));
+        // Eliminar de Auth y Firestore mediante Cloud Function (Maestro requerido)
+        var { getApp: _getAppEU } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions: _gfEU, httpsCallable: _hcEU } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var _fnEU = _hcEU(_gfEU(_getAppEU(), 'us-central1'), 'adminEliminarUsuario');
+        var _resEU = await _fnEU({ uidObjetivo: uid });
+        if(!_resEU.data || _resEU.data.ok !== true) throw new Error('La función no confirmó la eliminación.');
         window._admuDatos = window._admuDatos.filter(function(u){ return u.uid !== uid; });
         admuFiltrarLista();
+        _dcAlerta('✅ Usuario eliminado correctamente.');
       } catch(e) { alert('Error al eliminar: '+e.message); }
     });
   };
@@ -2318,7 +2323,13 @@ function showAdminTab(i,btn){
         _dcAlerta('✅ Correo actualizado correctamente.');
       } catch(e) {
         btn.disabled = false; btn.textContent = 'Guardar';
-        var msg = (e.details && e.details.message) || e.message || (e.code||'');
+        var code = (e.code||'');
+        var msg;
+        if(code === 'functions/already-exists' || code === 'auth/email-already-exists' || code === 'auth/email-already-in-use') {
+          msg = 'Ese correo ya está registrado.';
+        } else {
+          msg = (e.details && e.details.message) || e.message || code;
+        }
         errEl.style.display = 'block';
         errEl.textContent = 'Error: ' + msg;
       }
