@@ -5052,192 +5052,137 @@
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="back-row"><button class="btn-back" onclick="go('v-admin-panel','left')">‹</button><div><div class="hdr-title">Monetización</div><div class="hdr-sub">Ingresos • Comisiones • Costos</div></div></div>
   </div>
-  <div class="si42 scroll">
-    <div class="admin-stat-row">
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-ingresos-hoy">$0</div><div class="admin-stat-lbl">Ingresos hoy</div></div>
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-ingresos-mes">$0</div><div class="admin-stat-lbl">Este mes</div></div>
-    </div>
-    <div class="admin-stat-row">
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-membresias">0</div><div class="admin-stat-lbl">Membresías activas</div></div>
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-transacciones">0</div><div class="admin-stat-lbl">Transacciones hoy</div></div>
-    </div>
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);">
-      <div style="font-size:12px;font-weight:700;color:var(--white-50);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Desglose</div>
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🍽️ Comisiones Food</span><span class="si77" id="d-food">$0</span></div>
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🏍️ Comisiones Ride</span><span class="si77" id="d-ride">$0</span></div>
-      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🏪 Membresías negocios</span><span class="si77" id="d-mem">$0</span></div>
-      <div style="display:flex;justify-content:space-between;padding:8px 0;"><span class="si02">🎪 Eventos</span><span class="si77" id="d-eventos">$0</span></div>
-    </div>
-    <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 10px;">⚙️ Infraestructura</div>
-    <div class="admin-stat-row">
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-costo-mes">—</div><div class="admin-stat-lbl">Costo del mes</div></div>
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-proyeccion">—</div><div class="admin-stat-lbl">Proyección</div></div>
-    </div>
-    <div class="admin-stat-row">
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-presupuesto">$50.00</div><div class="admin-stat-lbl">Presupuesto</div></div>
-      <div class="admin-stat-box"><div class="admin-stat-num" id="stat-uso-pct">—</div><div class="admin-stat-lbl">Uso</div></div>
-    </div>
-    <div style="background:var(--card-dark);border-radius:14px;padding:12px 14px;border:1px solid var(--card-border);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:12px;color:var(--white-50);">Estado de la plataforma</span>
-      <span id="stat-salud-infra" style="font-size:12px;font-weight:700;color:var(--white-50);">Sin datos</span>
-    </div>
-    <button onclick="monetCostosAbrir()" style="width:100%;background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <span>Ver costos y consumo</span><span style="color:#1FC26A;font-size:18px;">›</span>
-    </button>
-    <div class="si14"></div>
-  </div>
-</div>
-
-<!-- COSTOS DE OPERACIÓN -->
-<div class="si23 view go-right" id="v-admin-costos">
-  <div class="admin-sub-hdr">
-    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div class="back-row"><button class="btn-back" onclick="go('v-admin-monetizacion','left')">‹</button><div><div class="hdr-title">Costos de Operación</div><div class="hdr-sub">Ingresos • Comisiones • Costos</div></div></div>
+  <!-- PESTAÑAS -->
+  <div style="display:flex;background:var(--green-bg);border-bottom:1px solid var(--card-border);flex-shrink:0;">
+    <button id="mbtn-ingresos"   onclick="monetTab('ingresos')"   style="flex:1;padding:12px 4px;font-size:11px;font-weight:700;color:#fff;background:none;border:none;border-bottom:2px solid #1FC26A;cursor:pointer;font-family:'Inter',sans-serif;transition:color .2s,border-color .2s;">INGRESOS</button>
+    <button id="mbtn-comisiones" onclick="monetTab('comisiones')" style="flex:1;padding:12px 4px;font-size:11px;font-weight:700;color:var(--white-40);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:color .2s,border-color .2s;">COMISIONES</button>
+    <button id="mbtn-costos"     onclick="monetTab('costos')"     style="flex:1;padding:12px 4px;font-size:11px;font-weight:700;color:var(--white-40);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:color .2s,border-color .2s;">COSTOS</button>
   </div>
   <div class="si42 scroll">
 
-    <!-- Nota de simulación -->
-    <div id="costos-sim-nota" style="display:none;background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#F5C518;font-weight:600;">
-      ⚠️ MODO SIMULACIÓN — Monto: <span id="costos-sim-nota-monto">$0</span>. Los datos reales no han sido modificados.
+    <!-- TAB: INGRESOS -->
+    <div id="mtab-ingresos">
+      <div class="admin-stat-row">
+        <div class="admin-stat-box"><div class="admin-stat-num" id="stat-ingresos-hoy">$0</div><div class="admin-stat-lbl">Ingresos hoy</div></div>
+        <div class="admin-stat-box"><div class="admin-stat-num" id="stat-ingresos-mes">$0</div><div class="admin-stat-lbl">Este mes</div></div>
+      </div>
+      <div class="admin-stat-row">
+        <div class="admin-stat-box"><div class="admin-stat-num" id="stat-membresias">0</div><div class="admin-stat-lbl">Membresías activas</div></div>
+        <div class="admin-stat-box"><div class="admin-stat-num" id="stat-transacciones">0</div><div class="admin-stat-lbl">Transacciones hoy</div></div>
+      </div>
+      <div class="si14"></div>
     </div>
 
-    <!-- RESUMEN GENERAL -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🏥 Salud de la Plataforma</div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span class="si02">Costo total</span><span style="font-size:12px;font-weight:700;" id="costos-total">No disponible</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span class="si02">Presupuesto</span><span style="font-size:12px;font-weight:700;" id="costos-presupuesto">$50.00</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span class="si02">Proyección al cierre</span><span style="font-size:12px;font-weight:700;" id="costos-proyeccion">No disponible</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span class="si02">Estado</span><span style="font-size:12px;font-weight:700;color:var(--white-50);" id="costos-salud">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-        <span class="si02">Margen disponible</span><span style="font-size:12px;font-weight:700;color:#1FC26A;" id="costos-margen">No disponible</span>
-      </div>
-      <div style="margin-top:12px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:11px;color:var(--white-40);">Uso del presupuesto</span>
-          <span style="font-size:11px;font-weight:700;" id="costos-uso-pct">—</span>
-        </div>
-        <div style="background:rgba(255,255,255,.08);border-radius:6px;height:6px;overflow:hidden;">
-          <div id="costos-uso-barra" style="height:100%;width:0%;background:#1FC26A;border-radius:6px;transition:width .4s,background .4s;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BASE DE DATOS -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">🗄 Base de datos</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Firestore</div></div>
-        <span id="costos-fs-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-fs-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-fs-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Almacena toda la información de la app: usuarios, pedidos y configuraciones.</div>
-    </div>
-
-    <!-- FOTOGRAFÍAS Y ARCHIVOS -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">🖼 Fotografías y archivos</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Storage</div></div>
-        <span id="costos-st-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-st-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-st-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Guarda fotos de perfil, menús, productos y documentos subidos por usuarios y proveedores.</div>
-    </div>
-
-    <!-- PROCESOS DEL SERVIDOR -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">⚙️ Procesos del servidor</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Cloud Functions</div></div>
-        <span id="costos-fn-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-fn-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-fn-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Ejecuta acciones automáticas: notificaciones, cambios de contraseña y eliminación de cuentas.</div>
-    </div>
-
-    <!-- INFRAESTRUCTURA TÉCNICA -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">📦 Infraestructura técnica</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Artifact Registry</div></div>
-        <span id="costos-ar-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-ar-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-ar-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Almacena las versiones del código del servidor que se despliegan en la aplicación.</div>
-    </div>
-
-    <!-- DESPLIEGUES -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">🚀 Despliegues</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Cloud Build</div></div>
-        <span id="costos-cb-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-cb-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-cb-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Se usa cada vez que el equipo actualiza la aplicación con nuevas funciones o correcciones.</div>
-    </div>
-
-    <!-- TRANSFERENCIA -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div><div style="font-size:14px;font-weight:700;color:#fff;">🌐 Transferencia de datos</div><div style="font-size:10px;color:var(--white-40);margin-top:2px;">Networking</div></div>
-        <span id="costos-tf-salud" style="font-size:11px;font-weight:700;color:var(--white-50);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Costo del mes</span><span style="font-size:12px;font-weight:700;" id="costos-tf-costo">No disponible</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Participación</span><span style="font-size:12px;font-weight:700;" id="costos-tf-pct">—</span></div>
-      <div style="padding-top:10px;font-size:11px;color:var(--white-40);line-height:1.7;">Datos que viajan entre la app y los servidores cuando los usuarios la usan.</div>
-    </div>
-
-    <!-- DETALLES TÉCNICOS (colapsable) -->
-    <button id="costos-detalles-btn" onclick="monetToggleDetalles()" style="width:100%;background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <span>Detalles técnicos</span><span>›</span>
-    </button>
-    <div id="costos-detalles" style="display:none;margin-bottom:10px;">
+    <!-- TAB: COMISIONES -->
+    <div id="mtab-comisiones" style="display:none;">
       <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);">
-        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Firestore</div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Lecturas</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Escrituras</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Eliminaciones</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Storage</div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Espacio utilizado</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Descargas</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Cloud Functions</div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Invocaciones</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Tiempo de ejecución</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Memoria usada</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Transferencia</div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Datos enviados</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Artifact Registry / Cloud Build</div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Imágenes almacenadas</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Tiempo de compilación</span><span style="font-size:11px;color:var(--white-30);">No disponible actualmente</span></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--white-30);line-height:1.6;">
-          ℹ️ Los datos técnicos detallados requieren acceso a la API de Google Cloud Billing, disponible solo desde el servidor. Se integrará en una próxima actualización.
+        <div style="font-size:12px;font-weight:700;color:var(--white-50);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Desglose de comisiones</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🍽️ Comisiones Food</span><span class="si77" id="d-food">$0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🏍️ Comisiones Ride</span><span class="si77" id="d-ride">$0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">🏪 Membresías negocios</span><span class="si77" id="d-mem">$0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;"><span class="si02">🎪 Eventos</span><span class="si77" id="d-eventos">$0</span></div>
+      </div>
+      <div class="si14"></div>
+    </div>
+
+    <!-- TAB: COSTOS -->
+    <div id="mtab-costos" style="display:none;">
+
+      <!-- Nota simulación -->
+      <div id="costos-sim-nota" style="display:none;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.35);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#F5C518;font-weight:600;">
+        🧪 MODO SIMULACIÓN — <span id="costos-sim-nota-monto">$0</span> simulados. Los datos reales no cambian.
+      </div>
+
+      <!-- SEMÁFORO GRANDE -->
+      <div id="costos-semaforo" style="background:var(--card-dark);border-radius:16px;padding:28px 16px 22px;border:1px solid var(--card-border);margin-bottom:12px;text-align:center;transition:background .4s,border-color .4s;">
+        <div id="costos-emoji" style="font-size:52px;line-height:1;margin-bottom:10px;">—</div>
+        <div id="costos-estado-txt" style="font-size:20px;font-weight:800;color:#fff;letter-spacing:.5px;margin-bottom:6px;">SIN DATOS</div>
+        <div id="costos-estado-sub" style="font-size:12px;color:var(--white-50);line-height:1.5;">Activa el modo simulación para ver cómo funciona</div>
+      </div>
+
+      <!-- 4 STAT BOXES -->
+      <div class="admin-stat-row">
+        <div class="admin-stat-box"><div class="admin-stat-num" id="costos-gastado">—</div><div class="admin-stat-lbl">Gastado este mes</div></div>
+        <div class="admin-stat-box"><div class="admin-stat-num" id="costos-presupuesto">$50.00</div><div class="admin-stat-lbl">Presupuesto</div></div>
+      </div>
+      <div class="admin-stat-row">
+        <div class="admin-stat-box"><div class="admin-stat-num" id="costos-disponible">—</div><div class="admin-stat-lbl">Disponible</div></div>
+        <div class="admin-stat-box"><div class="admin-stat-num" id="costos-usado-pct">—</div><div class="admin-stat-lbl">Utilizado</div></div>
+      </div>
+
+      <!-- GRÁFICO DONA -->
+      <div style="background:var(--card-dark);border-radius:14px;padding:20px 14px 16px;border:1px solid var(--card-border);margin-bottom:12px;display:flex;flex-direction:column;align-items:center;">
+        <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+          <svg width="130" height="130" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r="52" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="16"/>
+            <circle id="costos-dona-arc" cx="65" cy="65" r="52" fill="none" stroke="#1FC26A" stroke-width="16"
+              stroke-dasharray="0 326.7" stroke-linecap="round"
+              transform="rotate(-90 65 65)" style="transition:stroke-dasharray .6s ease,stroke .4s ease;"/>
+          </svg>
+          <div style="position:absolute;text-align:center;">
+            <div id="costos-dona-pct" style="font-size:20px;font-weight:800;color:#fff;line-height:1;">—</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:20px;font-size:11px;">
+          <span style="color:var(--white-50);display:flex;align-items:center;gap:5px;"><span id="costos-dona-legend-color" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1FC26A;"></span>Usado</span>
+          <span style="color:var(--white-30);display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,.12);"></span>Disponible</span>
         </div>
       </div>
-    </div>
 
-    <!-- MODO SIMULACIÓN -->
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🧪 Modo Simulación</div>
-      <div style="font-size:11px;color:var(--white-40);margin-bottom:12px;line-height:1.6;">Solo para verificar semáforo, porcentajes y diseño. No modifica datos reales.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-        <button id="monet-sim-10" class="monet-sim-btn" onclick="monetSimular(10)" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:8px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$10</button>
-        <button id="monet-sim-25" class="monet-sim-btn" onclick="monetSimular(25)" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:8px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$25</button>
-        <button id="monet-sim-50" class="monet-sim-btn" onclick="monetSimular(50)" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:8px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$50</button>
-        <button id="monet-sim-100" class="monet-sim-btn" onclick="monetSimular(100)" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:8px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$100</button>
+      <!-- RANKING -->
+      <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:14px;">🏆 ¿Qué está consumiendo más?</div>
+        <div id="costos-ranking" style="font-size:12px;color:var(--white-40);line-height:1.6;text-align:center;padding:10px 0;">Activa el modo simulación para ver el ranking</div>
       </div>
-      <button onclick="monetSimularReset()" style="width:100%;background:rgba(214,58,42,.1);border:1px solid rgba(214,58,42,.3);border-radius:10px;padding:8px;color:#D63A2A;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Desactivar simulación</button>
-    </div>
 
-    <div class="si14"></div>
+      <!-- RECOMENDACIONES -->
+      <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:12px;">💡 ¿Cómo puedo ahorrar?</div>
+        <div id="costos-tips" style="font-size:12px;color:var(--white-40);line-height:1.6;text-align:center;padding:6px 0;">Activa el modo simulación para ver recomendaciones</div>
+      </div>
+
+      <!-- DETALLES TÉCNICOS -->
+      <button id="costos-detalles-btn" onclick="monetToggleDetalles()" style="width:100%;background:var(--card-dark);border:1px solid var(--card-border);border-radius:14px;padding:14px;color:var(--white-50);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span>Detalles técnicos</span><span id="costos-detalles-arr">›</span>
+      </button>
+      <div id="costos-detalles" style="display:none;margin-bottom:12px;">
+        <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);">
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Firestore</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Lecturas</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Escrituras</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Eliminaciones</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Storage</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Espacio utilizado</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Descargas</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Cloud Functions</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Invocaciones</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Tiempo de ejecución</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Memoria usada</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Transferencia</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);"><span class="si02">Datos enviados</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="font-size:11px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 10px;">Artifact Registry / Cloud Build</div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Imágenes almacenadas</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;"><span class="si02">Tiempo de compilación</span><span style="font-size:11px;color:var(--white-30);">No disponible</span></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--white-30);line-height:1.6;">ℹ️ Los datos detallados requieren la API de Google Cloud Billing, disponible solo desde el servidor.</div>
+        </div>
+      </div>
+
+      <!-- MODO SIMULACIÓN -->
+      <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🧪 Modo Simulación</div>
+        <div style="font-size:11px;color:var(--white-40);margin-bottom:12px;line-height:1.6;">Solo para verificar semáforo, gráfico y diseño. No modifica datos reales.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+          <button id="monet-sim-10"  class="monet-sim-btn" onclick="monetSimular(10)"  style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:10px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$10</button>
+          <button id="monet-sim-25"  class="monet-sim-btn" onclick="monetSimular(25)"  style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:10px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$25</button>
+          <button id="monet-sim-50"  class="monet-sim-btn" onclick="monetSimular(50)"  style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:10px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$50</button>
+          <button id="monet-sim-100" class="monet-sim-btn" onclick="monetSimular(100)" style="background:var(--card-dark);border:1px solid var(--card-border);border-radius:10px;padding:10px 4px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">$100</button>
+        </div>
+        <button onclick="monetSimularReset()" style="width:100%;background:rgba(214,58,42,.1);border:1px solid rgba(214,58,42,.3);border-radius:10px;padding:9px;color:#D63A2A;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">Desactivar simulación</button>
+      </div>
+
+      <div class="si14"></div>
+    </div><!-- /mtab-costos -->
+
   </div>
 </div>
 
@@ -5550,7 +5495,7 @@
   </div>
 </div>
 
-<script src="chat.js?v=20260713b"></script>
+<script src="chat.js?v=20260713c"></script>
 
 
 <!-- ══ MI AGENDA (vecino) ══════════════════════════════════════

@@ -1507,20 +1507,39 @@ function showAdminTab(i,btn){
   };
 
   // ── Monetización: Costos de Operación ─────────────────────────────────────
-  window._monetSimulando = false;
-  window._monetSimMonto  = 0;
+  window._monetSimulando   = false;
+  window._monetSimMonto    = 0;
   window._monetPresupuesto = 50;
 
-  // Distribución de costos en modo simulación (porcentajes fijos representativos)
-  var _MONET_DIST = { fs:0.35, st:0.25, fn:0.20, ar:0.10, cb:0.05, tf:0.05 };
+  var _MONET_CATS = [
+    { k:'fs', lbl:'Base de datos',          pct:35, emoji:'🗄' },
+    { k:'st', lbl:'Fotografías y archivos', pct:25, emoji:'🖼' },
+    { k:'fn', lbl:'Procesos del servidor',  pct:20, emoji:'⚙️' },
+    { k:'ar', lbl:'Infraestructura',        pct:10, emoji:'📦' },
+    { k:'cb', lbl:'Despliegues',            pct:5,  emoji:'🚀' },
+    { k:'tf', lbl:'Transferencia',          pct:5,  emoji:'🌐' }
+  ];
+
+  window.monetTab = function(t) {
+    ['ingresos','comisiones','costos'].forEach(function(n) {
+      var tab = document.getElementById('mtab-'+n);
+      var btn = document.getElementById('mbtn-'+n);
+      var active = n === t;
+      if(tab) tab.style.display = active ? 'block' : 'none';
+      if(btn) {
+        btn.style.color        = active ? '#fff' : 'rgba(255,255,255,.4)';
+        btn.style.borderBottom = active ? '2px solid #1FC26A' : '2px solid transparent';
+        btn.style.fontWeight   = active ? '700' : '500';
+      }
+    });
+    if(t === 'costos') window.monetCostosCargar();
+  };
 
   window.monetCostosAbrir = function() {
-    go('v-admin-costos','right');
-    setTimeout(function(){ window.monetCostosCargar(); }, 300);
+    window.monetTab('costos');
   };
 
   window.monetCostosCargar = async function() {
-    // Leer presupuesto configurado de Firestore
     try {
       var { getDoc: _gd, doc: _d } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
       var _snap = await _gd(_d(window._fbDb, 'configuracion', 'costos'));
@@ -1530,82 +1549,121 @@ function showAdminTab(i,btn){
       }
     } catch(_) {}
 
-    var pres = window._monetPresupuesto;
-    var sim  = window._monetSimulando;
-    var tot  = sim ? window._monetSimMonto : null;
-    var dia  = new Date().getDate() || 1;
-    var proy = sim ? Math.round(tot / dia * 30 * 100) / 100 : null;
-    var pct  = sim ? Math.round(tot / pres * 100) : null;
-    var margen = sim ? Math.round((pres - tot) * 100) / 100 : null;
+    var pres   = window._monetPresupuesto;
+    var sim    = window._monetSimulando;
+    var tot    = sim ? window._monetSimMonto : null;
+    var dia    = new Date().getDate() || 1;
+    var proy   = sim ? Math.round(tot / dia * 30 * 100) / 100 : null;
+    var pct    = sim ? Math.round(tot / pres * 100) : null;
+    var disp   = sim ? Math.round((pres - tot) * 100) / 100 : null;
 
-    var _semaforo = function(p) {
-      if(p === null) return { txt:'—', col:'var(--white-50)' };
-      if(p < 50)    return { txt:'🟢 Saludable', col:'#1FC26A' };
-      if(p < 80)    return { txt:'🟡 Atención',  col:'#F5C518' };
-      return              { txt:'🔴 Riesgo',     col:'#D63A2A' };
+    var _sem = function(p) {
+      if(p === null || p === undefined) return { emoji:'—',  txt:'Sin datos',  sub:'Activa el modo simulación', col:'rgba(255,255,255,.15)', border:'rgba(255,255,255,.1)', tcol:'var(--white-50)' };
+      if(p < 50)  return { emoji:'🟢', txt:'EXCELENTE',  sub:'El gasto está bajo control', col:'rgba(31,194,106,.12)',  border:'rgba(31,194,106,.3)',  tcol:'#1FC26A' };
+      if(p < 80)  return { emoji:'🟡', txt:'ATENCIÓN',   sub:'Revisa si hay picos inusuales', col:'rgba(245,197,24,.10)', border:'rgba(245,197,24,.35)', tcol:'#F5C518' };
+      return             { emoji:'🔴', txt:'RIESGO',     sub:'Podrías exceder el presupuesto', col:'rgba(214,58,42,.12)',  border:'rgba(214,58,42,.35)',  tcol:'#D63A2A' };
     };
-    var sal = _semaforo(pct);
+    var sal = _sem(pct);
 
-    var _fmt = function(v) { return v !== null ? '$'+v.toFixed(2) : 'No disponible'; };
+    var _fmt    = function(v) { return v !== null ? '$'+v.toFixed(2) : '—'; };
     var _fmtPct = function(v) { return v !== null ? v+'%' : '—'; };
-    var _set = function(id, val) { var e=document.getElementById(id); if(e) e.textContent=val; };
-    var _col = function(id, c)  { var e=document.getElementById(id); if(e) e.style.color=c; };
+    var _set    = function(id, val) { var e=document.getElementById(id); if(e) e.textContent=val; };
+    var _css    = function(id, prop, val) { var e=document.getElementById(id); if(e) e.style[prop]=val; };
 
-    // Resumen general
-    _set('costos-total',      _fmt(tot));
-    _set('costos-presupuesto','$'+pres.toFixed(2));
-    _set('costos-proyeccion', _fmt(proy));
-    _set('costos-salud', sal.txt); _col('costos-salud', sal.col);
-    _set('costos-margen', _fmt(margen));
-    _set('costos-uso-pct', _fmtPct(pct));
-    var barra = document.getElementById('costos-uso-barra');
-    if(barra) {
-      barra.style.width = (pct !== null ? Math.min(pct,100) : 0)+'%';
-      barra.style.background = sal.col === 'var(--white-50)' ? '#1FC26A' : sal.col;
+    // Semáforo card
+    var scard = document.getElementById('costos-semaforo');
+    if(scard) { scard.style.background=sal.col; scard.style.borderColor=sal.border; }
+    _set('costos-emoji',      sal.emoji);
+    _set('costos-estado-txt', sal.txt);
+    _css('costos-estado-txt', 'color', sal.tcol);
+    _set('costos-estado-sub', sal.sub);
+
+    // Nota simulación
+    var nota = document.getElementById('costos-sim-nota');
+    if(nota) nota.style.display = sim ? 'flex' : 'none';
+
+    // Stat boxes
+    _set('costos-gastado',      _fmt(tot));
+    _set('costos-presupuesto',  '$'+pres.toFixed(2));
+    _set('costos-disponible',   _fmt(disp));
+    _set('costos-usado-pct',    _fmtPct(pct));
+
+    // Dona SVG
+    var circ = 326.7;
+    var arc  = pct !== null ? Math.round(Math.min(pct,100) / 100 * circ * 10) / 10 : 0;
+    var arcEl = document.getElementById('costos-dona-arc');
+    if(arcEl) {
+      arcEl.setAttribute('stroke-dasharray', arc+' '+circ);
+      arcEl.setAttribute('stroke', sal.tcol === 'var(--white-50)' ? '#1FC26A' : sal.tcol);
+    }
+    _set('costos-dona-pct', pct !== null ? pct+'%' : '—');
+    _css('costos-dona-pct', 'color', sal.tcol === 'var(--white-50)' ? '#fff' : sal.tcol);
+    var legendCol = document.getElementById('costos-dona-legend-color');
+    if(legendCol) legendCol.style.background = sal.tcol === 'var(--white-50)' ? '#1FC26A' : sal.tcol;
+
+    // Ranking
+    var rankEl = document.getElementById('costos-ranking');
+    if(rankEl) {
+      if(!sim) {
+        rankEl.innerHTML = '<p style="color:var(--white-50);font-size:13px;text-align:center;padding:12px 0;">Activa el modo simulación para ver el ranking</p>';
+      } else {
+        var sorted = _MONET_CATS.slice().sort(function(a,b){ return b.pct-a.pct; });
+        rankEl.innerHTML = sorted.map(function(c, i) {
+          var costo = Math.round(c.pct / 100 * tot * 100) / 100;
+          var barW  = c.pct+'%';
+          var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+          return '<div style="margin-bottom:14px;">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+            +'<span style="font-size:13px;color:var(--white-80);">'+medal+' '+c.emoji+' '+c.lbl+'</span>'
+            +'<span style="font-size:13px;font-weight:700;color:#fff;">$'+costo.toFixed(2)+'</span>'
+            +'</div>'
+            +'<div style="height:5px;border-radius:3px;background:rgba(255,255,255,.08);">'
+            +'<div style="height:100%;border-radius:3px;background:'+sal.tcol+(sal.tcol==='var(--white-50)'?';background:#1FC26A':'')+';width:'+barW+';transition:width .5s ease;"></div>'
+            +'</div>'
+            +'</div>';
+        }).join('');
+      }
     }
 
-    // Nota de simulación
-    _set('costos-sim-nota-monto', sim ? '$'+tot.toFixed(2) : '');
-    var nota = document.getElementById('costos-sim-nota');
-    if(nota) nota.style.display = sim ? 'block' : 'none';
-
-    // Tarjetas de servicios
-    var _cats = [
-      { k:'fs', lbl:'🗄 Base de datos' },
-      { k:'st', lbl:'🖼 Fotografías' },
-      { k:'fn', lbl:'⚙️ Procesos' },
-      { k:'ar', lbl:'📦 Infraestructura' },
-      { k:'cb', lbl:'🚀 Despliegues' },
-      { k:'tf', lbl:'🌐 Transferencia' }
-    ];
-    _cats.forEach(function(c) {
-      var costo = sim ? Math.round(_MONET_DIST[c.k] * tot * 100) / 100 : null;
-      var cpct  = sim ? Math.round(_MONET_DIST[c.k] * 100) : null;
-      var csal  = _semaforo(pct); // mismo semáforo general para cada servicio
-      _set('costos-'+c.k+'-costo', _fmt(costo));
-      _set('costos-'+c.k+'-pct',  cpct !== null ? cpct+'%' : '—');
-      _set('costos-'+c.k+'-salud', pct !== null ? csal.txt : '—');
-      _col('costos-'+c.k+'-salud', pct !== null ? csal.col : 'var(--white-50)');
-    });
-
-    // Widget en pantalla principal de Monetización
-    _set('stat-costo-mes',   _fmt(tot));
-    _set('stat-proyeccion',  _fmt(proy));
-    _set('stat-presupuesto', '$'+pres.toFixed(2));
-    _set('stat-uso-pct',     _fmtPct(pct));
-    _set('stat-salud-infra', sal.txt);
-    _col('stat-salud-infra', sal.col);
+    // Tips
+    var tipsEl = document.getElementById('costos-tips');
+    if(tipsEl) {
+      var tips;
+      if(pct === null) {
+        tips = ['<li>Activa el modo simulación para ver recomendaciones personalizadas.</li>'];
+      } else if(pct < 50) {
+        tips = [
+          '<li>La base de datos es tu mayor consumo. Revisa que no haya lecturas innecesarias.</li>',
+          '<li>Comprime las fotos antes de subirlas para reducir el almacenamiento.</li>',
+          '<li>Estás en zona verde — buen momento para revisar sin presión.</li>'
+        ];
+      } else if(pct < 80) {
+        tips = [
+          '<li>Revisa si hay picos de tráfico inusuales en los procesos del servidor.</li>',
+          '<li>Considera aumentar el presupuesto o reducir envíos de notificaciones.</li>',
+          '<li>Las fotografías sin comprimir pueden estar generando costos extra de transferencia.</li>'
+        ];
+      } else {
+        tips = [
+          '<li>⚠️ Estás cerca del límite. Pausa funciones no críticas si es posible.</li>',
+          '<li>Revisa si hay un proceso que se ejecuta en bucle (loop infinito).</li>',
+          '<li>Considera aumentar el presupuesto mensual para el próximo ciclo.</li>'
+        ];
+      }
+      tipsEl.innerHTML = '<ul style="margin:0;padding-left:18px;color:var(--white-80);font-size:13px;line-height:1.8;">'+tips.join('')+'</ul>';
+    }
   };
 
   window.monetSimular = function(monto) {
     window._monetSimulando = true;
     window._monetSimMonto  = monto;
     document.querySelectorAll('.monet-sim-btn').forEach(function(b){
-      b.style.background   = 'var(--card-dark)';
-      b.style.borderColor  = 'var(--card-border)';
+      b.style.background  = 'var(--card-dark)';
+      b.style.borderColor = 'var(--card-border)';
+      b.style.color       = 'var(--white-80)';
     });
     var btn = document.getElementById('monet-sim-'+monto);
-    if(btn) { btn.style.background='rgba(31,194,106,.15)'; btn.style.borderColor='#1FC26A'; }
+    if(btn) { btn.style.background='rgba(31,194,106,.15)'; btn.style.borderColor='#1FC26A'; btn.style.color='#1FC26A'; }
     window.monetCostosCargar();
   };
 
@@ -1615,19 +1673,18 @@ function showAdminTab(i,btn){
     document.querySelectorAll('.monet-sim-btn').forEach(function(b){
       b.style.background  = 'var(--card-dark)';
       b.style.borderColor = 'var(--card-border)';
+      b.style.color       = 'var(--white-80)';
     });
     window.monetCostosCargar();
   };
 
   window.monetToggleDetalles = function() {
     var sec = document.getElementById('costos-detalles');
-    var btn = document.getElementById('costos-detalles-btn');
+    var arr = document.getElementById('costos-detalles-arr');
     if(!sec) return;
     var visible = sec.style.display !== 'none';
     sec.style.display = visible ? 'none' : 'block';
-    if(btn) {
-      btn.querySelector('span:last-child').textContent = visible ? '›' : '↓';
-    }
+    if(arr) arr.textContent = visible ? '›' : '↓';
   };
 
   window.entrarAdmin = async function() {
