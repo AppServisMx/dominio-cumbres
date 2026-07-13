@@ -4845,6 +4845,26 @@
         </div>
       </div>
 
+      <!-- PLANES IMPULSA -->
+      <div class="admin-card" id="card-planes" onclick="go('v-admin-planes','right');setTimeout(window.adminPlanesCargar,200)">
+        <div>
+          <div class="admin-card-ic" style="background:rgba(245,197,24,.15);">⭐</div>
+          <div class="admin-card-title">Plan Impulsa</div>
+          <div class="admin-card-sub">Activar · renovar · suspender</div>
+        </div>
+        <div id="notif-planes" class="si12 admin-notif" style="display:none;">0</div>
+      </div>
+
+      <!-- CAMPAÑAS -->
+      <div class="admin-card" id="card-campanas" onclick="go('v-admin-campanas','right');setTimeout(window.adminCampanasCargar,200)">
+        <div>
+          <div class="admin-card-ic" style="background:rgba(46,134,193,.15);">📢</div>
+          <div class="admin-card-title">Campañas</div>
+          <div class="admin-card-sub">Banners · secciones · slots</div>
+        </div>
+        <div id="notif-campanas" class="si12 admin-notif" style="display:none;">0</div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -5286,6 +5306,196 @@
       <span style="color:#1FC26A;font-size:18px;">›</span>
     </div>
     <div class="si14"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-ADMIN-PLANES — Plan Impulsa              ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="si23 view go-right" id="v-admin-planes">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-admin-panel','left')">‹</button>
+      <div><div class="hdr-title">⭐ Plan Impulsa</div><div class="hdr-sub">Activar · renovar · suspender</div></div>
+    </div>
+  </div>
+
+  <!-- Buscador -->
+  <div style="padding:10px 14px 0;flex-shrink:0;">
+    <input id="planes-search" type="text" placeholder="🔍 Buscar negocio..." oninput="window.adminPlanesFiltrar(this.value)"
+      style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;padding:10px 14px 0;gap:8px;flex-shrink:0;">
+    <button id="ptab-activos" onclick="window.adminPlanesMostrar('activos')"
+      style="flex:1;padding:9px 4px;font-size:11px;font-weight:700;color:#F5C518;background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;">
+      ⭐ Impulsa activos</button>
+    <button id="ptab-todos" onclick="window.adminPlanesMostrar('todos')"
+      style="flex:1;padding:9px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;">
+      Todos los negocios</button>
+  </div>
+
+  <div class="scroll" style="padding:12px 14px 20px;" id="planes-lista">
+    <div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:13px;">Cargando... ⏳</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-ADMIN-PLANES-FORM — Activar plan         ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="si23 view go-right" id="v-admin-planes-form">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-admin-planes','left')">‹</button>
+      <div><div class="hdr-title" id="pf-titulo">Gestionar Plan</div><div class="hdr-sub" id="pf-sub">Plan Impulsa</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:16px 14px 30px;">
+
+    <div style="background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.25);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:4px;">Negocio seleccionado</div>
+      <div style="font-size:15px;font-weight:800;color:#F5C518;" id="pf-nombre-neg">—</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;" id="pf-uid-neg"></div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Plan</div>
+      <select id="pf-plan-tipo" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+        <option value="impulsa_mes">⭐ Impulsa Mensual — $199</option>
+        <option value="impulsa_ano">⭐ Impulsa Anual — $1,999</option>
+        <option value="basico">Plan Básico (sin costo)</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:12px;" id="pf-fechas-wrap">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Inicio del plan</div>
+      <input type="date" id="pf-inicio" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+    </div>
+
+    <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,.45);line-height:1.7;" id="pf-resumen">
+      Selecciona el tipo de plan para ver el resumen.
+    </div>
+
+    <button onclick="window.adminPlanesGuardar()" id="pf-guardar-btn"
+      style="width:100%;background:linear-gradient(135deg,#c8940a,#F5C518);border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#1A3A5C;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
+      ⭐ Activar Plan Impulsa
+    </button>
+    <button onclick="go('v-admin-planes','left')"
+      style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;font-size:13px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;">
+      Cancelar
+    </button>
+    <div id="pf-error" style="display:none;background:rgba(214,58,42,.15);border:1px solid rgba(214,58,42,.3);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:12px;color:#ff6b6b;"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-ADMIN-CAMPANAS — Gestión de banners      ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="si23 view go-right" id="v-admin-campanas">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-admin-panel','left')">‹</button>
+      <div><div class="hdr-title">📢 Campañas</div><div class="hdr-sub">Banners activos por sección</div></div>
+    </div>
+  </div>
+
+  <!-- Botón crear -->
+  <div style="padding:10px 14px 0;flex-shrink:0;">
+    <button onclick="window.adminCampanasNueva()" style="width:100%;background:linear-gradient(135deg,#1A3A5C,#2E86C1);border:none;border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+      <span style="font-size:18px;">+</span> Nueva campaña
+    </button>
+  </div>
+
+  <!-- Tabs por sección -->
+  <div style="display:flex;gap:6px;padding:10px 14px 0;overflow-x:auto;scrollbar-width:none;flex-shrink:0;">
+    <button class="camp-tab on" data-sec="todas"   onclick="window.adminCampanasTab('todas')">Todas</button>
+    <button class="camp-tab"    data-sec="home"     onclick="window.adminCampanasTab('home')">Home</button>
+    <button class="camp-tab"    data-sec="food"     onclick="window.adminCampanasTab('food')">Food</button>
+    <button class="camp-tab"    data-sec="plaza"    onclick="window.adminCampanasTab('plaza')">Plaza</button>
+    <button class="camp-tab"    data-sec="servicios" onclick="window.adminCampanasTab('servicios')">Servicios</button>
+    <button class="camp-tab"    data-sec="informa"  onclick="window.adminCampanasTab('informa')">Informa</button>
+    <button class="camp-tab"    data-sec="eventos"  onclick="window.adminCampanasTab('eventos')">Eventos</button>
+  </div>
+
+  <div class="scroll" style="padding:12px 14px 20px;" id="campanas-admin-lista">
+    <div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:13px;">Cargando... ⏳</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-ADMIN-CAMPANAS-FORM — Nueva campaña      ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="si23 view go-right" id="v-admin-campanas-form">
+  <div class="admin-sub-hdr">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div class="back-row">
+      <button class="btn-back" onclick="go('v-admin-campanas','left')">‹</button>
+      <div><div class="hdr-title">Nueva campaña</div><div class="hdr-sub">Banner publicitario</div></div>
+    </div>
+  </div>
+  <div class="scroll" style="padding:16px 14px 30px;">
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Sección donde aparece</div>
+      <select id="cf-ubicacion" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+        <option value="home">🏠 Home — todos los usuarios</option>
+        <option value="food">🍽️ Dominio Food</option>
+        <option value="plaza">🏪 Plaza Online</option>
+        <option value="servicios">🔧 Servicios</option>
+        <option value="informa">📰 Informa</option>
+        <option value="eventos">🎪 Eventos</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Nombre del negocio (aparece en el banner)</div>
+      <input type="text" id="cf-nombre" placeholder="Ej. Tacos El Gordo" maxlength="60"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Texto del banner (opcional)</div>
+      <input type="text" id="cf-texto" placeholder="Ej. ¡Abrimos todos los días!" maxlength="80"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">URL de imagen del banner</div>
+      <input type="url" id="cf-imagen" placeholder="https://..."
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">Sube la imagen a Firebase Storage primero y pega la URL aquí</div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Inicio</div>
+        <input type="date" id="cf-inicio" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:11px 10px;font-size:12px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Fin (30 días)</div>
+        <input type="date" id="cf-fin" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:11px 10px;font-size:12px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">UID del negocio (opcional — para abrir su perfil al tocar)</div>
+      <input type="text" id="cf-negocio-id" placeholder="uid del usuario en Firestore"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+    </div>
+
+    <button id="cf-guardar-btn" onclick="window.adminCampanasGuardar()"
+      style="width:100%;background:linear-gradient(135deg,#1A3A5C,#2E86C1);border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
+      📢 Activar campaña
+    </button>
+    <button onclick="go('v-admin-campanas','left')"
+      style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;font-size:13px;font-weight:600;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Inter',sans-serif;">
+      Cancelar
+    </button>
+    <div id="cf-error" style="display:none;background:rgba(214,58,42,.15);border:1px solid rgba(214,58,42,.3);border-radius:10px;padding:10px 14px;margin-top:10px;font-size:12px;color:#ff6b6b;"></div>
   </div>
 </div>
 
