@@ -1050,6 +1050,16 @@ function _postHooks(id){
     if(id==='vn-home'&&typeof window.dcNeg_resetStack==='function') window.dcNeg_resetStack();
     if(id==='v-favoritos'){window.__dcL33LastBeforeFav=window.__dcL33LastBeforeFav||'';}
     if(id==='v-eventos'){setTimeout(function(){try{window.evCargarPortal&&window.evCargarPortal();}catch(_){}},60);}
+    // ── Campañas: cargar banner al entrar a cada sección ──────────────────
+    if(window.dcCampanas){
+      var _campMap={'v-home':'home','v-food':'food','v-plaza':'plaza',
+                    'v-servicios':'servicios','v-informa':'informa','v-eventos':'eventos'};
+      if(_campMap[id]){
+        setTimeout(function(){
+          try{window.dcCampanas.cargar(_campMap[id],'campanas-'+_campMap[id]);}catch(_){}
+        },200);
+      }
+    }
     if(typeof window.__dcNavPatchAll==='function'){setTimeout(window.__dcNavPatchAll,35);setTimeout(window.__dcNavPatchAll,180);}
     _patchFavBack();
   }catch(_){}
@@ -3227,6 +3237,9 @@ window.renderHomeM2 = function() {
     }
     // Insertar promos activas al inicio del carrusel
     window.renderPromoEnCarrusel && window.renderPromoEnCarrusel();
+
+    // ── 2b. Campañas del home ──────────────────────────────────
+    try{window.dcCampanas&&window.dcCampanas.cargar('home','campanas-home');}catch(_){}
 
     // ── 3. Contenido del scroll ────────────────────────────────
     var scroll = document.querySelector('#v-home .scroll');
