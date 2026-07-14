@@ -1394,6 +1394,11 @@
     </div>
   </div>
   <div class="dcf-scroll" id="det-menu"></div>
+  <div id="food-det-rating-wrap" style="padding:16px 14px;background:#FFF8E1;border-top:1px solid #F5C518;flex-shrink:0;display:none;">
+    <div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:8px;" id="food-det-rating-avg">Sé el primero en calificar</div>
+    <div id="food-det-rating-block"></div>
+    <div id="food-det-opiniones-block" style="display:none;margin-top:12px;"></div>
+  </div>
   <div class="dcf-cart-bar" id="dcf-cart-bar" style="display:none;" onclick="go('v-carrito','right')">
     <div class="dcf-cart-badge" id="dcf-cart-count">0</div>
     <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver carrito</div>
@@ -2629,6 +2634,11 @@
     </div>
   </div>
   <div class="scroll" id="plaza-prod-lista" style="padding:12px 0;"></div>
+  <div id="neg-det-rating-wrap" style="padding:16px 14px;background:#FFF8E1;border-top:1px solid #F5C518;flex-shrink:0;display:none;">
+    <div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:8px;" id="neg-det-rating-avg">Sé el primero en calificar</div>
+    <div id="neg-det-rating-block"></div>
+    <div id="neg-det-opiniones-block" style="display:none;margin-top:12px;"></div>
+  </div>
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
@@ -8180,7 +8190,7 @@ function _dcfRenderLista(docs) {
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
       +'<div class="rname">'+(r.nombreNegocio||r.nombre||'—')+'</div>'
       +'<span style="'+estStyle+'">'+estLabel+'</span></div>'
-      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.descripcion||cat)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.) · ':'')+(r.descripcion||cat)+'</div>'
       +'<div class="rfooter">'
       +'<span style="font-size:11px;color:var(--tx2);">'+envStr+'</span>'
       +'<span class="link-green">Pedir →</span>'
@@ -8246,6 +8256,7 @@ window.dcFood_abrirRest = async function(restId) {
   }
   _dcfNav('v-food-det');
   await dcFood_cargarMenu(restId);
+  try { window.dcRatingCargar && window.dcRatingCargar(restId, 'food-det', 'Calificar restaurante'); } catch(e) {}
 };
 
 /* ── Cargar menú ────────────────────────────────────── */
@@ -13898,6 +13909,124 @@ async function _ratingMostrarOpiniones(pUid,myUid){
     ob.innerHTML=html;
   }catch(e){ob.style.display='none';}
 };
+
+/* ======= GENERIC RATING ENGINE (restaurantes + negocios) ======= */
+window._dcRatingUid={};
+window._dcRatingSelGen={};
+window._dcRatingVotoGen={};
+
+function _dcGenRatingMostrarVotado(nr,comentario,prom,cnt,blockId){
+  window._dcRatingVotoGen[blockId]={nr:nr,comentario:comentario||''};
+  var blk=document.getElementById(blockId+'-rating-block'); if(!blk)return;
+  var comHtml=comentario?'<div style="font-size:11px;color:#7a5000;background:#fffbe6;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-style:italic;">&ldquo;'+comentario.replace(/</g,'&lt;')+'&rdquo;</div>':'';
+  blk.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">&#x2B50; Tu calificaci&#xF3;n</div>'
+    +'<div style="font-size:22px;margin-bottom:6px;">'+'&#x2B50;'.repeat(nr)+'&#x2606;'.repeat(5-nr)+'</div>'
+    +comHtml
+    +(prom!==null?'<div style="font-size:11px;color:#9a7020;margin-bottom:10px;">Promedio: &#x2B50; '+prom+' ('+cnt+' opiniones)</div>':'')
+    +'<button onclick="window.dcRatingModoEditar(\''+blockId+'\')" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">&#x270F;&#xFE0F; Editar calificaci&#xF3;n</button>';
+}
+
+window.dcRatingModoEditar=function(blockId){
+  var b=document.getElementById(blockId+'-rating-block'); if(!b)return;
+  var voto=window._dcRatingVotoGen[blockId]||{}; var nr=voto.nr||0; var com=voto.comentario||'';
+  window._dcRatingSelGen[blockId]=nr;
+  var estrellas='';
+  for(var i=1;i<=5;i++) estrellas+='<span onclick="window.dcRatingSet('+i+',\''+blockId+'\')" style="font-size:28px;cursor:pointer;">'+(i<=nr?'&#x2B50;':'&#x2606;')+'</span>';
+  b.innerHTML='<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:4px;">&#x2B50; Calificar</div>'
+    +'<div id="'+blockId+'-stars" style="display:flex;gap:6px;margin-bottom:10px;">'+estrellas+'</div>'
+    +'<textarea id="'+blockId+'-rating-com" class="nota" rows="2" placeholder="Comentario opcional...">'+com+'</textarea>'
+    +'<button onclick="window.dcRatingEnviar(\''+blockId+'\')" style="width:100%;margin-top:8px;background:#F5C518;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#1a1200;cursor:pointer;font-family:inherit;">Enviar calificaci&#xF3;n &#x2192;</button>';
+};
+
+window.dcRatingSet=function(n,blockId){
+  window._dcRatingSelGen[blockId]=n;
+  document.querySelectorAll('#'+blockId+'-stars span').forEach(function(s,i){s.innerHTML=i<n?'&#x2B50;':'&#x2606;';});
+};
+
+window.dcRatingEnviar=async function(blockId){
+  var nr=window._dcRatingSelGen[blockId]||0;
+  if(!nr){alert('Selecciona estrellas');return;}
+  var pUid=window._dcRatingUid[blockId]||''; if(!pUid)return;
+  var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid;
+  if(!myUid){alert('Inicia sesión');return;}
+  var com=(document.getElementById(blockId+'-rating-com')||{}).value||'';
+  var btn=document.querySelector('#'+blockId+'-rating-block button:last-child');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Guardando...';}
+  try{
+    var miNombre=localStorage.getItem('dcuser')||'Vecino';
+    await _fbSet4('calificaciones',pUid,'votos',myUid,{rating:nr,comentario:com,fecha:new Date().toISOString(),vecUid:myUid,nombre:miNombre});
+    var snap=await _fbColSub3('calificaciones',pUid,'votos');
+    var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
+    var prom=cnt?Math.round((tot/cnt)*10)/10:0;
+    await _fbSet4('calificaciones',pUid,'resumen','datos',{promedio:prom,total:cnt});
+    try{await _fbUpd2('usuarios',pUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
+    var avgEl=document.getElementById(blockId+'-rating-avg');
+    if(avgEl) avgEl.textContent='⭐ '+prom+' ('+cnt+' opiniones)';
+    var savedNr=nr; var savedCom=com; window._dcRatingSelGen[blockId]=0;
+    _dcGenRatingMostrarVotado(savedNr,savedCom,prom,cnt,blockId);
+    _feliz('¡Gracias por calificar!');
+    _dcGenRatingMostrarOpiniones(pUid,myUid,blockId);
+  }catch(e){
+    console.error('rating-gen',e);
+    if(btn){btn.disabled=false;btn.textContent='Enviar calificación →';}
+    alert('Error: '+e.message);
+  }
+};
+
+window.dcRatingCargar=async function(pUid,blockId,titulo){
+  window._dcRatingUid[blockId]=pUid;
+  var wrap=document.getElementById(blockId+'-rating-wrap');
+  var blk=document.getElementById(blockId+'-rating-block');
+  if(!blk)return;
+  var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
+  if(tipo!=='vecino'){if(wrap)wrap.style.display='none';return;}
+  if(wrap)wrap.style.display='block';
+  window._dcRatingSelGen[blockId]=0;
+  blk.innerHTML='<div style="text-align:center;padding:20px;color:#cca020;font-size:12px;">Cargando...</div>';
+  if(!pUid||!window._fbDb){window.dcRatingModoEditar(blockId);return;}
+  try{
+    var promSnap=await _fbGet4('calificaciones',pUid,'resumen','datos');
+    var prom=null,cnt=0;
+    if(promSnap.exists()){var pd=promSnap.data();prom=pd.promedio||null;cnt=pd.total||0;}
+    var avgEl=document.getElementById(blockId+'-rating-avg');
+    if(avgEl) avgEl.textContent=prom!==null?'⭐ '+prom+' ('+cnt+' opiniones)':'Sé el primero en calificar';
+    var auth2=window._fbAuth; var myUid2=auth2&&auth2.currentUser&&auth2.currentUser.uid;
+    if(myUid2){
+      var mv=await _fbGet4('calificaciones',pUid,'votos',myUid2);
+      if(mv.exists()){
+        var vd=mv.data();
+        _dcGenRatingMostrarVotado(vd.rating||0,vd.comentario||'',prom,cnt,blockId);
+        _dcGenRatingMostrarOpiniones(pUid,myUid2,blockId);
+        return;
+      }
+    }
+    window.dcRatingModoEditar(blockId);
+    _dcGenRatingMostrarOpiniones(pUid,myUid2||'',blockId);
+  }catch(e){console.error('rating-gen-cargar',e);window.dcRatingModoEditar(blockId);}
+};
+
+async function _dcGenRatingMostrarOpiniones(pUid,myUid,blockId){
+  var ob=document.getElementById(blockId+'-opiniones-block'); if(!ob)return;
+  try{
+    var snap=await _fbColSub3('calificaciones',pUid,'votos');
+    var items=[];
+    snap.forEach(function(d){var v=d.data();if(d.id!==myUid&&(v.comentario||'').trim())items.push(v);});
+    if(!items.length){ob.style.display='none';return;}
+    ob.style.display='block';
+    var html='<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">Opiniones de clientes</div>';
+    items.forEach(function(v){
+      var nr=v.rating||0; var fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
+      html+='<div style="background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;border:.5px solid #e8e8e8;">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        +'<span style="font-size:13px;">'+('⭐'.repeat(nr)+'☆'.repeat(5-nr))+'</span>'
+        +'<span style="font-size:10px;color:#aaa;">'+fecha+'</span></div>'
+        +(v.comentario?'<div style="font-size:12px;color:#444;line-height:1.5;margin-bottom:4px;font-style:italic;">&ldquo;'+v.comentario.replace(/</g,'&lt;')+'&rdquo;</div>':'')
+        +'<div style="font-size:11px;color:#888;">'+(v.nombre||'Vecino')+'</div>'
+        +'</div>';
+    });
+    ob.innerHTML=html;
+  }catch(e){ob.style.display='none';}
+}
 
 /* ======= CMV PROVEEDOR ======= */
 window._cmvFotoB64=null;

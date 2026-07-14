@@ -788,7 +788,7 @@
               <div class="rest-name">${r.nombreNegocio||r.nombre||'—'}</div>
               <span class="si44" style="${(()=>{var _e=(typeof window._estadoEfectivoDe==='function')?window._estadoEfectivoDe(r.estadoOp,r.estadoOpTs||0,r.horarios&&r.horarios.length?r.horarios:null):(r.estadoOp||'activo');return _e==='cerrado'?'background:#FDECEA;color:#D63A2A':_e==='pausado'?'background:#FFF0E6;color:#E87722':_e==='ocupado'?'background:#FFF8E1;color:#d97706':'background:var(--green-lt);color:var(--green-dk)';})()}">${(()=>{var _e=(typeof window._estadoEfectivoDe==='function')?window._estadoEfectivoDe(r.estadoOp,r.estadoOpTs||0,r.horarios&&r.horarios.length?r.horarios:null):(r.estadoOp||'activo');return _e==='cerrado'?'🔴 Cerrado':_e==='pausado'?'🟠 Pausado':_e==='ocupado'?'🟡 Ocupado':'🟢 Abierto';})()}</span>
             </div>
-            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">⭐ Nuevo · ${r.descripcion||r.categoria||''}</div>
+            <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">${r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.) · ':''}${r.descripcion||r.categoria||''}</div>
             <div class="rest-footer"><span class="si01">Envío disponible</span><span class="si16">Pedir →</span></div>
           </div>`;
         div.onclick = () => go('v-food-det','right');
@@ -961,7 +961,7 @@ window._plazaRenderLista = function(docs) {
       + '<div class="si05"><div class="si17">'+(r.nombrePublico || r.nombreNegocio || r.nombre || '—')+'</div>'
       + '<span class="si44" style="background:'+meta.bg+';color:'+meta.col+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;">'+meta.lbl+'</span></div>'
       + '<div class="si10">'+(r.descripcionPublica || r.descripcion || cat || 'Comercio local')+'</div>'
-      + '<div class="si46">'+_plazaCatLabel(cat)+' · ⭐ Nuevo en la app</div>'
+      + '<div class="si46">'+_plazaCatLabel(cat)+(r.ratingPromedio?' · ⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.)':' · ⭐ Nuevo')+'</div>'
       + '<div class="si47"><span class="si62">'+(r.direccionNegocio || 'Comercio de la zona')+'</span><button class="si48" style="background:var(--blue);">Ver productos →</button></div>'
       + '</div></div>';
   }).join('');
@@ -1014,6 +1014,7 @@ window.plazaAbrirComercio = async function(id) {
   go('v-plaza-det','right');
   var detScr = document.getElementById('plaza-prod-lista'); if (detScr) detScr.scrollTop = 0;
   await window.plazaCargarProductos(id, r, estOp);
+  try { window.dcRatingCargar && window.dcRatingCargar(id, 'neg-det', 'Calificar comercio'); } catch(e) {}
 };
 
 window._plazaProdDocsCache = [];
