@@ -1716,29 +1716,46 @@ function showAdminTab(i,btn){
     try {
       await admuEnsureAuth();
       var { getDocs, collection } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-      // Traer todos los usuarios sin filtro y filtrar en memoria
-      // para incluir documentos antiguos sin campo "tipo" o con capitalización distinta
+      console.log('[DIAG][admuCargar] iniciando carga para tipo='+tipo);
       var snap = await getDocs(collection(window._fbDb,'usuarios'));
+      console.log('[DIAG][admuCargar] documentos totales en Firestore: '+snap.size);
       window._admuDatos = [];
+      var _diagContadores = { total: snap.size, admins: 0, sinTipo: 0, porTipo: {}, descartados: [] };
       snap.forEach(function(d){
         var u = Object.assign({uid:d.id}, d.data());
-        if(u.esAdmin === true) return; // nunca mezclar admins
+        if(u.esAdmin === true) { _diagContadores.admins++; return; }
         var t = (u.tipo||'').toLowerCase().trim();
+        if(!t) _diagContadores.sinTipo++;
+        _diagContadores.porTipo[t] = (_diagContadores.porTipo[t]||0) + 1;
         var ok = false;
         if(tipo === 'todos') {
-          ok = (t !== 'vecino'); // todos los proveedores (no vecinos, no admins)
+          ok = (t !== 'vecino');
         } else if(tipo === 'vecino') {
-          ok = (t === 'vecino'); // solo vecinos explícitos
+          ok = (t === 'vecino');
         } else if(tipo === 'servicio') {
           ok = (t === 'proveedor' || t === 'servicio');
         } else {
-          ok = (t === tipo); // restaurante, negocio, ride — coincidencia exacta
+          ok = (t === tipo);
         }
-        if(ok) window._admuDatos.push(u);
+        if(ok) {
+          window._admuDatos.push(u);
+        } else {
+          _diagContadores.descartados.push({ uid: d.id, tipo: u.tipo, tipoNorm: t, razon: !t ? 'sin-tipo' : 'tipo-no-coincide(buscado:'+tipo+')' });
+        }
       });
+      console.log('[DIAG][admuCargar] resumen', JSON.stringify({
+        tipo: tipo,
+        totalFirestore: _diagContadores.total,
+        adminsIgnorados: _diagContadores.admins,
+        sinCampoTipo: _diagContadores.sinTipo,
+        distribucionTipos: _diagContadores.porTipo,
+        coinciden: window._admuDatos.length,
+        descartados: _diagContadores.descartados
+      }));
       if(ADMU_TIPOS_PROV.indexOf(tipo) >= 0) admuRenderListaProv(window._admuDatos);
       else admuRenderLista(window._admuDatos);
     } catch(e) {
+      console.error('[DIAG][admuCargar] excepción', { code: e.code, message: e.message, raw: String(e) });
       if(lista) lista.innerHTML = '<div style="color:#D63A2A;font-size:12px;padding:10px;">Error: '+e.message+'</div>';
     }
   };
@@ -2325,12 +2342,22 @@ function showAdminTab(i,btn){
         var { getApp: _getApp3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
         var { getFunctions: _gf3, httpsCallable: _hc3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
         var fn = _hc3(_gf3(_getApp3(), 'us-central1'), 'adminCambiarCorreo');
-        await fn({ uidObjetivo: uid, nuevoCorreo: c1 });
+        console.log('[DIAG][admuCambiarCorreoAdmin] llamando fn', { uid: uid, nuevoCorreo: c1 });
+        var _res3 = await fn({ uidObjetivo: uid, nuevoCorreo: c1 });
+        console.log('[DIAG][admuCambiarCorreoAdmin] respuesta ok', { data: _res3 && _res3.data });
         // Actualizar cache local
         if(u) { u.correo = c1; u.email = c1; }
         cerrar();
         _dcAlerta('✅ Correo actualizado correctamente.');
       } catch(e) {
+        console.error('[DIAG][admuCambiarCorreoAdmin] excepción', {
+          code: e.code,
+          message: e.message,
+          details: e.details,
+          httpErrorCode: e.httpErrorCode,
+          name: e.name,
+          raw: String(e)
+        });
         btn.disabled = false; btn.textContent = 'Guardar';
         var code = (e.code||'');
         var msg;
