@@ -21,7 +21,7 @@
   /* Restaurante v2.4 */
   --card-bg:#FFFFFF;
   --red-dk:#7A1810;
-  --rest-hdr:linear-gradient(150deg,#5A0E08 0%,#8A1810 30%,#C02A1C 70%,#D63A2A 100%);
+  --rest-hdr:linear-gradient(150deg,#4A2800 0%,#7A4200 30%,#B87800 70%,#D4A000 100%);
   --shadow-sm:0 1px 4px rgba(0,0,0,.06);
   --w15:rgba(255,255,255,.15);
   --w25:rgba(255,255,255,.25);
@@ -769,8 +769,8 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   cursor:pointer;border:.5px solid #f0e8d0;
   box-shadow:0 2px 8px var(--shadow);transition:transform .15s;}
 .dcf-rcard:active{transform:scale(.98);}
-.rbanner{height:90px;display:flex;align-items:center;justify-content:center;
-  font-size:52px;position:relative;overflow:hidden;}
+.rbanner{height:130px;display:flex;align-items:center;justify-content:center;
+  font-size:64px;position:relative;overflow:hidden;}
 .rbadge{position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.55);
   color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
 .rbody{padding:10px 12px 12px;}
@@ -1068,7 +1068,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-}#vr-shell .ni-ic { font-size: 19px; }#vr-shell .ni-lb { font-size: 9px; font-weight: 600; color: #aaa; margin-top: 2px; letter-spacing: .1px; }#vr-shell .ni-lb.on { color: var(--red); }#vr-shell .ni-badge {
+}#vr-shell .ni-ic { font-size: 19px; }#vr-shell .ni-lb { font-size: 9px; font-weight: 600; color: #aaa; margin-top: 2px; letter-spacing: .1px; }#vr-shell .ni-lb.on { color: #c8940a; }#vr-shell .ni-badge {
   position: absolute; top: 5px; left: 50%; margin-left: 4px;
   background: var(--red); color: #fff;
   font-size: 8px; font-weight: 800;
@@ -1172,12 +1172,12 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }#vr-shell .jornada-box::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg,var(--red),#f97316,rgba(198,43,26,.1));
+  background: linear-gradient(90deg,#c8940a,#f0b43a,rgba(200,148,10,.1));
   border-radius: 16px 16px 0 0;
 }#vr-shell .jornada-box::after {
   content: ''; position: absolute; bottom: 0; right: 0;
   width: 40px; height: 40px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(214,58,42,.07) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(200,148,10,.07) 0%, transparent 70%);
   pointer-events: none;
 }#vr-shell .jornada-val {
   font-size: 22px; font-weight: 800;
@@ -1232,7 +1232,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 }#vr-shell .bd {
   width: 5px; height: 5px; border-radius: 50%;
   background: #ccc; transition: background .25s, width .25s;
-}#vr-shell .bd.on { background: var(--red); width: 14px; border-radius: 3px; }
+}#vr-shell .bd.on { background: #c8940a; width: 14px; border-radius: 3px; }
 
 /* ═══════════════════════════════════════════════════════
    DC CUMBRES — Comunidad (sección de pertenencia)
@@ -1268,7 +1268,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   background: linear-gradient(120deg, #fff 0%, #fafaf7 100%);
   border-radius: 16px;
   padding: 14px 16px;
-  border: .5px solid rgba(214,58,42,.15);
+  border: .5px solid rgba(200,148,10,.15);
   display: flex; align-items: center; gap: 12px;
   cursor: pointer;
   transition: transform .14s, box-shadow .14s;
@@ -1276,9 +1276,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   box-shadow: 0 3px 14px rgba(0,0,0,.07);
 }#vr-shell .oportunidad-card:active { transform: scale(.98); box-shadow: 0 1px 6px rgba(0,0,0,.06); }#vr-shell .op-ic { font-size: 24px; flex-shrink: 0; }#vr-shell .op-body { flex: 1; min-width: 0; }#vr-shell .op-title { font-size: 13px; font-weight: 700; color: var(--tx); }#vr-shell .op-sub { font-size: 11px; color: var(--tx3); margin-top: 2px; line-height: 1.4; }#vr-shell .op-cta {
   font-size: 11px; font-weight: 800;
-  color: var(--red); white-space: nowrap;
+  color: #c8940a; white-space: nowrap;
   flex-shrink: 0;
-  background: rgba(214,58,42,.08);
+  background: rgba(200,148,10,.08);
   border-radius: 8px; padding: 4px 10px;
 }
 
@@ -1371,18 +1371,18 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   padding: 12px 14px; font-size: 13px; color: var(--tx);
   outline: none; font-family: inherit;
   transition: border-color .2s;
-}#vr-shell .inp:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(214,58,42,.08); }#vr-shell .inp-ta {
+}#vr-shell .inp:focus { border-color: #c8940a; box-shadow: 0 0 0 3px rgba(200,148,10,.08); }#vr-shell .inp-ta {
   width: 100%; background: var(--bg);
   border: .5px solid var(--border); border-radius: 12px;
   padding: 10px 14px; font-size: 12px; color: var(--tx);
   outline: none; font-family: inherit; resize: none;
-}#vr-shell .inp-ta:focus { border-color: var(--red); }#vr-shell .inp-sel {
+}#vr-shell .inp-ta:focus { border-color: #c8940a; }#vr-shell .inp-sel {
   width: 100%; background: var(--card-bg);
   border: .5px solid var(--border); border-radius: 12px;
   padding: 12px 14px; font-size: 13px; color: var(--tx);
   outline: none; font-family: inherit;
   appearance: none; -webkit-appearance: none;
-}#vr-shell .inp-sel:focus { border-color: var(--red); }#vr-shell .lbl {
+}#vr-shell .inp-sel:focus { border-color: #c8940a; }#vr-shell .lbl {
   font-size: 10px; font-weight: 700; color: #777;
   display: block; margin-bottom: 5px;
   text-transform: uppercase; letter-spacing: .4px;
@@ -1435,7 +1435,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   padding: 8px 0;
   border-bottom: .5px solid #f0f0f0;
 }#vr-shell .comanda-item:last-child { border-bottom: none; padding-bottom: 2px; }#vr-shell .comanda-item-qty {
-  font-size: 20px; font-weight: 800; color: var(--red);
+  font-size: 20px; font-weight: 800; color: #c8940a;
   font-family: 'DM Mono', monospace;
   min-width: 28px; flex-shrink: 0; line-height: 1;
 }#vr-shell .comanda-item-nombre {
@@ -1449,7 +1449,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   margin-top: 10px; padding-top: 10px;
   border-top: 1.5px solid var(--border);
 }#vr-shell .comanda-total-lbl { font-size: 13px; font-weight: 700; color: var(--tx2); }#vr-shell .comanda-total-val {
-  font-size: 20px; font-weight: 800; color: var(--red);
+  font-size: 20px; font-weight: 800; color: #c8940a;
   font-family: 'DM Mono', monospace;
 }#vr-shell .comanda-nota {
   margin-top: 10px; padding: 8px 10px;
@@ -1506,7 +1506,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 /* Acciones pedido — grandes y claras */#vr-shell .det-acciones {
   padding: 0 14px 8px;
 }#vr-shell .det-accion-aceptar {
-  background: var(--red); color: #fff;
+  background: var(--yellow); color: var(--amber-dk);
   border: none; border-radius: 14px;
   padding: 15px; font-size: 15px; font-weight: 800;
   width: 100%; cursor: pointer; font-family: inherit;
@@ -1574,7 +1574,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   font-size: 12px; font-weight: 700; color: var(--tx);
   line-height: 1.3; margin-bottom: 2px;
 }#vr-shell .menu-pcard-precio {
-  font-size: 14px; font-weight: 800; color: var(--red);
+  font-size: 14px; font-weight: 800; color: #c8940a;
   font-family: 'DM Mono', monospace;
 }#vr-shell .menu-pcard-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -1592,7 +1592,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   font-size: 36px; cursor: pointer; margin-bottom: 14px; gap: 6px;
   box-shadow: inset 0 2px 6px rgba(0,0,0,.04);
   transition: border-color .2s, background .2s;
-}#vr-shell .prod-img-ph:active { background: #ededec; border-color: var(--red); }#vr-shell .prod-img-ph span { font-size: 11px; color: #bbb; font-weight: 600; }#vr-shell .empty { text-align: center; padding: 36px 20px; }#vr-shell .empty-ic { font-size: 38px; margin-bottom: 10px; }#vr-shell .empty-tit { font-size: 13px; font-weight: 700; color: #888; }#vr-shell .empty-sub { font-size: 11px; color: #bbb; margin-top: 4px; line-height: 1.5; }
+}#vr-shell .prod-img-ph:active { background: #ededec; border-color: #c8940a; }#vr-shell .prod-img-ph span { font-size: 11px; color: #bbb; font-weight: 600; }#vr-shell .empty { text-align: center; padding: 36px 20px; }#vr-shell .empty-ic { font-size: 38px; margin-bottom: 10px; }#vr-shell .empty-tit { font-size: 13px; font-weight: 700; color: #888; }#vr-shell .empty-sub { font-size: 11px; color: #bbb; margin-top: 4px; line-height: 1.5; }
 
 /* ═══ PROMO CARDS ═══ */#vr-shell .promo-card {
   border-radius: 16px; margin-bottom: 10px;
@@ -1806,9 +1806,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 }
 
 /* ═══════════════════════════════════════════════════════
-   HEADER RESTAURANTE — base para todas las sub-vistas
+   HEADER NEGOCIO — base para todas las sub-vistas
 ═══════════════════════════════════════════════════════ */#vn-shell .hdr {
-  background: var(--rest-hdr);
+  background: linear-gradient(135deg,#5B2C8A,#7B3FA0);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -1893,7 +1893,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   position: relative;
-}#vn-shell .ni-ic { font-size: 19px; }#vn-shell .ni-lb { font-size: 9px; font-weight: 600; color: #aaa; margin-top: 2px; letter-spacing: .1px; }#vn-shell .ni-lb.on { color: var(--red); }#vn-shell .ni-badge {
+}#vn-shell .ni-ic { font-size: 19px; }#vn-shell .ni-lb { font-size: 9px; font-weight: 600; color: #aaa; margin-top: 2px; letter-spacing: .1px; }#vn-shell .ni-lb.on { color: var(--purple); }#vn-shell .ni-badge {
   position: absolute; top: 5px; left: 50%; margin-left: 4px;
   background: var(--red); color: #fff;
   font-size: 8px; font-weight: 800;
@@ -1997,12 +1997,12 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }#vn-shell .jornada-box::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg,var(--red),#f97316,rgba(198,43,26,.1));
+  background: linear-gradient(90deg,#7B3FA0,#9B5FC0,rgba(123,63,160,.1));
   border-radius: 16px 16px 0 0;
 }#vn-shell .jornada-box::after {
   content: ''; position: absolute; bottom: 0; right: 0;
   width: 40px; height: 40px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(214,58,42,.07) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(123,63,160,.07) 0%, transparent 70%);
   pointer-events: none;
 }#vn-shell .jornada-val {
   font-size: 22px; font-weight: 800;
@@ -2057,7 +2057,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 }#vn-shell .bd {
   width: 5px; height: 5px; border-radius: 50%;
   background: #ccc; transition: background .25s, width .25s;
-}#vn-shell .bd.on { background: var(--red); width: 14px; border-radius: 3px; }
+}#vn-shell .bd.on { background: var(--purple); width: 14px; border-radius: 3px; }
 
 /* ═══════════════════════════════════════════════════════
    DC CUMBRES — Comunidad (sección de pertenencia)
@@ -2093,7 +2093,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   background: linear-gradient(120deg, #fff 0%, #fafaf7 100%);
   border-radius: 16px;
   padding: 14px 16px;
-  border: .5px solid rgba(214,58,42,.15);
+  border: .5px solid rgba(123,63,160,.15);
   display: flex; align-items: center; gap: 12px;
   cursor: pointer;
   transition: transform .14s, box-shadow .14s;
@@ -2101,9 +2101,9 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   box-shadow: 0 3px 14px rgba(0,0,0,.07);
 }#vn-shell .oportunidad-card:active { transform: scale(.98); box-shadow: 0 1px 6px rgba(0,0,0,.06); }#vn-shell .op-ic { font-size: 24px; flex-shrink: 0; }#vn-shell .op-body { flex: 1; min-width: 0; }#vn-shell .op-title { font-size: 13px; font-weight: 700; color: var(--tx); }#vn-shell .op-sub { font-size: 11px; color: var(--tx3); margin-top: 2px; line-height: 1.4; }#vn-shell .op-cta {
   font-size: 11px; font-weight: 800;
-  color: var(--red); white-space: nowrap;
+  color: var(--purple); white-space: nowrap;
   flex-shrink: 0;
-  background: rgba(214,58,42,.08);
+  background: rgba(123,63,160,.08);
   border-radius: 8px; padding: 4px 10px;
 }
 
@@ -2152,7 +2152,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   font-family: inherit;
   transition: all .15s;
 }#vn-shell .chip.on {
-  background: var(--yellow); color: var(--amber-dk);
+  background: var(--purple); color: #fff;
   border-color: rgba(0,0,0,.08); font-weight: 700;
 }
 
@@ -2196,18 +2196,18 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   padding: 12px 14px; font-size: 13px; color: var(--tx);
   outline: none; font-family: inherit;
   transition: border-color .2s;
-}#vn-shell .inp:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(214,58,42,.08); }#vn-shell .inp-ta {
+}#vn-shell .inp:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(123,63,160,.08); }#vn-shell .inp-ta {
   width: 100%; background: var(--bg);
   border: .5px solid var(--border); border-radius: 12px;
   padding: 10px 14px; font-size: 12px; color: var(--tx);
   outline: none; font-family: inherit; resize: none;
-}#vn-shell .inp-ta:focus { border-color: var(--red); }#vn-shell .inp-sel {
+}#vn-shell .inp-ta:focus { border-color: var(--purple); }#vn-shell .inp-sel {
   width: 100%; background: var(--card-bg);
   border: .5px solid var(--border); border-radius: 12px;
   padding: 12px 14px; font-size: 13px; color: var(--tx);
   outline: none; font-family: inherit;
   appearance: none; -webkit-appearance: none;
-}#vn-shell .inp-sel:focus { border-color: var(--red); }#vn-shell .lbl {
+}#vn-shell .inp-sel:focus { border-color: var(--purple); }#vn-shell .lbl {
   font-size: 10px; font-weight: 700; color: #777;
   display: block; margin-bottom: 5px;
   text-transform: uppercase; letter-spacing: .4px;
@@ -2260,7 +2260,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   padding: 8px 0;
   border-bottom: .5px solid #f0f0f0;
 }#vn-shell .comanda-item:last-child { border-bottom: none; padding-bottom: 2px; }#vn-shell .comanda-item-qty {
-  font-size: 20px; font-weight: 800; color: var(--red);
+  font-size: 20px; font-weight: 800; color: var(--purple);
   font-family: 'DM Mono', monospace;
   min-width: 28px; flex-shrink: 0; line-height: 1;
 }#vn-shell .comanda-item-nombre {
@@ -2274,7 +2274,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
   margin-top: 10px; padding-top: 10px;
   border-top: 1.5px solid var(--border);
 }#vn-shell .comanda-total-lbl { font-size: 13px; font-weight: 700; color: var(--tx2); }#vn-shell .comanda-total-val {
-  font-size: 20px; font-weight: 800; color: var(--red);
+  font-size: 20px; font-weight: 800; color: var(--purple);
   font-family: 'DM Mono', monospace;
 }#vn-shell .comanda-nota {
   margin-top: 10px; padding: 8px 10px;
@@ -2331,7 +2331,7 @@ body{font-family:'Inter',sans-serif;background:radial-gradient(ellipse at 60% 40
 /* Acciones pedido — grandes y claras */#vn-shell .det-acciones {
   padding: 0 14px 8px;
 }#vn-shell .det-accion-aceptar {
-  background: var(--red); color: #fff;
+  background: var(--purple); color: #fff;
   border: none; border-radius: 14px;
   padding: 15px; font-size: 15px; font-weight: 800;
   width: 100%; cursor: pointer; font-family: inherit;

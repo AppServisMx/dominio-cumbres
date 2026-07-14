@@ -81,6 +81,50 @@ function _dcfFiltrarSel(cat) {
   if (window._dcDirtyV === 'v-food') window._dcDirtyV = null;
 }
 
+/* ── Restaurantes donde el vecino tiene pedido entregado ── */
+var _S_restConPedido = new Set();
+async function _cargarRestConPedido() {
+  var uid = _uid();
+  if (!uid || _isD()) return;
+  try {
+    var f = await _fb(); var db = _db();
+    var snap = await f.getDocs(f.query(
+      f.collection(db,'pedidos'),
+      f.where('vecinoId','==',uid),
+      f.where('estado','==','entregado')
+    ));
+    _S_restConPedido = new Set();
+    snap.forEach(function(d){ var p=d.data(); if(p.restauranteId) _S_restConPedido.add(p.restauranteId); });
+  } catch(e) {}
+}
+
+/* ── Horario próximo de apertura ── */
+function _proximaApertura(horarios) {
+  if (!horarios || !horarios.length) return '';
+  var now = new Date();
+  var hhmm = now.getHours()*60 + now.getMinutes();
+  // Ordenar por inicio
+  var sorted = horarios.slice().sort(function(a,b){
+    var ah=parseInt((a.inicio||'0:0').split(':')[0])*60+parseInt((a.inicio||'0:0').split(':')[1]||0);
+    var bh=parseInt((b.inicio||'0:0').split(':')[0])*60+parseInt((b.inicio||'0:0').split(':')[1]||0);
+    return ah-bh;
+  });
+  for (var i=0;i<sorted.length;i++) {
+    var parts=(sorted[i].inicio||'').split(':');
+    var min=parseInt(parts[0]||0)*60+parseInt(parts[1]||0);
+    if (min > hhmm) {
+      var h=parseInt(parts[0]||0), m=parseInt(parts[1]||0);
+      var ampm=h>=12?'pm':'am'; var h12=h>12?h-12:(h===0?12:h);
+      return 'Abre a las '+h12+(m?':'+String(m).padStart(2,'0'):'')+ampm;
+    }
+  }
+  // Todos los horarios ya pasaron — el primero del día siguiente
+  var parts2=(sorted[0].inicio||'').split(':');
+  var h=parseInt(parts2[0]||0), m=parseInt(parts2[1]||0);
+  var ampm=h>=12?'pm':'am'; var h12=h>12?h-12:(h===0?12:h);
+  return 'Abre mañana a las '+h12+(m?':'+String(m).padStart(2,'0'):'')+ampm;
+}
+
 /* ── Cargar restaurantes ────────────────────────────── */
 window.dcFood_cargarRestaurantes = async function() {
   var cont = document.getElementById('lista-cont');
@@ -101,12 +145,10 @@ window.dcFood_cargarRestaurantes = async function() {
       f.getDocs(f.query(f.collection(db,'usuarios'),f.where('tipo','==','negocio')))
     ]);
     var docs=[];
-    // tipo:'restaurante' — incluir si estado OK
     sR.forEach(function(d){
       var r=d.data();
       if(ESTADOS_OK.indexOf(r.estado)!==-1) docs.push(Object.assign({_id:d.id},r));
     });
-    // tipo:'negocio' — solo categorías food, excluye belleza/tienda/etc
     sN.forEach(function(d){
       var r=d.data();
       if(ESTADOS_OK.indexOf(r.estado)===-1) return;
@@ -116,7 +158,7 @@ window.dcFood_cargarRestaurantes = async function() {
     });
     _S.historial = docs;
     if (subEl) subEl.textContent = docs.length > 0 ? docs.length + ' disponibles' : 'Sin restaurantes activos';
-    _dcfRenderLista(docs);
+    _cargarRestConPedido().then(function(){ _dcfRenderLista(docs); });
   } catch(e) {
     cont.innerHTML = '<div class="empty"><div class="empty-ic">⚠️</div><div class="empty-tit">Error: '+e.message+'</div></div>';
   }
@@ -178,6 +220,9 @@ function _dcfRenderLista(docs) {
       : (r.estadoOp || 'activo');
 
     var estLabel, estStyle;
+    // Cierre automático por horario vs cierre manual
+    var cierreManual = (r.estadoOp === 'cerrado');
+    var proximaApert = (estOp === 'cerrado' && !cierreManual) ? _proximaApertura(r.horarios) : '';
     if (estOp === 'cerrado') {
       estLabel = '🔴 Cerrado';
       estStyle = 'background:#FDECEA;color:#D63A2A;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;';
@@ -191,20 +236,26 @@ function _dcfRenderLista(docs) {
       estLabel = '🟢 Abierto';
       estStyle = 'background:var(--green-lt);color:var(--green-dk);font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;';
     }
+    // Calificar: solo si el vecino tiene un pedido entregado de este restaurante
+    var puedeCal = _S_restConPedido.has(r._id);
+    var calBtn = puedeCal
+      ? '<button data-rate-id="'+_fesc(r._id)+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+_fesc(r._id)+'\',\''+_fesc(r.nombreNegocio||r.nombre||'')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
+      : '<span style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#bbb;white-space:nowrap;" title="Pide aquí para poder calificar">⭐ Calificar</span>';
     return '<div class="dcf-rcard" onclick="dcFood_abrirRest(\''+r._id+'\')" style="'+(estOp==='cerrado'?'opacity:.6;filter:grayscale(.4);':'')+'">'
       +'<div class="rbanner" style="background:'+bg+';">'
       +(r.fotoPerfil && r.fotoPerfil.indexOf('data:image')===0
         ? '<img src="'+r.fotoPerfil+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0;">'
         : em)
-      +(estOp==='cerrado' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;"><span style="background:#D63A2A;color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.3px;">🔴 CERRADO</span></div>' : '')
+      +(estOp==='cerrado' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="background:#D63A2A;color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.3px;">🔴 CERRADO</span>'+(proximaApert?'<span style="background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:600;padding:2px 10px;border-radius:20px;">'+_fesc(proximaApert)+'</span>':'')+'</div>' : '')
       +'<span class="rbadge">'+(r.estado==='aprobado_pendiente_pago'?'⏳ Pend. pago':'✓ Verificado')+'</span></div>'
       +'<div class="rbody">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;">'
       +'<div class="rname">'+_fesc(r.nombreNegocio||r.nombre||'—')+'</div>'
       +'<span style="'+estStyle+'">'+estLabel+'</span></div>'
+      +(proximaApert && estOp==='cerrado' ? '<div style="font-size:10px;color:#D63A2A;font-weight:600;margin-top:2px;">'+_fesc(proximaApert)+'</div>' : '')
       +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+_fesc(r._id)+'\',\'restaurante\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span> ·':'')+_fesc(r.descripcion||cat)+'</div>'
       +'<div class="rfooter" style="align-items:center;">'
-      +'<button data-rate-id="'+_fesc(r._id)+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+_fesc(r._id)+'\',\''+_fesc(r.nombreNegocio||r.nombre||'')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
+      +calBtn
       +'<span class="link-green">Pedir →</span>'
       +'</div></div></div>';
   }).join('');
@@ -1337,5 +1388,8 @@ function dcFood_scrollReset(viewId) {
 /* ── Alias y exposes al final del script Food ─────────── */
 // Alias: mantiene compatibilidad con _goCore existente y cargarRestaurantes v1/v2
 window.cargarRestaurantes = window.dcFood_cargarRestaurantes;
+
+// Vaciar carrito de Food desde app.js (usado por advertencia al salir)
+window.dcFood_vaciarCarrito = function() { _S.carrito = {}; _updateCartBar(); };
 
 
