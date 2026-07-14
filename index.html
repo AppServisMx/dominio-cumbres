@@ -1394,11 +1394,6 @@
     </div>
   </div>
   <div class="dcf-scroll" id="det-menu"></div>
-  <div id="food-det-rating-wrap" style="padding:16px 14px;background:#FFF8E1;border-top:1px solid #F5C518;flex-shrink:0;display:none;">
-    <div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:8px;" id="food-det-rating-avg">Sé el primero en calificar</div>
-    <div id="food-det-rating-block"></div>
-    <div id="food-det-opiniones-block" style="display:none;margin-top:12px;"></div>
-  </div>
   <div class="dcf-cart-bar" id="dcf-cart-bar" style="display:none;" onclick="go('v-carrito','right')">
     <div class="dcf-cart-badge" id="dcf-cart-count">0</div>
     <div style="font-size:13px;font-weight:700;color:#fff;flex:1;margin-left:10px;">Ver carrito</div>
@@ -2634,11 +2629,6 @@
     </div>
   </div>
   <div class="scroll" id="plaza-prod-lista" style="padding:12px 0;"></div>
-  <div id="neg-det-rating-wrap" style="padding:16px 14px;background:#FFF8E1;border-top:1px solid #F5C518;flex-shrink:0;display:none;">
-    <div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:8px;" id="neg-det-rating-avg">Sé el primero en calificar</div>
-    <div id="neg-det-rating-block"></div>
-    <div id="neg-det-opiniones-block" style="display:none;margin-top:12px;"></div>
-  </div>
   <div class="nav">
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
@@ -8256,7 +8246,14 @@ window.dcFood_abrirRest = async function(restId) {
   }
   _dcfNav('v-food-det');
   await dcFood_cargarMenu(restId);
-  try { window.dcRatingCargar && window.dcRatingCargar(restId, 'food-det', 'Calificar restaurante'); } catch(e) {}
+  try {
+    var _rTipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
+    if(_rTipo==='vecino'){
+      var _dm=document.getElementById('det-menu');
+      if(_dm){var _oRs=_dm.querySelector('.dc-rating-inject');if(_oRs)_oRs.remove();var _rs=document.createElement('div');_rs.className='dc-rating-inject';_rs.style.cssText='padding:14px;margin:8px 14px;background:#FFF8DC;border-radius:14px;border:.5px solid #f0e0a0;';_rs.innerHTML='<div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:6px;" id="food-det-rating-avg">⭐ Cargando...</div><div id="food-det-rating-block"></div><div id="food-det-opiniones-block" style="display:none;margin-top:12px;"></div>';_dm.insertBefore(_rs,_dm.firstChild);}
+      window.dcRatingCargar&&window.dcRatingCargar(restId,'food-det','Calificar restaurante');
+    }
+  }catch(e){}
 };
 
 /* ── Cargar menú ────────────────────────────────────── */
@@ -13975,12 +13972,10 @@ window.dcRatingEnviar=async function(blockId){
 
 window.dcRatingCargar=async function(pUid,blockId,titulo){
   window._dcRatingUid[blockId]=pUid;
-  var wrap=document.getElementById(blockId+'-rating-wrap');
   var blk=document.getElementById(blockId+'-rating-block');
   if(!blk)return;
   var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
-  if(tipo!=='vecino'){if(wrap)wrap.style.display='none';return;}
-  if(wrap)wrap.style.display='block';
+  if(tipo!=='vecino')return;
   window._dcRatingSelGen[blockId]=0;
   blk.innerHTML='<div style="text-align:center;padding:20px;color:#cca020;font-size:12px;">Cargando...</div>';
   if(!pUid||!window._fbDb){window.dcRatingModoEditar(blockId);return;}

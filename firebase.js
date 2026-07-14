@@ -1014,7 +1014,15 @@ window.plazaAbrirComercio = async function(id) {
   go('v-plaza-det','right');
   var detScr = document.getElementById('plaza-prod-lista'); if (detScr) detScr.scrollTop = 0;
   await window.plazaCargarProductos(id, r, estOp);
-  try { window.dcRatingCargar && window.dcRatingCargar(id, 'neg-det', 'Calificar comercio'); } catch(e) {}
+  try {
+    var _rTipo3=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
+    if(_rTipo3==='vecino'){
+      var _pl=document.getElementById('plaza-prod-lista');
+      if(_pl){var _oRs3=_pl.querySelector('.dc-rating-inject');if(_oRs3)_oRs3.remove();var _rs3=document.createElement('div');_rs3.className='dc-rating-inject';_rs3.style.cssText='padding:14px;margin:8px 14px;background:#FFF8DC;border-radius:14px;border:.5px solid #f0e0a0;';_rs3.innerHTML='<div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:6px;" id="neg-det-rating-avg">⭐ Cargando...</div><div id="neg-det-rating-block"></div><div id="neg-det-opiniones-block" style="display:none;margin-top:12px;"></div>';_pl.insertBefore(_rs3,_pl.firstChild);}
+      window.dcRatingCargar&&window.dcRatingCargar(id,'neg-det','Calificar comercio');
+    }
+  }catch(e){}
+
 };
 
 window._plazaProdDocsCache = [];
