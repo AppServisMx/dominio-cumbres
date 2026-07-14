@@ -22,7 +22,7 @@
 
   // Importar funciones Firestore una sola vez
   const { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, onSnapshot, updateDoc, doc: fsDoc } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-  window._fs = { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, onSnapshot, updateDoc, fsDoc };
+  window._fs = { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, onSnapshot, updateDoc, fsDoc, doc, getDoc, setDoc };
 
   // enviarMensaje DENTRO del módulo — acceso directo a Firestore
   window.enviarMensaje = async function() {

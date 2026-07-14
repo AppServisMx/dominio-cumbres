@@ -759,34 +759,42 @@
   <div class="scr" style="padding:0;">
     <!-- Preview card -->
     <div style="margin:16px 14px 0;">
-      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Vista previa</div>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Vista previa del cliente</div>
       <div id="vprov-cmv-preview" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);">
-        <!-- generado por vprovCmvRenderPreview() -->
+      </div>
+    </div>
+    <!-- Foto de perfil -->
+    <div style="margin:16px 14px 0;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:12px;">📷 Foto de perfil</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div id="vprov-cmv-foto-prev" style="width:72px;height:72px;border-radius:14px;background:#f0f0f0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;border:2px solid #e8e8e8;">🔧</div>
+        <div>
+          <input type="file" id="vprov-cmv-foto-inp" accept="image/*" style="display:none;" onchange="vprovCmvFotoChange(this)">
+          <button onclick="document.getElementById('vprov-cmv-foto-inp').click()" style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;">📷 Cambiar foto</button>
+          <div style="font-size:11px;color:#aaa;margin-top:6px;">Foto cuadrada recomendada</div>
+        </div>
       </div>
     </div>
     <!-- Editar datos -->
-    <div style="margin:16px 14px;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;padding:16px;">
-      <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:12px;">Editar perfil público</div>
+    <div style="margin:12px 14px 0;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:12px;">✏️ Editar perfil público</div>
       <div style="font-size:11px;color:#888;margin-bottom:4px;">Nombre visible</div>
       <input id="vprov-cmv-nombre" class="inp" style="font-size:13px;margin-bottom:12px;" placeholder="Tu nombre o negocio" oninput="vprovCmvRenderPreview()">
       <div style="font-size:11px;color:#888;margin-bottom:4px;">Descripción corta</div>
-      <input id="vprov-cmv-desc" class="inp" maxlength="120" style="font-size:13px;margin-bottom:12px;" placeholder="¿Qué ofreces?" oninput="vprovCmvRenderPreview()">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">Categoría</div>
-      <select id="vprov-cmv-cat" class="inp" style="appearance:auto;-webkit-appearance:auto;font-size:12px;padding:10px;margin-bottom:16px;" onchange="vprovCmvRenderPreview()">
-        <option value="Servicios del Hogar">🏠 Servicios del Hogar</option>
-        <option value="Plomería">🔧 Plomería</option>
-        <option value="Electricidad">⚡ Electricidad</option>
-        <option value="Limpieza">🧹 Limpieza</option>
-        <option value="Jardinería">🌿 Jardinería</option>
-        <option value="Pintura">🎨 Pintura</option>
-        <option value="Cerrajería">🔑 Cerrajería</option>
-        <option value="Tecnología">💻 Tecnología</option>
-        <option value="Mudanzas">📦 Mudanzas</option>
-        <option value="Otro">🔹 Otro</option>
-      </select>
+      <textarea id="vprov-cmv-desc" class="inp nota" maxlength="160" rows="3" style="font-size:13px;margin-bottom:12px;resize:none;" placeholder="Cuéntale al cliente qué ofreces y tu experiencia" oninput="vprovCmvRenderPreview()"></textarea>
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">Tus oficios (desde tu registro)</div>
+      <div id="vprov-cmv-oficios" style="background:#f5f5f5;border-radius:10px;padding:10px 12px;font-size:12px;color:#555;margin-bottom:16px;min-height:34px;">—</div>
       <button id="vprov-cmv-btn-guardar" onclick="vprovCmvGuardar()" style="width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 14px rgba(31,194,106,.3);">Guardar cambios</button>
     </div>
-    <div style="height:20px;"></div>
+    <!-- Fotos de trabajos -->
+    <div style="margin:12px 14px 0;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:4px;">🖼️ Fotos de mis trabajos</div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:10px;">Las fotos aumentan la confianza del cliente</div>
+      <div id="vprov-cmv-fotos-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <input type="file" id="vprov-cmv-fotos-inp" accept="image/*" multiple style="display:none;" onchange="vprovCmvFotosChange(this)">
+      <button onclick="document.getElementById('vprov-cmv-fotos-inp').click()" style="padding:9px 18px;background:#f0f0f0;color:#444;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar fotos</button>
+    </div>
+    <div style="height:24px;"></div>
   </div>
 </div>
 
@@ -13738,13 +13746,37 @@ if (typeof window.go !== 'function') {
 (function(){
 'use strict';
 
+/* ── helpers ─────────────────────────────────────────────────── */
+function _db()   { return window._fbDb; }
+function _auth() { return window._fbAuth; }
+function _myUid(){ var a=_auth(); return a&&a.currentUser&&a.currentUser.uid; }
+function _fs()   { return window._fs || {}; }
+function _doc(db,path){ var f=_fs(); return (f.fsDoc||f.doc)(db,...path.split('/')); }
+function _getDoc(ref)  { return (_fs().getDoc)(ref); }
+function _setDoc(ref,d){ return (_fs().setDoc)(ref,d); }
+function _updateDoc(ref,d){ return (_fs().updateDoc)(ref,d); }
+function _getDocs(q)   { return (_fs().getDocs)(q); }
+function _col(db,p)    { return (_fs().collection)(db,p); }
+
+/* Pantalla de "Final Feliz" ligero — reemplaza el alert */
+function _feliz(msg) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'
+    + 'background:#fff;border-radius:20px;padding:28px 24px;text-align:center;'
+    + 'box-shadow:0 8px 40px rgba(0,0,0,.22);z-index:9999;min-width:240px;font-family:Inter,sans-serif;';
+  t.innerHTML = '<div style="font-size:40px;margin-bottom:12px;">✅</div>'
+    + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px;">' + msg + '</div>'
+    + '<button onclick="this.parentNode.remove()" style="margin-top:14px;background:var(--green,#1fc26a);color:#fff;border:none;border-radius:12px;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Aceptar</button>';
+  document.body.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.remove(); }, 3000);
+}
+
 /* ── 1. RATING PROVEEDOR ─────────────────────────────────────── */
 var _ratingSeleccionado = 0;
 
 window.dcProvRatingSet = function(n) {
   _ratingSeleccionado = n;
-  var spans = document.querySelectorAll('#det-stars span');
-  spans.forEach(function(s, i) {
+  document.querySelectorAll('#det-stars span').forEach(function(s, i) {
     s.textContent = i < n ? '⭐' : '☆';
     s.style.transform = i < n ? 'scale(1.15)' : 'scale(1)';
   });
@@ -13755,43 +13787,34 @@ window.dcProvRatingEnviar = async function() {
   var p = window._proveedorActual || {};
   var provUid = p.uid || p.id || '';
   if (!provUid) return;
-  var _auth = window._fbAuth;
-  var _db   = window._fbDb;
-  var myUid = _auth && _auth.currentUser && _auth.currentUser.uid;
-  if (!myUid || !_db) { alert('Necesitas iniciar sesión'); return; }
+  var myUid = _myUid();
+  if (!myUid || !_db()) { alert('Necesitas iniciar sesión'); return; }
   var comentario = (document.getElementById('det-rating-com') || {}).value || '';
   var btn = document.querySelector('#det-rating-block button');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
   try {
-    var { doc, setDoc, updateDoc, collection, getDocs } = window._fs;
-    // Guardar calificación individual
-    await setDoc(doc(_db, 'calificaciones', provUid, 'votos', myUid), {
-      rating: _ratingSeleccionado,
-      comentario: comentario,
-      fecha: new Date().toISOString(),
-      vecUid: myUid
+    var db = _db(); var fs = _fs();
+    await _setDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'votos',myUid), {
+      rating: _ratingSeleccionado, comentario: comentario,
+      fecha: new Date().toISOString(), vecUid: myUid
     });
-    // Recalcular promedio
-    var snap = await getDocs(collection(_db, 'calificaciones', provUid, 'votos'));
-    var total = 0; var count = 0;
-    snap.forEach(function(d) { total += (d.data().rating || 0); count++; });
-    var promedio = count ? Math.round((total / count) * 10) / 10 : 0;
-    await setDoc(doc(_db, 'calificaciones', provUid, 'resumen', 'datos'), {
-      promedio: promedio, total: count
-    });
-    // Actualizar campo en usuario proveedor
-    try { await updateDoc(doc(_db, 'usuarios', provUid), { ratingPromedio: promedio, ratingTotal: count }); } catch(e) {}
+    var snap = await _getDocs(fs.collection(db,'calificaciones',provUid,'votos'));
+    var total = 0, count = 0;
+    snap.forEach(function(d){ total += (d.data().rating||0); count++; });
+    var promedio = count ? Math.round((total/count)*10)/10 : 0;
+    await _setDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'resumen','datos'), { promedio: promedio, total: count });
+    try { await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',provUid), { ratingPromedio: promedio, ratingTotal: count }); } catch(e){}
     var avg = document.getElementById('det-rating-avg');
-    if (avg) avg.textContent = '⭐ ' + promedio + ' (' + count + ' opiniones) — ¡Gracias por calificar!';
-    if (btn) { btn.disabled = false; btn.textContent = '✅ Calificación enviada'; }
-    setTimeout(function(){ if(btn){ btn.textContent='Enviar calificación →'; btn.disabled=false; } }, 2500);
-    document.getElementById('det-rating-com') && (document.getElementById('det-rating-com').value = '');
+    if (avg) avg.textContent = '⭐ ' + promedio + ' (' + count + ' opiniones)';
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar calificación →'; }
+    document.getElementById('det-rating-com') && (document.getElementById('det-rating-com').value='');
     _ratingSeleccionado = 0;
     document.querySelectorAll('#det-stars span').forEach(function(s){ s.textContent='☆'; s.style.transform='scale(1)'; });
+    _feliz('¡Gracias por calificar!');
   } catch(e) {
-    console.error('rating error', e);
-    if (btn) { btn.disabled = false; btn.textContent = 'Enviar calificación →'; }
-    alert('Error al guardar. Intenta de nuevo.');
+    console.error('rating',e);
+    if (btn) { btn.disabled=false; btn.textContent='Enviar calificación →'; }
+    alert('Error al guardar');
   }
 };
 
@@ -13799,80 +13822,137 @@ window.dcProvRatingCargar = async function(provUid) {
   var blk = document.getElementById('det-rating-block');
   var avg = document.getElementById('det-rating-avg');
   if (!blk) return;
-  var tipo = (localStorage.getItem('dcuserTipo') || 'vecino').toLowerCase();
-  if (tipo !== 'vecino') { blk.style.display = 'none'; return; }
+  var tipo = (localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
+  if (tipo !== 'vecino') { blk.style.display='none'; return; }
   blk.style.display = 'block';
   _ratingSeleccionado = 0;
   document.querySelectorAll('#det-stars span').forEach(function(s){ s.textContent='☆'; s.style.transform='scale(1)'; });
   if (avg) avg.textContent = 'Cargando...';
-  var _db = window._fbDb;
-  if (!_db || !provUid) { if(avg) avg.textContent = ''; return; }
+  if (!_db() || !provUid) { if(avg) avg.textContent=''; return; }
   try {
-    var { doc, getDoc } = window._fs;
-    var snap = await getDoc(doc(_db, 'calificaciones', provUid, 'resumen', 'datos'));
+    var fs = _fs(); var db = _db();
+    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'calificaciones',provUid,'resumen','datos'));
     if (snap.exists()) {
       var d = snap.data();
-      if (avg) avg.textContent = '⭐ ' + (d.promedio || '—') + ' (' + (d.total || 0) + ' opiniones)';
+      if (avg) avg.textContent = '⭐ ' + (d.promedio||'—') + ' (' + (d.total||0) + ' opiniones)';
     } else {
       if (avg) avg.textContent = 'Sé el primero en calificar';
     }
-  } catch(e) { if(avg) avg.textContent = ''; }
+  } catch(e) { if(avg) avg.textContent=''; }
 };
 
 /* ── 2. CMV PROVEEDOR ───────────────────────────────────────── */
+var _vprovFotoBase64 = null;
+
 window.vprovCmvRenderPreview = function() {
-  var nombre = (document.getElementById('vprov-cmv-nombre') || {}).value || 'Mi nombre';
-  var desc   = (document.getElementById('vprov-cmv-desc')   || {}).value || 'Descripción del servicio';
-  var cat    = (document.getElementById('vprov-cmv-cat')    || {}).value || 'Servicios del Hogar';
+  var nombre = (document.getElementById('vprov-cmv-nombre')||{}).value || 'Mi nombre';
+  var desc   = (document.getElementById('vprov-cmv-desc')  ||{}).value || 'Descripción del servicio';
+  var oficios= (document.getElementById('vprov-cmv-oficios')||{}).textContent || '';
+  var imgSrc = _vprovFotoBase64 || (document.getElementById('vprov-cmv-foto-prev')||{}).dataset.src || '';
+  var fotoHtml = imgSrc
+    ? '<img src="'+imgSrc+'" style="width:54px;height:54px;object-fit:cover;border-radius:13px;border:2px solid #e8e8e8;">'
+    : '<div style="width:54px;height:54px;border-radius:13px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">🔧</div>';
   var p = document.getElementById('vprov-cmv-preview');
   if (!p) return;
   p.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:#fff;border-radius:16px;border:.5px solid #e8e8e8;">'
-    + '<div style="width:54px;height:54px;border-radius:13px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;" id="vprov-cmv-ic-prev">🔧</div>'
+    + fotoHtml
     + '<div style="flex:1;min-width:0;">'
     + '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px;">' + nombre + '</div>'
-    + '<div style="font-size:11px;color:#555;margin-bottom:4px;">' + cat + '</div>'
+    + '<div style="font-size:11px;color:#555;margin-bottom:4px;">' + oficios + '</div>'
     + '<div style="font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + desc + '</div>'
     + '</div>'
-    + '<div style="flex-shrink:0;text-align:center;">'
-    + '<div style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:5px 10px;border-radius:9px;">Contactar</div>'
+    + '<div style="flex-shrink:0;">'
+    + '<div style="background:var(--green,#1fc26a);color:#fff;font-size:10px;font-weight:700;padding:5px 10px;border-radius:9px;">Contactar</div>'
     + '</div></div>';
 };
 
+window.vprovCmvFotoChange = function(inp) {
+  if (!inp.files || !inp.files[0]) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    _vprovFotoBase64 = e.target.result;
+    var prev = document.getElementById('vprov-cmv-foto-prev');
+    if (prev) { prev.innerHTML = '<img src="'+_vprovFotoBase64+'" style="width:100%;height:100%;object-fit:cover;">'; }
+    window.vprovCmvRenderPreview();
+  };
+  r.readAsDataURL(inp.files[0]);
+};
+
+var _vprovFotosTrabajo = [];
+window.vprovCmvFotosChange = function(inp) {
+  if (!inp.files || !inp.files.length) return;
+  var grid = document.getElementById('vprov-cmv-fotos-grid');
+  Array.from(inp.files).forEach(function(file) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      _vprovFotosTrabajo.push(e.target.result);
+      if (grid) {
+        var d = document.createElement('div');
+        d.style.cssText = 'width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
+        d.innerHTML = '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;">';
+        grid.appendChild(d);
+      }
+    };
+    r.readAsDataURL(file);
+  });
+};
+
 window.vprovCmvCargar = async function() {
+  _vprovFotoBase64 = null;
   window.vprovCmvRenderPreview();
-  var _auth = window._fbAuth;
-  var _db   = window._fbDb;
-  if (!_auth || !_auth.currentUser || !_db) return;
-  var uid = _auth.currentUser.uid;
+  if (!_auth()||!_auth().currentUser||!_db()) return;
+  var uid = _auth().currentUser.uid;
   try {
-    var { doc, getDoc } = window._fs;
-    var snap = await getDoc(doc(_db, 'usuarios', uid));
+    var fs = _fs(); var db = _db();
+    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid));
     if (!snap.exists()) return;
     var d = snap.data();
-    var nm = document.getElementById('vprov-cmv-nombre'); if(nm) nm.value = d.nombre || '';
-    var ds = document.getElementById('vprov-cmv-desc');   if(ds) ds.value = d.descripcion || '';
-    var ct = document.getElementById('vprov-cmv-cat');    if(ct) ct.value = d.categoria || '';
+    var nm = document.getElementById('vprov-cmv-nombre'); if(nm) nm.value = d.nombre||'';
+    var ds = document.getElementById('vprov-cmv-desc');   if(ds) ds.value = d.descripcion||'';
+    // Oficios: read-only desde la DB
+    var ofs = [d.oficio1,d.oficio2,d.oficio3].filter(Boolean).join(' · ') || d.categoria || '—';
+    var ofsEl = document.getElementById('vprov-cmv-oficios');
+    if (ofsEl) ofsEl.textContent = ofs;
+    // Foto existente
+    if (d.fotoUrl) {
+      var prev = document.getElementById('vprov-cmv-foto-prev');
+      if (prev) { prev.dataset.src = d.fotoUrl; prev.innerHTML = '<img src="'+d.fotoUrl+'" style="width:100%;height:100%;object-fit:cover;">'; }
+    }
+    // Fotos de trabajos
+    if (Array.isArray(d.fotosTrabajo) && d.fotosTrabajo.length) {
+      var grid = document.getElementById('vprov-cmv-fotos-grid');
+      if (grid) {
+        grid.innerHTML = '';
+        d.fotosTrabajo.forEach(function(url){
+          var img = document.createElement('div');
+          img.style.cssText = 'width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
+          img.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
+          grid.appendChild(img);
+        });
+      }
+    }
     window.vprovCmvRenderPreview();
   } catch(e) {}
 };
 
 window.vprovCmvGuardar = async function() {
-  var _auth = window._fbAuth;
-  var _db   = window._fbDb;
-  if (!_auth || !_auth.currentUser || !_db) { alert('Sin sesión'); return; }
-  var uid  = _auth.currentUser.uid;
-  var nm   = (document.getElementById('vprov-cmv-nombre') || {}).value || '';
-  var ds   = (document.getElementById('vprov-cmv-desc')   || {}).value || '';
-  var ct   = (document.getElementById('vprov-cmv-cat')    || {}).value || '';
-  var btn  = document.getElementById('vprov-cmv-btn-guardar');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  if (!_auth()||!_auth().currentUser||!_db()) { alert('Sin sesión'); return; }
+  var uid = _auth().currentUser.uid;
+  var nm  = (document.getElementById('vprov-cmv-nombre')||{}).value||'';
+  var ds  = (document.getElementById('vprov-cmv-desc')  ||{}).value||'';
+  var btn = document.getElementById('vprov-cmv-btn-guardar');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
   try {
-    var { doc, updateDoc } = window._fs;
-    await updateDoc(doc(_db, 'usuarios', uid), { nombre: nm, descripcion: ds, categoria: ct });
-    if (btn) { btn.textContent = '✅ Guardado'; btn.disabled = false; }
-    setTimeout(function(){ if(btn){ btn.textContent='Guardar cambios'; } }, 2000);
+    var fs = _fs(); var db = _db();
+    var upd = { nombre: nm, descripcion: ds };
+    if (_vprovFotoBase64) upd.fotoUrl = _vprovFotoBase64;
+    if (_vprovFotosTrabajo.length) upd.fotosTrabajo = _vprovFotosTrabajo;
+    await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid), upd);
+    if (btn) { btn.disabled=false; btn.textContent='Guardar cambios'; }
+    _feliz('¡Perfil actualizado!');
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+    console.error('cmv-guardar',e);
+    if (btn) { btn.disabled=false; btn.textContent='Guardar cambios'; }
     alert('Error al guardar');
   }
 };
@@ -13881,55 +13961,59 @@ window.vprovCmvGuardar = async function() {
 window.cargarMembresia = async function() {
   var cont = document.getElementById('memb-cont');
   if (!cont) return;
-  cont.innerHTML = '<div style="text-align:center;padding:30px;color:#aaa;">Cargando...</div>';
-  var _auth = window._fbAuth;
-  var _db   = window._fbDb;
-  if (!_auth || !_auth.currentUser || !_db) return;
-  var uid = _auth.currentUser.uid;
+  cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Cargando...</div>';
+  if (!_auth()||!_auth().currentUser||!_db()) {
+    cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">Sin sesión activa</div>'; return;
+  }
+  var uid = _auth().currentUser.uid;
   try {
-    var { doc, getDoc } = window._fs;
-    var snap = await getDoc(doc(_db, 'usuarios', uid));
+    var fs = _fs(); var db = _db();
+    var snap = await _getDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid));
     var d = snap.exists() ? snap.data() : {};
-    var memb     = d.membresia || {};
-    var estado   = memb.estado || 'pendiente_pago';
-    var vence    = memb.fechaVencimiento ? new Date(memb.fechaVencimiento.seconds ? memb.fechaVencimiento.seconds*1000 : memb.fechaVencimiento).toLocaleDateString('es-MX') : '—';
-    var planNom  = memb.plan || 'Básico';
-    var monto    = memb.monto || 150;
-    var colEst   = estado === 'activo' ? '#0A4220' : estado === 'vencido' ? '#D63A2A' : '#9A6800';
-    var bgEst    = estado === 'activo' ? '#E8F5EE' : estado === 'vencido' ? '#FDECEA' : '#FFF8E1';
-    var lblEst   = estado === 'activo' ? '✅ Activa' : estado === 'vencido' ? '🔴 Vencida' : '⏳ Pendiente de pago';
+    var memb   = d.membresia || {};
+    var estado = memb.estado || 'pendiente_pago';
+    var vence  = memb.fechaVencimiento
+      ? new Date(memb.fechaVencimiento.seconds ? memb.fechaVencimiento.seconds*1000 : memb.fechaVencimiento).toLocaleDateString('es-MX')
+      : '—';
+    var plan   = memb.plan || 'Básico';
+    var monto  = memb.monto || 150;
+    var colMap = { activo:'#0A4220', vencido:'#D63A2A' };
+    var bgMap  = { activo:'#E8F5EE', vencido:'#FDECEA' };
+    var col    = colMap[estado] || '#9A6800';
+    var bg     = bgMap[estado]  || '#FFF8E1';
+    var lbl    = estado==='activo'?'✅ Activa':estado==='vencido'?'🔴 Vencida':'⏳ Pendiente de pago';
     cont.innerHTML = ''
-      + '<div style="background:'+bgEst+';border-radius:16px;padding:20px;margin-bottom:16px;text-align:center;">'
-      +   '<div style="font-size:32px;margin-bottom:8px;">💎</div>'
-      +   '<div style="font-size:18px;font-weight:800;color:'+colEst+';margin-bottom:4px;">Plan ' + planNom + '</div>'
-      +   '<div style="display:inline-block;background:'+colEst+';color:#fff;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;">' + lblEst + '</div>'
+      + '<div style="background:'+bg+';border-radius:16px;padding:22px;margin-bottom:16px;text-align:center;">'
+      +   '<div style="font-size:36px;margin-bottom:10px;">💎</div>'
+      +   '<div style="font-size:18px;font-weight:800;color:'+col+';margin-bottom:6px;">Plan '+plan+'</div>'
+      +   '<div style="display:inline-block;background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;">'+lbl+'</div>'
       + '</div>'
       + '<div style="background:#fff;border-radius:14px;border:.5px solid #e8e8e8;padding:16px;margin-bottom:14px;">'
-      +   '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+      +   '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:.5px solid #f0f0f0;margin-bottom:10px;">'
       +     '<span style="font-size:12px;color:#888;">Vigencia hasta</span>'
-      +     '<span style="font-size:13px;font-weight:700;color:#333;">' + vence + '</span>'
+      +     '<span style="font-size:13px;font-weight:700;color:#333;">'+vence+'</span>'
       +   '</div>'
       +   '<div style="display:flex;justify-content:space-between;align-items:center;">'
       +     '<span style="font-size:12px;color:#888;">Monto mensual</span>'
-      +     '<span style="font-size:14px;font-weight:800;color:var(--green);">$' + monto + ' MXN</span>'
+      +     '<span style="font-size:15px;font-weight:800;color:#1fc26a;">$'+monto+' MXN</span>'
       +   '</div>'
       + '</div>'
-      + (estado !== 'activo' ? ''
-        + '<div style="background:#FFF8E1;border-radius:14px;padding:16px;margin-bottom:14px;">'
+      + (estado==='activo' ? '' :
+          '<div style="background:#FFF8E1;border-radius:14px;padding:16px;margin-bottom:14px;">'
         +   '<div style="font-size:12px;font-weight:700;color:#9A6800;margin-bottom:8px;">💳 Cómo realizar tu pago</div>'
-        +   '<div style="font-size:12px;color:#7a5000;line-height:1.7;">'
+        +   '<div style="font-size:12px;color:#7a5000;line-height:1.8;">'
         +     '1. Realiza transferencia o depósito<br>'
-        +     '2. Monto: <strong>$' + monto + ' MXN mensuales</strong><br>'
-        +     '3. Envía comprobante vía WhatsApp o correo al equipo DC App Servis<br>'
+        +     '2. Monto: <strong>$'+monto+' MXN mensuales</strong><br>'
+        +     '3. Envía comprobante por WhatsApp o correo al equipo DC App Servis<br>'
         +     '4. Tu cuenta se activa en menos de 24 horas'
         +   '</div>'
-        + '</div>'
-        : '')
+        + '</div>')
       + '<div style="background:#f8f8f8;border-radius:14px;padding:14px;font-size:11px;color:#888;line-height:1.6;">'
       +   '¿Dudas? Escríbenos a <strong>zonadominiocumbres@gmail.com</strong>'
       + '</div>';
   } catch(e) {
-    cont.innerHTML = '<div style="text-align:center;padding:30px;color:#aaa;">No se pudo cargar</div>';
+    console.error('membresia',e);
+    cont.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;">No se pudo cargar la membresía</div>';
   }
 };
 
