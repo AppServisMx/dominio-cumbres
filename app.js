@@ -367,7 +367,13 @@ function _renderTransferencia(){
   var store=window._dcPlazaStoreActual||null;
   var storeName=(store&&(store.nombrePublico||store.nombreNegocio||store.nombre))||'Plaza Online';
   if(hdrS) hdrS.textContent=storeName;
-  var c=norm(activeCartData().items), subtotal=total(c);
+  var allItems=norm(activeCartData().items);
+  // Filtrar solo productos de la tienda actual
+  var storeId=store&&(store._id||store.id||store.uid||'');
+  var c=storeId?allItems.filter(function(x){var nid=String(x.negocioId||x.uidNegocio||x.comercioId||'');return nid===storeId||nid==='';})
+                :allItems;
+  if(!c.length) c=allItems; // fallback: si no filtra nada, mostrar todo
+  var subtotal=total(c);
   // Datos bancarios del negocio
   var banco=(store&&store.bancoTransferencia)||{};
   var tieneData=banco.banco||banco.clabe||banco.cuenta||banco.titular;
@@ -532,13 +538,11 @@ function _plazaShowCompraOverlay(onDone){
 var _confirmLock=false;
 
 function goSeguimiento(){
-  // Limpiar v-plaza-comprando del stack Y suprimir su push durante go()
+  // Tras compra → volver a Plaza Online (limpiar comprando del stack)
   _navStack=_navStack.filter(function(id){return id!=='v-plaza-comprando';});
   _navSuppress=true;
-  try{if(typeof window.go==='function') window.go('v-plaza-seguimiento','right');}catch(e){}
-  _navStack=_navStack.filter(function(id){return id!=='v-plaza-comprando';});
+  try{if(typeof window.go==='function') window.go('v-plaza','left');}catch(e){}
   setTimeout(function(){_navSuppress=false;},0);
-  [40,120,300].forEach(function(ms){setTimeout(function(){try{renderSeguimiento();}catch(_){}},ms);});
   setTimeout(function(){_confirmLock=false;},800);
   return false;
 }
