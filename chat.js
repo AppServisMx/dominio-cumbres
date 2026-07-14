@@ -662,8 +662,8 @@ function cargarFavoritos() {
     div.innerHTML = `
       <div style="width:44px;height:44px;border-radius:14px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">${ic}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">${f.nombre||'—'}</div>
-        <div style="font-size:11px;color:#888;">${f.categoria||'Proveedor'}</div>
+        <div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">${window.dcEscHTML(f.nombre||'—')}</div>
+        <div style="font-size:11px;color:#888;">${window.dcEscHTML(f.categoria||'Proveedor')}</div>
       </div>`;
 
     // Botón quitar

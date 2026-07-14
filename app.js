@@ -2069,8 +2069,8 @@ window.cargarMembresia=async function(){
               + 'style="background:#fff;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
               + '<div style="width:40px;height:40px;border-radius:11px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+ic+'</div>'
               + '<div style="flex:1;min-width:0;">'
-              +   '<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">'+(p.nombre||'—')+'</div>'
-              +   '<div style="font-size:11px;color:#888;">'+(p.descripcion||p.categoria||'Proveedor')+'</div>'
+              +   '<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:2px;">'+window.dcEscHTML(p.nombre||'—')+'</div>'
+              +   '<div style="font-size:11px;color:#888;">'+window.dcEscHTML(p.descripcion||p.categoria||'Proveedor')+'</div>'
               + '</div>'
               + '<div style="font-size:11px;color:#bbb;flex-shrink:0;">Servicios ›</div>'
               + '</div>';
@@ -2130,8 +2130,8 @@ window.cargarMembresia=async function(){
 
     html += '<div style="background:#fff;border-radius:14px;padding:13px 14px;border:.5px solid #e8e8e8;margin-bottom:16px;display:flex;align-items:center;gap:12px;">'
       + '<div style="width:40px;height:40px;border-radius:11px;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔧</div>'
-      + '<div><div style="font-size:13px;font-weight:700;color:#111;">' + (p.nombre||'—') + '</div>'
-      + '<div style="font-size:11px;color:#888;">' + (p.categoria||'Proveedor') + '</div></div>'
+      + '<div><div style="font-size:13px;font-weight:700;color:#111;">' + window.dcEscHTML(p.nombre||'—') + '</div>'
+      + '<div style="font-size:11px;color:#888;">' + window.dcEscHTML(p.categoria||'Proveedor') + '</div></div>'
       + '</div>';
 
     if (!ag.horarios || !ag.horarios.length || ag.estado === 'pausado') {
@@ -2270,9 +2270,9 @@ window.cargarMembresia=async function(){
         + '<div style="font-size:48px;margin-bottom:14px;">✅</div>'
         + '<div style="font-size:18px;font-weight:700;color:#111;margin-bottom:6px;">¡Reserva enviada!</div>'
         + '<div style="font-size:13px;color:#555;line-height:1.6;margin-bottom:16px;">'
-        + '<b>' + (p.nombre||'El proveedor') + '</b> recibirá tu solicitud:<br>'
+        + '<b>' + window.dcEscHTML(p.nombre||'El proveedor') + '</b> recibirá tu solicitud:<br>'
         + '<b>' + diaLbl + ' a las ' + _horaSel + '</b>'
-        + (nota ? '<br><span style="color:#888;">Nota: ' + nota + '</span>' : '')
+        + (nota ? '<br><span style="color:#888;">Nota: ' + window.dcEscHTML(nota) + '</span>' : '')
         + '</div>'
         + '<div id="reserva-estado-live" style="margin-bottom:20px;padding:10px 16px;border-radius:12px;background:#FFF8DC;font-size:12px;font-weight:700;color:#d97706;">⏳ Pendiente de confirmación</div>'
         + '<button onclick="go(\'v-home\',\'left\')" style="width:100%;background:#1FC26A;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:\'Inter\',sans-serif;margin-bottom:10px;">Ir al inicio</button>'
@@ -2482,10 +2482,10 @@ window.cargarMembresia=async function(){
       div.innerHTML = '<div style="width:40px;height:40px;border-radius:12px;background:'+cfg.bg+';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">'+cfg.ic+'</div>'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
-        + '<span style="font-size:13px;font-weight:'+(n.leida?'600':'700')+';color:#111;">'+(n.titulo||n.tipo||'Notificación')+'</span>'
+        + '<span style="font-size:13px;font-weight:'+(n.leida?'600':'700')+';color:#111;">'+window.dcEscHTML(n.titulo||n.tipo||'Notificación')+'</span>'
         + (n.leida ? '' : '<span style="width:7px;height:7px;border-radius:50%;background:#D63A2A;flex-shrink:0;display:inline-block;"></span>')
         + '</div>'
-        + '<div style="font-size:11px;color:#666;line-height:1.45;margin-bottom:3px;">'+(n.mensaje||'')+'</div>'
+        + '<div style="font-size:11px;color:#666;line-height:1.45;margin-bottom:3px;">'+window.dcEscHTML(n.mensaje||'')+'</div>'
         + '<div style="font-size:10px;color:#bbb;">'+fecha+'</div>'
         + '</div>';
 
@@ -2924,9 +2924,9 @@ window._plazaRenderLista = function(docs) {
       +'<span style="position:absolute;right:10px;top:10px;background:rgba(255,255,255,.92);color:var(--blue);font-size:10px;font-weight:800;padding:4px 8px;border-radius:10px;">✓ Verificado</span>'
       +'</div>'
       +'<div class="si45">'
-      +'<div class="si05"><div class="si17">'+(r.nombrePublico||r.nombreNegocio||r.nombre||'—')+'</div>'
-      +'<span class="si44" style="background:'+meta.bg+';color:'+meta.col+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;">'+meta.lbl+'</span></div>'
-      +'<div class="si10">'+(r.descripcionPublica||r.descripcion||cat||'Comercio local')+'</div>'
+      +'<div class="si05"><div class="si17">'+window.dcEscHTML(r.nombrePublico||r.nombreNegocio||r.nombre||'—')+'</div>'
+      +'<span class="si44" style="background:'+meta.bg+';color:'+meta.col+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;">'+window.dcEscHTML(meta.lbl)+'</span></div>'
+      +'<div class="si10">'+window.dcEscHTML(r.descripcionPublica||r.descripcion||cat||'Comercio local')+'</div>'
       +'<div class="si46">'+_plazaCatLabel(cat)+(r.ratingPromedio?' · ⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+r._id+'\',\'negocio\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span>':'')+'</div>'
       +'<div class="si47"><button data-rate-id="'+r._id+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombrePublico||r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button><button class="si48">Ver productos →</button></div>'
       +'</div></div>';
@@ -3905,7 +3905,7 @@ window.renderHomeM2 = function() {
 
       // Helper: field row always shows, empty -> em-dash
       const FR = (label, val) => {
-        const v = (val === null || val === undefined || val === '') ? '&#8212;' : String(val);
+        const v = (val === null || val === undefined || val === '') ? '&#8212;' : window.dcEscHTML(String(val));
         return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #f5f5f5;">'
           + '<span style="font-size:12px;color:#888;font-weight:600;flex-shrink:0;margin-right:12px;">' + label + '</span>'
           + '<span style="font-size:13px;color:var(--text-primary);font-weight:500;text-align:right;word-break:break-word;">' + v + '</span>'
@@ -3939,7 +3939,7 @@ window.renderHomeM2 = function() {
           'aprobado_pendiente_pago':'#1A7AB5', 'rechazado':'#D63A2A', 'suspendido':'#D63A2A'
         };
         const ee = (e||'').toLowerCase();
-        return '<span style="font-size:12px;font-weight:700;color:'+(col[ee]||'#888')+';">'+(lbl[ee]||e||'&#8212;')+'</span>';
+        return '<span style="font-size:12px;font-weight:700;color:'+(col[ee]||'#888')+';">'+(lbl[ee]||window.dcEscHTML(e||'')||'&#8212;')+'</span>';
       };
 
       let html = '';
