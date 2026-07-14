@@ -1124,7 +1124,10 @@
         <div style="font-size:9px;color:#5a7a5a;font-weight:500;">AppServis</div>
       </div>
     </div>
-    <button onclick="cerrarSesion()" style="display:inline-flex;align-items:center;gap:5px;background:#F3F4F6;border:1.5px solid #C0C4CC;border-radius:9px;padding:0 14px;height:38px;font-size:13px;font-weight:600;color:#222;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Salir</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);" style="position:relative;width:38px;height:38px;border-radius:9px;background:#F3F4F6;border:1.5px solid #C0C4CC;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;" title="Alertas"><span>🔔</span><span class="notif-dot" style="display:none;position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:#e53935;border:1.5px solid #fff;pointer-events:none;"></span></button>
+      <button onclick="cerrarSesion()" style="display:inline-flex;align-items:center;gap:5px;background:#F3F4F6;border:1.5px solid #C0C4CC;border-radius:9px;padding:0 14px;height:38px;font-size:13px;font-weight:600;color:#222;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;">Salir</button>
+    </div>
   </div>
 
   <!-- ── SALUDO + BADGE + UBICACIÓN ── -->
@@ -1230,7 +1233,7 @@
     <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 
@@ -1265,7 +1268,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
@@ -1630,7 +1633,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
@@ -1790,7 +1793,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -1944,7 +1947,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -2345,7 +2348,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -2453,7 +2456,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -2499,7 +2502,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -2526,7 +2529,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
@@ -2554,7 +2557,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
@@ -2587,7 +2590,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -4348,7 +4351,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
@@ -4426,7 +4429,7 @@
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="go('v-mis-chats','right');setTimeout(cargarMisChats,200)"><div class="ni-ic">💬</div><div class="ni-lb" style="color:var(--green);">Chats</div></div>
-        <div class="ni"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
       </div>
     </div>
@@ -5406,27 +5409,6 @@ if(!window._nHoraTimer){window._nHoraTimer=setInterval(function(){if(window._upd
     }
   }));
 }
-function go(id,dir){
-  if(id==='v-reg-prov'&&localStorage.getItem('dcuserEstado')==='aprobado_pendiente_pago'){
-    id='v-espera-pago';dir=dir||'right';
-  }
-  // Reset btn cuando se navega HACIA una vista de registro
-  if(['v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz'].includes(id)){
-    document.querySelectorAll('.check-row .chk.on').forEach(el=>el.classList.remove('on'));
-    var _bv=document.getElementById('btn-reg-vecino');
-    if(_bv){_bv.textContent='Crear mi cuenta →';_bv.disabled=false;}
-  }
-  // Reset btn cuando se navega DESDE v-reg-vecino hacia otra vista
-  const cur=document.querySelector('.view.active');
-  if(cur&&cur.id==='v-reg-vecino'&&id!=='v-reg-vecino'){
-    var _bv2=document.getElementById('btn-reg-vecino');
-    if(_bv2){_bv2.textContent='Crear mi cuenta →';_bv2.disabled=false;}
-  }
-  if(!id||!document.getElementById(id)||(cur&&cur.id===id))return;
-  if(dir==='left'&&cur&&typeof window._dcConfirmarSalida==='function'&&!window._dcConfirmarSalida(cur.id))return;
-  history.pushState({viewId:id},'','');
-  _goCore(id,dir);
-}
 // Estado inicial en el historial (replaceState = no añade entrada extra al historial)
 (function(){
   const ini=document.querySelector('.view.active');
@@ -5477,7 +5459,7 @@ document.addEventListener('click',function(ev){
 // Al intentar REGRESAR de esa pantalla, se pide confirmación.
 // Excepciones: búsquedas, chat y login (no son capturas que se "guarden").
 window._dcDirtyV = null;
-var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat','v-prov-cmv','v-serv-det','v-membresia'];
+var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat','v-prov-cmv','v-serv-det','v-membresia','v-agenda','v-agenda-reservas','v-reservar','v-mi-agenda'];
 var _DC_DIRTY_IDS_EXCL = ['busqueda-input','chat-input','menu-search-inp'];
 document.addEventListener('change', _dcDirtyUniv, true);
 document.addEventListener('input',  _dcDirtyUniv, true);

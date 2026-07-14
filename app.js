@@ -935,17 +935,6 @@ window.dcBack=function(fallback){
 
 try{Object.defineProperty(window,'go',{value:dcGoOficial,writable:false,configurable:false});}catch(_){window.go=dcGoOficial;}
 
-// Handler global de flechas .btn-back
-document.addEventListener('click',function(e){
-  var btn=e.target&&e.target.closest?e.target.closest('.btn-back'):null;
-  if(!btn) return;
-  if(btn.closest('#vr-shell')||btn.closest('#vn-shell')) return;
-  var oc=(btn.getAttribute('onclick')||'');
-  if(oc.indexOf('navTo')!==-1||oc.indexOf('navBack')!==-1) return;
-  e.preventDefault(); e.stopPropagation(); if(e.stopImmediatePropagation) e.stopImmediatePropagation();
-  if(btn.closest('#v-mis-compras-plaza')){try{window.go('v-plaza','left');}catch(_){} return false;}
-  window.dcBack('v-home');
-},true);
 
 
 // ══════════════════════════════════════════════
@@ -962,7 +951,7 @@ document.addEventListener('click',function(e){
     if(txt.indexOf('inicio')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-home','left');return;}
     if(txt.indexOf('plaza')!==-1&&txt.indexOf('mis')===-1){ev.preventDefault();ev.stopPropagation();window.go('v-plaza','left');return;}
     if(txt.indexOf('mis compras')!==-1||txt.indexOf('compras')!==-1){ev.preventDefault();ev.stopPropagation();window._misComprasPlazaTab='proceso';window.go('v-mis-compras-plaza','right');setTimeout(function(){try{window.cargarMisComprasPlaza&&window.cargarMisComprasPlaza();}catch(e){}},120);return;}
-    if(txt.indexOf('alertas')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-notificaciones','right');setTimeout(function(){try{window.renderNotificaciones&&window.renderNotificaciones();}catch(e){}},180);return;}
+    if(txt.indexOf('reservaciones')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-mi-agenda','right');setTimeout(function(){try{window._renderMiAgenda&&window._renderMiAgenda();}catch(e){}},200);return;}
     if(txt.indexOf('perfil')!==-1){ev.preventDefault();ev.stopPropagation();window.go('v-mipanel','right');setTimeout(function(){try{window.cargarMiPerfil&&window.cargarMiPerfil();}catch(e){}},180);return;}
   },true);
 })();
@@ -994,7 +983,7 @@ document.addEventListener('click',function(e){
       if(id==='v-mis-pedidos-food'&&(t.indexOf('pedido')!==-1||t.indexOf('mis pedido')!==-1)){setItem(item,'🔔','Alertas',function(){goTo('v-notificaciones','right',function(){try{window.renderNotificaciones&&window.renderNotificaciones();}catch(_){}});},'');}
       if(id==='v-mis-reportes'&&(t.indexOf('solicitud')!==-1||t.indexOf('mis solicitudes')!==-1)){setItem(item,'🔧','Servicios',function(){goTo('v-servicios','left');},'var(--green)');}
       if(id==='v-favoritos'&&t.indexOf('favoritos')!==-1){setItem(item,'🔧','Servicios',function(){goTo('v-servicios','left');},'');}
-      if(id==='v-notificaciones'&&t.indexOf('alertas')!==-1){setItem(item,'🏠','Inicio',function(){goTo('v-home','left');},'');}
+      if(id==='v-notificaciones'&&t.indexOf('reservaciones')!==-1){setItem(item,'🏠','Inicio',function(){goTo('v-home','left');},'');}
     });
   }
   function patchAll(){
@@ -1265,7 +1254,7 @@ window.dcProvRatingEnviar=async function(){
   if(btn){btn.disabled=true;btn.textContent='&#x23F3; Guardando...';}
   try{
     var miNombre=localStorage.getItem('dcuser')||'Vecino';
-    await _fbSet4('calificaciones',pUid,'votos',myUid,{rating:_ratingSel,comentario:com,fecha:new Date().toISOString(),vecUid:myUid,nombre:miNombre});
+    await _fbSet4('calificaciones',pUid,'votos',myUid,{rating:_ratingSel,comentario:com,fecha:new Date().toISOString(),nombre:miNombre});
     var snap=await _fbColSub3('calificaciones',pUid,'votos');
     var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
     var prom=cnt?Math.round((tot/cnt)*10)/10:0;
@@ -1380,7 +1369,7 @@ window.dcRatingEnviar=async function(blockId){
   if(btn){btn.disabled=true;btn.textContent='⏳ Guardando...';}
   try{
     var miNombre=localStorage.getItem('dcuser')||'Vecino';
-    await _fbSet4('calificaciones',pUid,'votos',myUid,{rating:nr,comentario:com,fecha:new Date().toISOString(),vecUid:myUid,nombre:miNombre});
+    await _fbSet4('calificaciones',pUid,'votos',myUid,{rating:nr,comentario:com,fecha:new Date().toISOString(),nombre:miNombre});
     var snap=await _fbColSub3('calificaciones',pUid,'votos');
     var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
     var prom=cnt?Math.round((tot/cnt)*10)/10:0;
@@ -1781,7 +1770,7 @@ window.cargarMembresia=async function(){
     if(btn){btn.disabled=true;btn.textContent='⏳ Guardando...';}
     try{
       var miNombre=localStorage.getItem('dcuser')||'Vecino';
-      await _fbSet4('calificaciones',_rpUid,'votos',myUid,{rating:_rpSel,comentario:com,fecha:new Date().toISOString(),vecUid:myUid,nombre:miNombre});
+      await _fbSet4('calificaciones',_rpUid,'votos',myUid,{rating:_rpSel,comentario:com,fecha:new Date().toISOString(),nombre:miNombre});
       var snap=await _fbColSub3('calificaciones',_rpUid,'votos');
       var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
       var prom=cnt?Math.round((tot/cnt)*10)/10:0;
@@ -2661,7 +2650,7 @@ window.cargarMembresia=async function(){
         if (rSnap.exists()) {
           var rData = rSnap.data();
           var vecinoUid = rData.vecinoUid || '';
-          if (vecinoUid && !vecinoUid.startsWith('local_')) {
+          if (vecinoUid) {
             var titulo = nuevoEstado === 'aceptada' ? 'Reserva aceptada ✅' : 'Reserva rechazada';
             var mensaje = nuevoEstado === 'aceptada'
               ? 'Tu reserva con ' + (rData.proveedorNombre||'el proveedor') + ' para el ' + (rData.dia||'') + ' a las ' + (rData.hora||'') + ' fue aceptada.'
@@ -2987,7 +2976,7 @@ window._plazaRenderProductos = function() {
   el.innerHTML = html + '<div style="height:70px;"></div>';
 };
 
-window.plazaCambiarQtyDetalle = window.plazaCambiarQtyDetalle || function(delta){
+window.plazaCambiarQtyDetalle = function(delta){
   var q = Number(window._plazaDetalleQty||1) + Number(delta||0);
   if (q < 1) q = 1; if (q > 99) q = 99;
   window._plazaDetalleQty = q;
@@ -2996,7 +2985,7 @@ window.plazaCambiarQtyDetalle = window.plazaCambiarQtyDetalle || function(delta)
   return false;
 };
 
-window.plazaAbrirProductoDetalle = window.plazaAbrirProductoDetalle || function(pid){
+window.plazaAbrirProductoDetalle = function(pid){
   if(document.body.dataset.dcModalLocked!=='1'){var _sy=window.scrollY||0;document.body.dataset.dcModalLocked='1';document.body.dataset.dcModalScrollY=String(_sy);document.body.style.overflow='hidden';document.body.style.touchAction='none';}
   var p = (window._plazaProdDocsCache||[]).find(function(x){return String(x._id)===String(pid);});
   if (!p) return;
