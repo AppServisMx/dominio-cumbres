@@ -217,8 +217,15 @@
       if (snap.exists()) {
         const datos = snap.data();
 
-        // Bloquear acceso de cuentas administrativas en el login de vecinos/proveedores
-        if (datos.esAdmin === true) {
+        // Bloquear acceso de cuentas administrativas en el login de vecinos/proveedores.
+        // Se verifica esAdmin===true (campo booleano) Y como fallback los roles de admin,
+        // para cubrir cuentas creadas antes de que existiera el campo esAdmin.
+        var _esAdmin = datos.esAdmin === true
+          || datos.rol === 'maestro'
+          || datos.rol === 'senior'
+          || datos.rol === 'junior'
+          || datos.rol === 'premium';
+        if (_esAdmin) {
           const { signOut: _soAdm } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
           await _soAdm(auth).catch(function(){});
           if (window._dcAlerta) {

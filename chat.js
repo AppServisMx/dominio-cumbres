@@ -2192,10 +2192,14 @@ function showAdminTab(i,btn){
       var btn = ov.querySelector('#_cpOk');
       btn.disabled = true; btn.textContent = 'Guardando...';
       try {
+        var { getApp: _getApp } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
         var { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
-        var fns = getFunctions(window._fbAuth.app, 'us-central1');
+        var fns = getFunctions(_getApp(), 'us-central1');
         var fn = httpsCallable(fns, 'adminCambiarPassword');
-        await fn({ uidObjetivo: uid, nuevaPassword: p1 });
+        var _res = await fn({ uidObjetivo: uid, nuevaPassword: p1 });
+        if (!_res || !_res.data || _res.data.ok !== true) {
+          throw new Error('La función no confirmó el cambio. Verifica la consola.');
+        }
         cerrar();
         // Mostrar contraseña nueva una sola vez con botón Copiar
         var ovExito = document.createElement('div');
@@ -2255,9 +2259,9 @@ function showAdminTab(i,btn){
       var btn = ov.querySelector('#_elOk');
       btn.disabled = true; btn.textContent = 'Eliminando...';
       try {
-        var { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
-        var fns = getFunctions(window._fbAuth.app, 'us-central1');
-        var fn = httpsCallable(fns, 'adminEliminarCuenta');
+        var { getApp: _getApp2 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions: _gf2, httpsCallable: _hc2 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var fn = _hc2(_gf2(_getApp2(), 'us-central1'), 'adminEliminarCuenta');
         await fn({ uidObjetivo: uid });
         window._admuDatos = window._admuDatos.filter(function(x){ return x.uid !== uid; });
         cerrar();
@@ -2304,9 +2308,9 @@ function showAdminTab(i,btn){
       var btn = ov.querySelector('#_ccOk');
       btn.disabled = true; btn.textContent = 'Guardando...';
       try {
-        var { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
-        var fns = getFunctions(window._fbAuth.app, 'us-central1');
-        var fn = httpsCallable(fns, 'adminCambiarCorreo');
+        var { getApp: _getApp3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js");
+        var { getFunctions: _gf3, httpsCallable: _hc3 } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js");
+        var fn = _hc3(_gf3(_getApp3(), 'us-central1'), 'adminCambiarCorreo');
         await fn({ uidObjetivo: uid, nuevoCorreo: c1 });
         // Actualizar cache local
         if(u) { u.correo = c1; u.email = c1; }
