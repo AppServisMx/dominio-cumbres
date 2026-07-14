@@ -14166,19 +14166,10 @@ window.cargarMembresia=async function(){
       </div>
       <button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#f5f5f5;border:none;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;margin-left:10px;">✕</button>
     </div>
-    <!-- Promedio general -->
     <div id="dc-rp-avg" style="font-size:12px;font-weight:700;color:#9a7020;background:#FFFBEB;border-radius:10px;padding:7px 12px;margin-bottom:14px;display:none;"></div>
-    <!-- Modo A: nuevo voto -->
-    <div id="dc-rp-content" style="display:flex;flex-direction:column;gap:12px;">
-      <div id="dc-rp-stars" style="display:flex;gap:10px;justify-content:center;margin:4px 0 2px;"></div>
-      <textarea id="dc-rp-com" class="nota" rows="2" placeholder="Comentario opcional..." style="resize:none;"></textarea>
-      <button id="dc-rp-btn" onclick="window.dcRatingPopupEnviar&&window.dcRatingPopupEnviar()" style="background:#F5C518;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;color:#1a1200;cursor:pointer;font-family:inherit;width:100%;">Enviar calificación →</button>
-    </div>
-    <!-- Modo B: ya calificado (sombreado + editar) -->
-    <div id="dc-rp-yavotado" style="display:none;"></div>
-    <!-- Modo C: confirmación tras envío -->
-    <div id="dc-rp-ok" style="display:none;"></div>
-    <!-- Comentarios: colapsados con link -->
+    <!-- Único contenedor dinámico — JS decide qué renderiza aquí -->
+    <div id="dc-rp-body"></div>
+    <!-- Comentarios colapsables -->
     <div id="dc-rp-com-wrap" style="display:none;margin-top:16px;border-top:1px solid #f0f0f0;padding-top:12px;">
       <button onclick="window._rpToggleComentarios&&window._rpToggleComentarios()" id="dc-rp-com-toggle" style="background:none;border:none;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;padding:0;margin-bottom:8px;">💬 Ver comentarios ▾</button>
       <div id="dc-rp-comentarios" style="display:none;"></div>
@@ -14189,8 +14180,11 @@ window.cargarMembresia=async function(){
 (function(){
   var _rpUid='', _rpSel=0, _rpCardBtn=null, _rpComOpen=false;
 
+  function _rpSetBody(html){ var b=document.getElementById('dc-rp-body'); if(b)b.innerHTML=html; }
+  function _rpSetSub(t){ var s=document.getElementById('dc-rp-subtitulo'); if(s)s.textContent=t; }
+
   window.dcRatingAbrirPopup=function(pUid,nombre,e){
-    if(e){e.stopPropagation();}
+    if(e)e.stopPropagation();
     var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
     if(tipo!=='vecino'){alert('Solo los vecinos pueden calificar.');return;}
     _rpUid=pUid; _rpSel=0; _rpComOpen=false;
@@ -14198,16 +14192,11 @@ window.cargarMembresia=async function(){
     var ov=document.getElementById('dc-rp-overlay'), sh=document.getElementById('dc-rp-sheet');
     if(!ov||!sh)return;
     document.getElementById('dc-rp-nombre').textContent=nombre||'—';
-    document.getElementById('dc-rp-subtitulo').textContent='Comparte tu experiencia';
+    _rpSetSub('Cargando...');
     var avg=document.getElementById('dc-rp-avg'); avg.textContent=''; avg.style.display='none';
-    document.getElementById('dc-rp-content').style.display='flex';
-    document.getElementById('dc-rp-yavotado').style.display='none';
-    document.getElementById('dc-rp-ok').style.display='none';
     document.getElementById('dc-rp-com-wrap').style.display='none';
     document.getElementById('dc-rp-comentarios').style.display='none';
-    document.getElementById('dc-rp-com').value='';
-    var b=document.getElementById('dc-rp-btn'); b.disabled=false; b.textContent='Enviar calificación →';
-    _rpRenderStars(0);
+    _rpSetBody('<div style="text-align:center;padding:28px 0;color:#ccc;font-size:13px;">⏳</div>');
     ov.style.display='flex';
     requestAnimationFrame(function(){sh.style.transform='translateY(0)';sh.scrollTop=0;});
     _rpCargarDatos(pUid);
@@ -14220,28 +14209,68 @@ window.cargarMembresia=async function(){
     setTimeout(function(){ov.style.display='none';},320);
   };
 
-  function _rpRenderStars(sel){
-    _rpSel=sel;
-    var cont=document.getElementById('dc-rp-stars'); if(!cont)return;
+  function _rpStarsHtml(sel, interactive){
+    var h='';
+    for(var i=1;i<=5;i++){
+      if(interactive) h+='<span onclick="window._rpSetStar('+i+')" style="font-size:38px;cursor:pointer;transition:transform .12s;line-height:1;user-select:none;">'+(i<=sel?'⭐':'☆')+'</span>';
+      else h+='<span style="font-size:28px;line-height:1;">'+(i<=sel?'⭐':'<span style="opacity:.22;">☆</span>')+'</span>';
+    }
+    return h;
+  }
+
+  window._rpSetStar=function(n){
+    _rpSel=n;
+    var cont=document.getElementById('dc-rp-stars-live'); if(!cont)return;
     cont.innerHTML='';
     for(var i=1;i<=5;i++){
       var s=document.createElement('span');
-      s.innerHTML=i<=sel?'⭐':'☆';
+      s.innerHTML=i<=n?'⭐':'☆';
       s.style.cssText='font-size:38px;cursor:pointer;transition:transform .12s;line-height:1;user-select:none;';
-      (function(n,el){
+      (function(nn,el){
         el.onmouseenter=function(){el.style.transform='scale(1.2)';};
         el.onmouseleave=function(){el.style.transform='scale(1)';};
-        el.onclick=function(){_rpRenderStars(n);};
+        el.onclick=function(){window._rpSetStar(nn);};
       })(i,s);
       cont.appendChild(s);
     }
+  };
+
+  function _rpMostrarFormulario(nr, com, esEdicion){
+    _rpSel=nr||0;
+    _rpSetSub(esEdicion?'Editar tu calificación':'Comparte tu experiencia');
+    var starsHtml='<div id="dc-rp-stars-live" style="display:flex;gap:10px;justify-content:center;margin:4px 0 2px;"></div>';
+    _rpSetBody(
+      starsHtml
+      +'<textarea id="dc-rp-ta" class="nota" rows="2" placeholder="Comentario opcional..." style="resize:none;">'+(com||'')+'</textarea>'
+      +'<button onclick="window.dcRatingPopupEnviar&&window.dcRatingPopupEnviar()" style="background:#F5C518;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;color:#1a1200;cursor:pointer;font-family:inherit;width:100%;">'+(esEdicion?'Actualizar calificación →':'Enviar calificación →')+'</button>'
+    );
+    window._rpSetStar(_rpSel);
   }
+
+  function _rpMostrarYaVotado(nr, com){
+    _rpSel=nr||0;
+    _rpSetSub('Tu calificación');
+    _rpSetBody(
+      '<div style="background:#f7f7f7;border-radius:14px;padding:14px 16px;border:1px solid #ebebeb;">'
+      +'<div style="font-size:11px;font-weight:700;color:#aaa;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Tu calificación</div>'
+      +'<div style="display:flex;gap:4px;margin-bottom:10px;">'+_rpStarsHtml(nr,false)+'</div>'
+      +(com?'<div style="font-size:13px;color:#666;font-style:italic;line-height:1.5;">&ldquo;'+com.replace(/</g,'&lt;')+'&rdquo;</div>':'<div style="font-size:12px;color:#ccc;">Sin comentario</div>')
+      +'</div>'
+      +'<button onclick="window._rpIniciarEdicion&&window._rpIniciarEdicion()" style="width:100%;margin-top:10px;background:none;border:1.5px solid #d4a020;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar calificación</button>'
+    );
+  }
+
+  window._rpIniciarEdicion=function(){
+    var yv=document.getElementById('dc-rp-body');
+    var com='';
+    var ta=yv?yv.querySelector('textarea'):null; if(ta)com=ta.value;
+    _rpMostrarFormulario(_rpSel, com, true);
+  };
 
   async function _rpCargarDatos(pUid){
     try{
       var snap=await _fbGet4('calificaciones',pUid,'resumen','datos');
-      var avg=document.getElementById('dc-rp-avg');
-      var totalCnt=0;
+      var avg=document.getElementById('dc-rp-avg'); var totalCnt=0;
       if(snap.exists()&&snap.data().promedio){
         var d=snap.data(); totalCnt=d.total||0;
         if(avg){avg.textContent='⭐ '+d.promedio+' promedio · '+totalCnt+' opiniones';avg.style.display='block';}
@@ -14254,32 +14283,18 @@ window.cargarMembresia=async function(){
         var mv=await _fbGet4('calificaciones',pUid,'votos',myUid);
         if(mv.exists()){yaVotado=true; vdSaved=mv.data();}
       }
-      if(yaVotado){
-        // Mostrar modo "ya calificado": sombreado + botón editar
-        document.getElementById('dc-rp-content').style.display='none';
-        _rpSel=vdSaved.rating||0;
-        var yv=document.getElementById('dc-rp-yavotado');
-        yv.style.display='block';
-        yv.innerHTML='<div style="background:#f7f7f7;border-radius:14px;padding:14px 16px;border:1px solid #ebebeb;">'
-          +'<div style="font-size:11px;font-weight:700;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Tu calificación</div>'
-          +'<div style="font-size:28px;margin-bottom:8px;">'+'⭐'.repeat(_rpSel)+'<span style="opacity:.25;">☆</span>'.repeat(5-_rpSel)+'</div>'
-          +(vdSaved.comentario?'<div style="font-size:13px;color:#666;font-style:italic;line-height:1.5;">&ldquo;'+vdSaved.comentario.replace(/</g,'&lt;')+'&rdquo;</div>':'<div style="font-size:12px;color:#bbb;">Sin comentario</div>')
-          +'</div>'
-          +'<button onclick="window._rpModoEditar&&window._rpModoEditar()" style="width:100%;margin-top:10px;background:none;border:1.5px solid #d4a020;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar calificación</button>';
-      }
-      // Cargar comentarios de otros (siempre)
-      _rpCargarComentarios(pUid, myUid||'', totalCnt);
-    }catch(e){}
+      if(yaVotado) _rpMostrarYaVotado(vdSaved.rating||0, vdSaved.comentario||'');
+      else _rpMostrarFormulario(0,'',false);
+      _rpCargarComentarios(pUid, myUid||'');
+    }catch(e){ _rpMostrarFormulario(0,'',false); }
   }
 
-  async function _rpCargarComentarios(pUid, myUid, totalCnt){
+  async function _rpCargarComentarios(pUid, myUid){
     try{
       var snap=await _fbColSub3('calificaciones',pUid,'votos');
       var items=[];
       snap.forEach(function(d){var v=d.data();if(d.id!==myUid&&(v.comentario||'').trim())items.push(v);});
-      var wrap=document.getElementById('dc-rp-com-wrap');
-      var ob=document.getElementById('dc-rp-comentarios');
-      var tog=document.getElementById('dc-rp-com-toggle');
+      var wrap=document.getElementById('dc-rp-com-wrap'), ob=document.getElementById('dc-rp-comentarios'), tog=document.getElementById('dc-rp-com-toggle');
       if(!wrap||!ob)return;
       if(!items.length){wrap.style.display='none';return;}
       wrap.style.display='block';
@@ -14301,18 +14316,17 @@ window.cargarMembresia=async function(){
 
   window._rpToggleComentarios=function(){
     _rpComOpen=!_rpComOpen;
-    var ob=document.getElementById('dc-rp-comentarios');
-    var tog=document.getElementById('dc-rp-com-toggle');
+    var ob=document.getElementById('dc-rp-comentarios'), tog=document.getElementById('dc-rp-com-toggle');
     if(ob)ob.style.display=_rpComOpen?'block':'none';
-    if(tog){var t=tog.textContent;tog.textContent=t.replace(_rpComOpen?'▾':'▴',_rpComOpen?'▴':'▾');}
+    if(tog)tog.textContent=tog.textContent.replace(_rpComOpen?'▾':'▴',_rpComOpen?'▴':'▾');
   };
 
   window.dcRatingPopupEnviar=async function(){
     if(!_rpSel){alert('Selecciona una calificación');return;}
     var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid;
     if(!myUid){alert('Inicia sesión');return;}
-    var com=(document.getElementById('dc-rp-com')||{}).value||'';
-    var btn=document.getElementById('dc-rp-btn');
+    var ta=document.getElementById('dc-rp-ta'); var com=ta?ta.value:'';
+    var btn=document.querySelector('#dc-rp-body button:last-child');
     if(btn){btn.disabled=true;btn.textContent='⏳ Guardando...';}
     try{
       var miNombre=localStorage.getItem('dcuser')||'Vecino';
@@ -14323,35 +14337,21 @@ window.cargarMembresia=async function(){
       await _fbSet4('calificaciones',_rpUid,'resumen','datos',{promedio:prom,total:cnt});
       try{await _fbUpd2('usuarios',_rpUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
       if(_rpCardBtn){_rpCardBtn.innerHTML='✅ Ya calificado';_rpCardBtn.style.background='#E8F5E9';_rpCardBtn.style.borderColor='#1FC26A';_rpCardBtn.style.color='#1a7a3a';}
-      var savedNr=_rpSel; var savedCom=com;
-      document.getElementById('dc-rp-content').style.display='none';
-      document.getElementById('dc-rp-yavotado').style.display='none';
       var avg=document.getElementById('dc-rp-avg');
       if(avg){avg.textContent='⭐ '+prom+' promedio · '+cnt+' opiniones';avg.style.display='block';}
-      var ok=document.getElementById('dc-rp-ok');
-      ok.style.display='block';
-      ok.innerHTML='<div style="text-align:center;padding:16px 0;">'
-        +'<div style="font-size:42px;margin-bottom:10px;">✅</div>'
-        +'<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:8px;">¡Gracias por calificar!</div>'
-        +'<div style="font-size:26px;margin:8px 0;">'+'⭐'.repeat(savedNr)+'☆'.repeat(5-savedNr)+'</div>'
-        +(savedCom?'<div style="font-size:12px;color:#666;font-style:italic;margin:8px 0;">&ldquo;'+savedCom.replace(/</g,'&lt;')+'&rdquo;</div>':'')
-        +'<div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">'
-        +'<button onclick="window._rpModoEditar&&window._rpModoEditar()" style="background:none;border:1.5px solid #d4a020;border-radius:12px;padding:10px 18px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar</button>'
-        +'<button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#1FC26A;border:none;border-radius:12px;padding:10px 22px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">Cerrar</button>'
-        +'</div></div>';
+      // "Gracias" breve — se cierra solo en 1.8s
+      _rpSetSub('¡Calificación enviada!');
+      _rpSetBody('<div style="text-align:center;padding:20px 0;">'
+        +'<div style="font-size:40px;margin-bottom:8px;">✅</div>'
+        +'<div style="font-size:14px;font-weight:800;color:#111;margin-bottom:8px;">¡Gracias por calificar!</div>'
+        +'<div style="font-size:24px;">'+('⭐'.repeat(_rpSel)+'☆'.repeat(5-_rpSel))+'</div>'
+        +(com?'<div style="font-size:12px;color:#666;font-style:italic;margin-top:8px;">&ldquo;'+com.replace(/</g,'&lt;')+'&rdquo;</div>':'')
+        +'</div>');
+      setTimeout(function(){window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup();},1800);
     }catch(e){
       if(btn){btn.disabled=false;btn.textContent='Enviar calificación →';}
       alert('Error: '+e.message);
     }
-  };
-
-  window._rpModoEditar=function(){
-    document.getElementById('dc-rp-yavotado').style.display='none';
-    document.getElementById('dc-rp-ok').style.display='none';
-    document.getElementById('dc-rp-content').style.display='flex';
-    document.getElementById('dc-rp-subtitulo').textContent='Editar tu calificación';
-    var b=document.getElementById('dc-rp-btn'); if(b){b.disabled=false;b.textContent='Actualizar calificación →';}
-    _rpRenderStars(_rpSel);
   };
 })();
 </script>
