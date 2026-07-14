@@ -1062,20 +1062,23 @@ function _postHooks(id){
     }
     if(typeof window.__dcNavPatchAll==='function'){setTimeout(window.__dcNavPatchAll,35);setTimeout(window.__dcNavPatchAll,180);}
     _patchFavBack();
-    // FAB: visible solo si la pantalla activa tiene barra nav inferior
     try {
       var fab = document.getElementById('dc-fab-global');
-      if (fab && fab.classList.contains('visible')) {
-        var _activeView = document.getElementById(id);
-        var _tieneNav = _activeView && _activeView.querySelector('.nav');
-        if (_tieneNav) {
+      if (fab) {
+        var _fabOcultar = ['v-impulsa','v-impulsa-planes','v-impulsa-pago','v-impulsa-ok',
+                           'v-splash','v-login','v-register','v-role','v-loading',
+                           'v-admin-login','v-admin-panel',
+                           'v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz',
+                           'v-reg-proveedor','v-reg-restaurante','v-reg-negocio','v-reg-transporte'];
+        if (_fabOcultar.indexOf(id) !== -1) {
+          fab.style.opacity = '0';
+          fab.style.pointerEvents = 'none';
+        } else if (fab.classList.contains('visible')) {
           fab.style.opacity = '1';
           fab.style.pointerEvents = 'auto';
-          fab.style.bottom = '140px';
-        } else {
-          fab.style.opacity = '1';
-          fab.style.pointerEvents = 'auto';
-          fab.style.bottom = '80px';
+          var _activeView = document.getElementById(id);
+          var _tieneNav = _activeView && _activeView.querySelector('.nav');
+          fab.style.bottom = _tieneNav ? '140px' : '80px';
         }
       }
     } catch(_) {}
