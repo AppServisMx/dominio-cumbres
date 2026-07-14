@@ -6026,7 +6026,7 @@ select.cnt-form-input option{background:#1a1f1a;color:#fff;}
       delayOnTouchOnly: true,
       ghostClass: 'admin-card-drag-ghost',
       chosenClass: 'admin-card-drag-chosen',
-      onEnd: function() { saveOrder(grid); }
+      onEnd: function() { saveOrder(grid); try { window._dcDirtyV = null; } catch(e) {} }
     });
   }
 
