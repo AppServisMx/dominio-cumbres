@@ -445,8 +445,8 @@ document.addEventListener('click',function(e){
     // Ahora sí confirmar compra
     var o={id:'plaza_'+Date.now(),folio:'#PZ'+String(Date.now()).slice(-6),tipo:'plaza_orden',estado:'en_proceso',titulo:'Plaza Online',fecha:Date.now(),items:selectedItems(),total:total(selectedItems()),entrega:(localStorage.getItem('dcPlazaTipoEntrega')||'domicilio'),pago:'transferencia',referenciaTransferencia:ref};
     saveOrder(o); clearCart();
-    try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goProceso),false;}catch(_){}
-    return goProceso();
+    try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goSeguimiento),false;}catch(_){}
+    return goSeguimiento();
   }
 },true);
 
@@ -455,6 +455,16 @@ document.addEventListener('click',function(e){
 // CONFIRMAR COMPRA
 // ══════════════════════════════════════════════
 var _confirmLock=false;
+
+function goSeguimiento(){
+  // Quitar v-plaza-comprando del stack para que ‹ desde seguimiento no regrese ahí
+  for(var _i=_navStack.length-1;_i>=0;_i--){if(_navStack[_i]==='v-plaza-comprando'){_navStack.splice(_i,1);break;}}
+  try{window._misComprasPlazaTab='proceso';}catch(e){}
+  try{if(typeof window.go==='function') window.go('v-plaza-seguimiento','right');}catch(e){}
+  [40,120,300].forEach(function(ms){setTimeout(function(){try{renderSeguimiento();}catch(_){}},ms);});
+  setTimeout(function(){_confirmLock=false;},800);
+  return false;
+}
 
 function isConfirmTarget(e){
   var t=e&&e.target; if(!t||!t.closest) return false;
@@ -476,8 +486,8 @@ function finalizarCompra(e){
   if(!items.length){_confirmLock=false;return false;}
   var o={id:'plaza_'+Date.now(),folio:'#PZ'+String(Date.now()).slice(-6),tipo:'plaza_orden',estado:'en_proceso',titulo:'Plaza Online',fecha:Date.now(),items:items,total:total(items),entrega:(localStorage.getItem('dcPlazaTipoEntrega')||'domicilio'),pago:(localStorage.getItem('dcPlazaTipoPago')||'efectivo')};
   saveOrder(o); clearCart();
-  try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goProceso),false;}catch(_){}
-  return goProceso();
+  try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goSeguimiento),false;}catch(_){}
+  return goSeguimiento();
 }
 
 window.addEventListener('pointerdown',finalizarCompra,true);
