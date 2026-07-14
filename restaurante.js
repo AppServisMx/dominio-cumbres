@@ -352,11 +352,14 @@ window.dcRestGoMenuAfterSave = function(){ _rNavStack = ['vr-home','vr-menu','vr
 
 // ══════ NAVEGACIÓN DEL CENTRO OPERATIVO DEL NEGOCIO (vn-shell) ══════
 var _nNavStack = ['vn-home'];
+var _nNavBusy = false;
 function dcNeg_navTo(id, isBack) {
+  if (_nNavBusy) return;
   var shell = document.getElementById('vn-shell');
   var cur = shell ? shell.querySelector('.view.active') : null;
   var nxt = document.getElementById(id);
   if (!cur || !nxt || cur === nxt) return;
+  _nNavBusy = true; setTimeout(function(){ _nNavBusy = false; }, 330);
   // REGLA #4: avisar antes de salir con cambios sin guardar
   if (window._dirtyView && cur.id === window._dirtyView) {
     var _seguir = window.confirm('\u26A0\uFE0F Tienes cambios sin guardar.\n\nPresiona CANCELAR para quedarte y guardarlos,\no ACEPTAR para salir y descartarlos.');
@@ -400,6 +403,7 @@ function dcNeg_navBack() {
 var negTo = function(id, isBack){ if(isBack) return dcNeg_navBack(); return dcNeg_navTo(id); };
 window.dcNeg_navTo = dcNeg_navTo;
 window.negTo = negTo;
+window.dcNeg_resetStack = function(){ _nNavStack = ['vn-home']; };
 window.vnegGoHomeFromMenu = function(){ _nNavStack = ['vn-home','vn-menu']; dcNeg_navBack(); };
 window.vnegBackMenuFromProd = function(){ _nNavStack = ['vn-home','vn-menu','vn-prod-form']; dcNeg_navBack(); };
 window.vnegGoMenuAfterSave = function(){ _nNavStack = ['vn-home','vn-menu','vn-prod-form']; dcNeg_navBack(); setTimeout(function(){ window.vnegCargarMenu&&window.vnegCargarMenu(); },160); };
@@ -574,8 +578,8 @@ window._calcMetricasNeg = async function(){
   var ledSet = function(cardId,on){ var c=document.getElementById(cardId); if(c) c.classList.toggle('led-on', !!on); };
   try {
     var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',user.uid)));
-    var GP_NUEVO=['nuevo'], GP_PROC=['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'];
+    var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidosPlaza'), _fb.where('negocioId','==',user.uid)));
+    var GP_NUEVO=['en_proceso'], GP_PROC=['preparando','listo','en_camino'];
     var nAcep=0,nProc=0,nHoy=0, ventaHoy=0, nSem=0, ventaSem=0;
     var hoy0=new Date(); hoy0.setHours(0,0,0,0); var t0=hoy0.getTime();
     var sem0=new Date(); sem0.setHours(0,0,0,0); sem0.setDate(sem0.getDate()-6); var ts0=sem0.getTime();
@@ -602,12 +606,160 @@ window._calcMetricasNeg = async function(){
 
 // ══════ FUNCIONES DE PANTALLAS DEL NEGOCIO (IDs vn- propios, datos por uid) ══════
 var _vnegPedTab = 'pedidos';
+var _vnegPedidosCache = [];
+var _vnegDetDocId = null;
+
 window.vnegTabPedidos = function(tab, btn){
   _vnegPedTab = tab;
   document.querySelectorAll('#vn-pedidos .chip').forEach(function(b){ b.classList.remove('on'); });
   if (btn) btn.classList.add('on');
   window.vnegRenderPedidos();
 };
+
+// Crea la vista de detalle dentro de vn-shell si no existe
+function _vnegEnsureDetView() {
+  if (document.getElementById('vn-det-pedido')) return;
+  var shell = document.getElementById('vn-shell');
+  if (!shell) return;
+  var v = document.createElement('div');
+  v.id = 'vn-det-pedido';
+  v.className = 'view';
+  v.style.cssText = 'background:#f7f3fa;display:flex;flex-direction:column;height:100%;overflow:hidden;';
+  shell.appendChild(v);
+}
+
+// Renderiza el contenido de la vista de detalle (reutilizable para actualizar)
+function _vnegRenderDetView(p) {
+  var view = document.getElementById('vn-det-pedido'); if (!view) return;
+  // Tracker vertical igual que Food (_PASOS + .tstep/.tdot/.tline), colores morados
+  var PASOS = [
+    {est:['en_proceso','preparando','listo','en_camino','entregado'], ic:'📦', lbl:'Recibido'},
+    {est:['preparando','listo','en_camino','entregado'],              ic:'✅', lbl:'Aceptado'},
+    {est:['listo','en_camino','entregado'],                           ic:'👷', lbl:'Preparando'},
+    {est:['en_camino','entregado'],                                   ic:'🛎️', lbl:'Listo'},
+    {est:['entregado'],                                               ic:'🏍️', lbl:'En camino'},
+    {est:['entregado'],                                               ic:'🏠', lbl:'Entregado'}
+  ];
+  var est = String(p.estado||'en_proceso');
+  // mismo patrón que Food: done si el estado actual está en la lista del paso
+  var dotsHtml = PASOS.map(function(paso, i) {
+    var done = paso.est.indexOf(est) !== -1;
+    var dotBg = done ? '#5B2C8A' : '#f0f0f0';
+    var dotColor = done ? '#fff' : '#aaa';
+    var lineBg = done ? '#5B2C8A' : '#f0f0f0';
+    var lblColor = done ? '#111' : '#aaa';
+    var lblWeight = done ? 700 : 500;
+    var isLast = i === PASOS.length - 1;
+    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;">'
+      +(!isLast?'<div style="position:absolute;left:14px;top:30px;width:2px;height:calc(100% + 2px);background:'+lineBg+';z-index:0;"></div>':'')
+      +'<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;position:relative;z-index:1;background:'+dotBg+';color:'+dotColor+';">'+paso.ic+'</div>'
+      +'<div style="font-size:13px;font-weight:'+lblWeight+';color:'+lblColor+';">'+paso.lbl+'</div>'
+      +'</div>';
+  }).join('');
+
+  var AVANCE_SIG = {en_proceso:'preparando',preparando:'listo',listo:'en_camino',en_camino:'entregado'};
+  var AVANCE_LBL = {en_proceso:'✅ Aceptar pedido',preparando:'🏪 Marcar como listo',listo:'🏍️ Salió a entregar',en_camino:'🏠 Marcar como entregado'};
+  var est = String(p.estado||'en_proceso');
+  var sig = AVANCE_SIG[est];
+  var sigLbl = AVANCE_LBL[est];
+  var fch = p.fecha ? new Date(p.fecha).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+  var pedNum = String(p._id||'').slice(-6).toUpperCase();
+
+  var itemsHtml = (p.items||[]).map(function(it, idx){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid #ede8f3;">'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<span style="background:#5B2C8A;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex-shrink:0;">'+(idx+1)+'</span>'
+      +'<span style="font-size:12px;color:#111;">'+_resc(it.nombre)+'</span></div>'
+      +'<div style="text-align:right;flex-shrink:0;">'
+      +'<div style="font-size:11px;color:#777;">'+_resc(it.cantidad)+'× $'+_resc(it.precio||0)+'</div>'
+      +'<div style="font-size:12px;font-weight:800;color:#111;">$'+_resc((it.precio||0)*(it.cantidad||1))+'</div>'
+      +'</div></div>';
+  }).join('');
+
+  view.innerHTML =
+    // Header
+    '<div style="background:linear-gradient(135deg,#5B2C8A,#7B3FA0);padding:52px 18px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;">'
+    +'<button onclick="dcNeg_navBack()" style="background:rgba(255,255,255,.18);border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">‹</button>'
+    +'<div><div style="font-size:16px;font-weight:900;color:#fff;">Detalle del pedido</div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.75);">#'+pedNum+'</div></div></div>'
+    // Scroll body
+    +'<div class="scr" style="flex:1;overflow-y:auto;padding:16px 14px 24px;">'
+    // Cliente card
+    +'<div style="background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(91,44,138,.08);">'
+    +'<div style="font-size:11px;color:#7B3FA0;font-weight:800;letter-spacing:.5px;margin-bottom:8px;">👤 CLIENTE</div>'
+    +'<div style="font-size:14px;font-weight:900;color:#111;">'+_resc(p.clienteNombre||p.vecinoNombre||'Cliente')+'</div>'
+    +(p.telefono?'<div style="font-size:12px;color:#555;margin-top:3px;">📞 '+_resc(p.telefono)+'</div>':'')
+    +(p.direccion?'<div style="font-size:12px;color:#555;margin-top:3px;">📍 '+_resc(p.direccion)+'</div>':'')
+    +'<div style="font-size:11px;color:#aaa;margin-top:4px;">'+fch+'</div>'
+    +'<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<span style="font-size:11px;background:#f5f0fa;color:#5B2C8A;border-radius:20px;padding:3px 10px;font-weight:700;">📦 '+(p.entrega==='domicilio'?'A domicilio':'Recoger')+'</span>'
+    +'<span style="font-size:11px;background:#f5f0fa;color:#5B2C8A;border-radius:20px;padding:3px 10px;font-weight:700;">💳 '+_resc(p.pago||'—')+'</span>'
+    +(p.referenciaTransferencia?'<span style="font-size:11px;background:#f5f0fa;color:#5B2C8A;border-radius:20px;padding:3px 10px;font-weight:700;">🔖 '+_resc(p.referenciaTransferencia)+'</span>':'')
+    +'</div></div>'
+    // Comanda
+    +'<div style="background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(91,44,138,.08);">'
+    +'<div style="font-size:11px;color:#7B3FA0;font-weight:800;letter-spacing:.5px;margin-bottom:10px;">🧾 COMANDA</div>'
+    +itemsHtml
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:1.5px solid #ede8f3;margin-top:4px;">'
+    +'<span style="font-size:14px;font-weight:800;color:#111;">Total a cobrar</span>'
+    +'<span style="font-size:18px;font-weight:900;color:#5B2C8A;">$'+_resc(p.total||0)+'</span></div></div>'
+    // Progreso
+    +'<div style="background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(91,44,138,.08);">'
+    +'<div style="font-size:11px;color:#7B3FA0;font-weight:800;letter-spacing:.5px;margin-bottom:14px;">📍 PROGRESO</div>'
+    +dotsHtml
+    +'</div>'
+    +(p.notas?'<div style="background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(91,44,138,.08);font-size:12px;color:#555;">📝 <strong>Notas:</strong> '+_resc(p.notas)+'</div>':'')
+    // Botón dentro del scroll (no absoluto)
+    +(sig
+      ?'<button id="vneg-det-btn" onclick="window._vnegAvanzarPedVn(\''+_resc(p._id)+'\',\''+_resc(sig)+'\')" style="width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(135deg,#5B2C8A,#7B3FA0);color:#fff;font-size:15px;font-weight:900;font-family:inherit;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 16px rgba(91,44,138,.35);box-sizing:border-box;margin-bottom:8px;">'+sigLbl+'</button>'
+      :'<div style="text-align:center;padding:14px;font-size:14px;font-weight:800;color:#5B2C8A;background:#f5f0fa;border-radius:16px;">🎉 Pedido finalizado</div>')
+    +'</div>';
+}
+
+// Abrir detalle de pedido — vista full-screen dentro de vn-shell
+window._vnegAbrirDetPed = function(docId) {
+  var p = _vnegPedidosCache.find(function(x){ return x._id === docId; });
+  if (!p) return;
+  _vnegDetDocId = docId;
+  _vnegEnsureDetView();
+  _vnegRenderDetView(p);
+  dcNeg_navTo('vn-det-pedido');
+};
+
+// Avanzar estado — igual que dcFood_cambiarEstado: update → volver a la lista
+window._vnegAvanzarPedVn = async function(docId, nuevoEstado) {
+  var _db = window._fbDb; if (!_db || !docId) return;
+  var btn = document.getElementById('vneg-det-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try {
+    var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var snap = await _fb.getDoc(_fb.doc(_db,'pedidosPlaza',docId));
+    if (!snap.exists()) return;
+    var pd = snap.data();
+    await _fb.updateDoc(_fb.doc(_db,'pedidosPlaza',docId), {
+      estado: nuevoEstado, actualizado: Date.now(),
+      historialEstados: _fb.arrayUnion({estado:nuevoEstado, fecha:Date.now()})
+    });
+    // Notificar al cliente (igual que Food notifica al vecino)
+    var MSGS = {preparando:'Tu pedido fue aceptado.',listo:'Tu pedido está listo.',en_camino:'Tu pedido va en camino.',entregado:'¡Tu pedido fue entregado!'};
+    if (MSGS[nuevoEstado] && pd.clienteId) {
+      try { await _fb.addDoc(_fb.collection(_db,'notificaciones'),{uid:pd.clienteId,tipo:'pedido',modulo:'pedidos',titulo:'Actualización',mensaje:MSGS[nuevoEstado],leida:false,eliminada:false,prioridad:'normal',pedidoId:docId,fecha:_fb.serverTimestamp()}); } catch(ne){}
+    }
+    // Igual que Food: volver a la lista y recargar
+    dcNeg_navBack();
+    setTimeout(function(){ window.vnegRenderPedidos(); window._calcMetricasNeg && window._calcMetricasNeg(); }, 150);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Reintentar'; }
+    if (typeof toast === 'function') toast('⚠️ Error: ' + e.message);
+  }
+};
+
+if (!document.getElementById('vneg-det-kf')) {
+  var _vnegDetKf = document.createElement('style'); _vnegDetKf.id = 'vneg-det-kf';
+  _vnegDetKf.textContent = '@keyframes vnFadeIn{from{opacity:0;}to{opacity:1;}}';
+  document.head.appendChild(_vnegDetKf);
+}
+
 window.vnegRenderPedidos = async function(){
   var cont = document.getElementById('vn-ped-cont'); if(!cont) return;
   var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
@@ -615,17 +767,31 @@ window.vnegRenderPedidos = async function(){
   cont.innerHTML='<div style="text-align:center;color:#aaa;padding:30px;font-size:12px;">Cargando…</div>';
   try{
     var _fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
-    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'),_fb.where('restauranteId','==',user.uid)));
-    var G={pedidos:['nuevo'],en_proceso:['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'],entregados:['entregado']};
-    var perm=G[_vnegPedTab]||[]; var arr=[];
-    snap.forEach(function(d){var p=d.data();p._id=d.id;if(perm.indexOf(p.estado)!==-1)arr.push(p);});
-    arr.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
-    if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin pedidos en esta categoría.</div>';return;}
+    var snap=await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidosPlaza'),_fb.where('negocioId','==',user.uid)));
+    _vnegPedidosCache=[];
+    snap.forEach(function(d){var p=d.data();p._id=d.id;_vnegPedidosCache.push(p);});
+    _vnegPedidosCache.sort(function(a,b){return (b.fecha||0)-(a.fecha||0);});
+    var G={pedidos:['en_proceso'],en_proceso:['preparando','listo','en_camino'],entregados:['entregado']};
+    var perm=G[_vnegPedTab]||[];
+    var arr=_vnegPedidosCache.filter(function(p){return perm.indexOf(p.estado)!==-1;});
+    var EST_LBL={'en_proceso':'📦 Nuevo','preparando':'👨‍💼 Preparando','listo':'✅ Listo','en_camino':'🏍️ En camino','entregado':'🎉 Entregado'};
+    var EST_COL={'en_proceso':'#D97706','preparando':'#7B3FA0','listo':'#1a8a4a','en_camino':'#1a5a9a','entregado':'#555'};
+    if(!arr.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:50px 20px;font-size:13px;font-weight:700;">📭 Sin pedidos aquí</div>';return;}
     cont.innerHTML=arr.map(function(p){
-      var items=(p.items||[]).map(function(it){return _resc(it.cantidad)+'x '+_resc(it.nombre);}).join(', ');
-      return '<div style="background:#fff;border-radius:12px;padding:14px;margin:0 14px 10px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:800;font-size:13px;">'+_resc(p.vecinoNombre||'Cliente')+'</span><span style="font-weight:800;color:#7B3FA0;">$'+_resc(p.total||0)+'</span></div><div style="font-size:12px;color:#666;">'+items+'</div></div>';
+      var est=String(p.estado||'en_proceso');
+      var estCol=EST_COL[est]||'#555'; var estLbl=EST_LBL[est]||est;
+      var items=(p.items||[]).slice(0,3).map(function(it){return _resc(it.cantidad)+'× '+_resc(it.nombre);}).join(', ');
+      var hora=p.fecha?new Date(p.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
+      return '<div onclick="window._vnegAbrirDetPed(\''+_resc(p._id)+'\')" style="background:#fff;border-radius:14px;padding:14px 16px;margin:0 14px 10px;box-shadow:0 2px 8px rgba(0,0,0,.07);cursor:pointer;border-left:4px solid '+estCol+';">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">'
+        +'<div style="font-weight:800;font-size:13px;color:#111;">'+_resc(p.clienteNombre||p.vecinoNombre||'Cliente')+'</div>'
+        +'<div style="font-weight:900;font-size:14px;color:#5B2C8A;">$'+_resc(p.total||0)+'</div></div>'
+        +'<div style="font-size:11px;color:#777;margin-bottom:8px;line-height:1.4;">'+items+'</div>'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-size:10px;font-weight:800;color:'+estCol+';background:'+estCol+'1a;border-radius:20px;padding:3px 10px;">'+estLbl+'</span>'
+        +'<span style="font-size:10px;color:#bbb;">'+hora+'</span></div></div>';
     }).join('');
-  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error.</div>';}
+  }catch(e){cont.innerHTML='<div style="text-align:center;color:#c00;padding:30px;font-size:12px;">Error: '+_resc(e.message)+'</div>';}
 };
 
 window.vnegCrearCategoria = function(){

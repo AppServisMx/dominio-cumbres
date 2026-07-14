@@ -1,6 +1,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+  import { getStorage } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDMQe7mPjzrzuxqLXPu4Ft0A4r2ZggqV14",
@@ -16,9 +17,11 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  const storage = getStorage(app);
   // Exponer en window para acceso desde scripts regulares
-  window._fbAuth = auth;
-  window._fbDb   = db;
+  window._fbAuth    = auth;
+  window._fbDb      = db;
+  window._fbStorage = storage;
 
   function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 

@@ -1,4 +1,4 @@
-// CENTRO DE CONTENIDO — Admin Module v=20260709h
+// CENTRO DE CONTENIDO — Admin Module v=20260710i
 (function(){ 'use strict';
 
 var _FBFS = "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
@@ -82,10 +82,38 @@ function _statChip(icon, val, label){
 
 function _uid(){ return (window._fbAuth && window._fbAuth.currentUser) ? window._fbAuth.currentUser.uid : '(sin_sesion)'; }
 
-// ── Permisos (punto 8) ────────────────────────────────────────────────────────
-window.cntPuedeEditar    = function(){ return true; };
-window.cntPuedePublicar  = function(){ return true; };
-window.cntPuedeEliminar  = function(){ return true; };
+// ── Permisos reales basados en sesión admin ────────────────────────────────────
+window.cntPuedeEditar    = function(){ return !!(window._adminRol); };
+window.cntPuedePublicar  = function(){ return !!(window._adminRol); };
+window.cntPuedeEliminar  = function(){ return !!(window._adminRol); };
+
+// ── Garantizar sesión Firebase Auth para Firestore ───────────────────────────
+// El login admin es hardcoded (chat.js) y no crea sesión Firebase Auth.
+// Si el admin está logueado pero no hay Firebase Auth, se hace signInAnonymously
+// para satisfacer la regla: allow read, write: if request.auth != null
+async function _cntEnsureFirebaseAuth(){
+  var auth = window._fbAuth;
+  if(!auth) return;
+  // Si ya hay sesión Firebase, no hacer nada
+  if(auth.currentUser) return;
+  // Esperar por si Firebase está restaurando la sesión
+  var user = await new Promise(function(res){
+    var t = setTimeout(function(){ res(null); }, 3000);
+    var unsub = auth.onAuthStateChanged(function(u){ clearTimeout(t); unsub(); res(u); });
+  });
+  if(user) return; // sesión restaurada
+  // Si el admin está logueado via panel pero sin Firebase Auth → signInAnonymously
+  if(window._adminRol){
+    console.log('[CNT AUTH]', { currentUser: null, adminRol: window._adminRol, accion: 'signInAnonymously' });
+    try {
+      var A = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
+      await A.signInAnonymously(auth);
+      console.log('[CNT AUTH] sesión anónima creada:', auth.currentUser && auth.currentUser.uid);
+    } catch(ae){ console.warn('[CNT AUTH] signInAnonymously falló:', ae.message); }
+  } else {
+    console.log('[CNT AUTH]', { currentUser: null, adminRol: window._adminRol || null, localTipo: localStorage.getItem('dcuserTipo') });
+  }
+}
 
 // ── Bitácora (puntos 1 y 10) ──────────────────────────────────────────────────
 async function _guardarBitacora(col, id, accion, antes, despues){
@@ -104,23 +132,28 @@ async function _guardarBitacora(col, id, accion, antes, despues){
 async function _cargarCol(col, filtro){
   var db = window._fbDb;
   if(!db) return { err:'Sin conexión a Firebase (_fbDb no disponible)' };
-  try {
+  // Garantizar sesión Firebase Auth antes de consultar
+  await _cntEnsureFirebaseAuth();
+  async function _exec(){
     var F = await import(_FBFS);
     var snap;
     try {
-      var q;
-      if(filtro){
-        q = F.query(F.collection(db,col), F.where('estado','==',filtro), F.orderBy('creadoEn','desc'), F.limit(80));
-      } else {
-        q = F.query(F.collection(db,col), F.orderBy('creadoEn','desc'), F.limit(80));
-      }
+      var q = filtro
+        ? F.query(F.collection(db,col), F.where('estado','==',filtro), F.orderBy('creadoEn','desc'), F.limit(80))
+        : F.query(F.collection(db,col), F.orderBy('creadoEn','desc'), F.limit(80));
       snap = await F.getDocs(q);
     } catch(e1){
-      var q2 = F.query(F.collection(db,col), F.limit(80));
+      var q2 = filtro
+        ? F.query(F.collection(db,col), F.where('estado','==',filtro), F.limit(80))
+        : F.query(F.collection(db,col), F.limit(80));
       snap = await F.getDocs(q2);
     }
     return snap.docs.map(function(d){ return Object.assign({_id:d.id}, d.data()); });
+  }
+  try {
+    return await _exec();
   } catch(e){
+    console.error('[CNT] Error leyendo colección', { coleccion: col, filtro: filtro, uid: _uid(), code: e.code, message: e.message });
     return { err: e.message || 'Error Firestore' };
   }
 }
@@ -143,31 +176,31 @@ function _getItemsFiltrados(){
 // ── Conteos para menú Dominio Informa ────────────────────────────────────────
 window.cntCargarConteos = async function(){
   var db = window._fbDb; if(!db) return;
-  try {
-    var F = await import(_FBFS);
-    var defs = [
-      { col: COL_NOTICIAS,  estado: 'en_revision', id: 'cnt-badge-noticia'  },
-      { col: COL_PROYECTOS, estado: 'en_revision', id: 'cnt-badge-proyecto' },
-      { col: COL_REPORTES,  estado: 'en_revision', id: 'cnt-badge-reporte'  },
-    ];
-    defs.forEach(async function(d){
-      try {
-        var snap = await F.getCountFromServer(F.query(F.collection(db, d.col), F.where('estado','==',d.estado)));
-        var n = snap.data().count;
+  var defs = [
+    { col: COL_NOTICIAS,  estado: 'en_revision', id: 'cnt-badge-noticia'  },
+    { col: COL_PROYECTOS, estado: 'en_revision', id: 'cnt-badge-proyecto' },
+    { col: COL_REPORTES,  estado: 'en_revision', id: 'cnt-badge-reporte'  },
+  ];
+  defs.forEach(async function(d){
+    try {
+      var res = await _cargarCol(d.col, d.estado);
+      if(res && !res.err){
+        var n = res.length;
         var el = get(d.id);
         if(!el) return;
         if(n > 0){ el.textContent = n; el.style.display = ''; }
         else { el.style.display = 'none'; }
-      } catch(_){}
-    });
-  } catch(e){}
+      }
+    } catch(_){}
+  });
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
 // HUB
 // ══════════════════════════════════════════════════════════════════════════════
 window.cntIrInforma     = function(){ _nav('v-cnt-informa'); };
-window.cntIrEventos     = function(){ _cntEvFiltro='en_revision'; _nav('v-cnt-eventos'); window.cntCargarEventos&&window.cntCargarEventos(); };
+window.cntIrEventos     = function(){ _nav('v-cnt-eventos'); };
+window.cntEntrarEventos = function(){ _cntEvFiltro='en_revision'; window.cntCargarEventos&&window.cntCargarEventos(); };
 window.cntIrEmergencias = function(){ _nav('v-cnt-emergencias'); window.cntCargarEmergencias&&window.cntCargarEmergencias(); };
 
 // ══════════════════════════════════════════════════════════════════════════════

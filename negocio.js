@@ -514,3 +514,73 @@ window.vnegGuardarProd = async function(){
     }).join('');
   };
 
+// ══════════════════════════════════════════════════════════════
+// PLAZA ONLINE — PEDIDOS DEL NEGOCIO (Centro Operativo)
+// ══════════════════════════════════════════════════════════════
+(function(){
+  var _resc=function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  var AVANCE={'en_proceso':'preparando','preparando':'listo','listo':'en_camino','en_camino':'entregado'};
+  var AVANCE_LBL={'en_proceso':'Marcar como Preparando →','preparando':'Marcar como Listo →','listo':'Marcar como En camino →','en_camino':'Marcar como Entregado ✓'};
+
+  function _ensurePlazaView(){
+    var v=document.getElementById('vr-plaza-ped-neg');
+    if(!v){
+      v=document.createElement('div');v.className='view go-right';v.id='vr-plaza-ped-neg';
+      v.innerHTML='<div class="hdr"><div class="sbar"><span>9:41</span><span></span></div><div class="hdr-inner"><div class="hdr-row"><button class="btn-back" onclick="if(window.dcRest_navTo)window.dcRest_navTo(\'vr-home\',true);else if(window.navTo)navTo(\'vr-home\',true);">‹</button><div><div class="hdr-title">🏪 Plaza Online</div><div class="hdr-sub">Mis pedidos</div></div></div></div></div><div class="scr" id="vr-ppn-cont" style="padding:10px 0 80px;background:#f5f6f0;"></div>';
+      var base=document.getElementById('vr-pedidos')||document.querySelector('.view:last-of-type');
+      if(base&&base.parentNode) base.parentNode.insertBefore(v,base.nextSibling); else document.body.appendChild(v);
+    }
+    return v;
+  }
+
+  window._vnegPlazaPedidos=async function(){
+    _ensurePlazaView();
+    var fn=window.dcRest_navTo||window.navTo;
+    if(typeof fn==='function') fn('vr-plaza-ped-neg');
+    var cont=document.getElementById('vr-ppn-cont');
+    if(cont) cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;font-size:13px;">Cargando pedidos...</div>';
+    var db=window._fbDb;
+    var user=window._fbAuth&&window._fbAuth.currentUser;
+    if(!db||!user){if(cont)cont.innerHTML='<div style="text-align:center;padding:40px;color:#aaa;font-size:12px;">Sin sesión activa</div>';return;}
+    try{
+      var f=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap=await f.getDocs(f.query(f.collection(db,'pedidosPlaza'),f.where('negocioId','==',user.uid),f.orderBy('fecha','desc'),f.limit(50)));
+      var ords=[];snap.forEach(function(d){var data=d.data();data.firestoreId=d.id;ords.push(data);});
+      if(!cont) return;
+      if(!ords.length){cont.innerHTML='<div style="text-align:center;padding:48px 20px;color:#aaa;font-size:13px;font-weight:700;">Sin pedidos de Plaza Online</div>';return;}
+      cont.innerHTML=ords.map(function(o){
+        var estado=String(o.estado||'en_proceso');
+        var sig=AVANCE[estado],sigLbl=AVANCE_LBL[estado];
+        var items=(o.items||[]).map(function(x){return _resc((x.cantidad||1))+'× '+_resc(x.nombre||'Prod');}).join(', ');
+        var fch=o.fecha?new Date(o.fecha).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+        return '<div style="background:#fff;border-radius:14px;margin:8px 14px;padding:14px;border:.5px solid #e0e0e0;box-shadow:0 2px 8px rgba(0,0,0,.04);">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">'
+          +'<div style="font-size:13px;font-weight:900;color:#111;">'+_resc(o.clienteNombre||'Cliente')+'</div>'
+          +'<div style="font-size:10px;color:#999;">'+fch+'</div>'
+          +'</div>'
+          +'<div style="font-size:11px;color:#555;margin-bottom:8px;line-height:1.4;">'+items+'</div>'
+          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:'+(sig?'10':'0')+'px;">'
+          +'<span style="font-size:13px;font-weight:800;color:#111;">$'+_resc(o.total||0)+'</span>'
+          +'<span style="font-size:10px;font-weight:800;color:#555;background:#f5f5f5;border-radius:8px;padding:3px 8px;">'+_resc(estado)+'</span>'
+          +'</div>'
+          +(sig?'<button onclick="window._vnegAvanzarPlaza(\''+_resc(o.firestoreId)+'\',\''+_resc(sig)+'\')" style="width:100%;padding:11px;border:none;border-radius:11px;background:#1FC26A;color:#fff;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;">'+_resc(sigLbl)+'</button>':'')
+          +'</div>';
+      }).join('');
+    }catch(e){if(cont)cont.innerHTML='<div style="text-align:center;padding:40px;color:#D63A2A;font-size:12px;">Error al cargar: '+_resc(e.message)+'</div>';}
+  };
+
+  window._vnegAvanzarPlaza=async function(firestoreId,nuevoEstado){
+    var db=window._fbDb;if(!db||!firestoreId) return;
+    try{
+      var f=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      await f.updateDoc(f.doc(db,'pedidosPlaza',firestoreId),{
+        estado:nuevoEstado,actualizado:Date.now(),
+        historialEstados:f.arrayUnion({estado:nuevoEstado,fecha:Date.now()})
+      });
+      window._vnegPlazaPedidos();
+    }catch(e){if(typeof toast==='function')toast('⚠️ Error: '+e.message);}
+  };
+
+  // Card "Pedidos de Plaza Online" eliminada de vr-home — pertenece solo a vn-home
+})();
+
