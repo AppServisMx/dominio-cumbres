@@ -3394,6 +3394,13 @@ window.renderHomeM2 = function() {
         + modulo('🔧','#FFF8DC','Mi Servicio','Editar perfil',"go('v-mipanel','right')")
         + '</div>';
 
+      // Banner IMPULSA
+      html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 12px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
+        + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
+        + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu negocio</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más clientes · Desde $199</div></div>'
+        + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
+        + '</div>';
+
       // Banner CMV — igual estilo que otros banners del home
       html += '<div onclick="go(\'v-prov-cmv\',\'right\');setTimeout(window.vprovCmvCargar,200)" style="margin:0 14px 14px;background:linear-gradient(120deg,#0d3d24,#1a6640);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 4px 18px rgba(31,194,106,.25);">'
         + '<div style="width:48px;height:48px;border-radius:13px;background:rgba(31,194,106,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px;">👁</div>'
@@ -3483,6 +3490,13 @@ window.renderHomeM2 = function() {
         + chip('📊','Ventas', "go('vr-home','right');setTimeout(function(){navTo&&navTo('vr-ventas');},80)")
         + '</div>';
 
+      // Banner IMPULSA restaurante
+      html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 14px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
+        + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
+        + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu restaurante</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más pedidos · Desde $199</div></div>'
+        + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
+        + '</div>';
+
       html += descubrimiento(tieneActividad);
       html += secLabel('Actividad reciente');
       html += '<div id="home-actividad" style="padding:0 14px;">'
@@ -3529,6 +3543,13 @@ window.renderHomeM2 = function() {
       + chip('\ud83c\udfaa','Eventos', "go('v-eventos','right')")
       + chip('\ud83d\udea8','Seguridad', "go('v-seguridad','right')")
       + chip('\ud83d\udcca','Ventas', "go('vn-home','right');setTimeout(function(){negTo&&negTo('vn-ventas');},80)")
+      + '</div>';
+
+    // Banner IMPULSA negocio
+    html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 14px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
+      + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
+      + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu negocio</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más clientes · Desde $199</div></div>'
+      + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
       + '</div>';
 
     html += descubrimiento(tieneActividad);
@@ -3976,7 +3997,7 @@ window.renderHomeM2 = function() {
       html += ACCION('📅','Mi Agenda',"go('v-mi-agenda','right');setTimeout(function(){window._initMiAgenda&&window._initMiAgenda();},200)");
     } else {
       html += ACCION('💳','Métodos de pago',"go('vr-config','right')");
-      html += ACCION('⭐','Membresía y plan',"go('v-membresia','right');setTimeout(window.cargarMembresia,200)");
+      html += ACCION('⭐','Plan IMPULSA',"go('v-impulsa','right');setTimeout(window.impulsaCargar,200)");
       html += ACCION('📣','Crear promoción',"window.irACrearPromo&&window.irACrearPromo()");
       if (tipo === 'proveedor') {
         html += ACCION('📅','Mis horarios',"go('v-agenda','right');setTimeout(function(){window._renderAgenda&&window._renderAgenda();},100)");
@@ -5698,25 +5719,23 @@ var _planesCache = [];
 var _planesFiltro = 'activos';
 var _planesSearch = '';
 
-window.adminPlanesCargar = function() {
+window.adminPlanesCargar = async function() {
   var db = window._fbDb; if(!db) return;
   var lista = document.getElementById('planes-lista');
   if(lista) lista.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:13px;">Cargando... ⏳</div>';
-  db.collection('usuarios')
-    .where('esAdmin','!=',true)
-    .get()
-    .then(function(snap){
-      _planesCache = [];
-      snap.forEach(function(doc){
-        var d = doc.data();
-        if(['proveedor','restaurante','negocio'].indexOf((d.tipo||'').toLowerCase()) >= 0 ||
-           (d.plan && d.plan==='impulsa')){
-          _planesCache.push({uid:doc.id, ...d});
-        }
-      });
-      window.adminPlanesRender();
-    })
-    .catch(function(e){ if(lista) lista.innerHTML='<div style="color:#ff6b6b;padding:20px;text-align:center;">Error: '+e.message+'</div>'; });
+  try {
+    var f = await import(_FBFS);
+    var snap = await f.getDocs(f.query(f.collection(db,'usuarios'), f.where('esAdmin','!=',true)));
+    _planesCache = [];
+    snap.forEach(function(doc){
+      var d = doc.data();
+      if(['proveedor','restaurante','negocio'].indexOf((d.tipo||'').toLowerCase()) >= 0 ||
+         (d.plan && d.plan==='impulsa')){
+        _planesCache.push(Object.assign({uid:doc.id}, d));
+      }
+    });
+    window.adminPlanesRender();
+  } catch(e) { if(lista) lista.innerHTML='<div style="color:#ff6b6b;padding:20px;text-align:center;">Error: '+e.message+'</div>'; }
 };
 
 window.adminPlanesMostrar = function(filtro) {
@@ -5836,60 +5855,38 @@ function _adminPlanesActualizarResumen(){
   else bindPlan();
 })();
 
-window.adminPlanesGuardar = function() {
+window.adminPlanesGuardar = async function() {
   var db = window._fbDb; if(!db) return;
   var uid = window._adminPlanesUidActual; if(!uid) return;
   var tipo = document.getElementById('pf-plan-tipo').value;
   var inicioVal = document.getElementById('pf-inicio').value;
   var errEl = document.getElementById('pf-error');
   errEl.style.display='none';
-
-  if(tipo!=='basico' && !inicioVal){
-    errEl.textContent='Selecciona la fecha de inicio.';errEl.style.display='block';return;
-  }
-
+  if(tipo!=='basico' && !inicioVal){ errEl.textContent='Selecciona la fecha de inicio.';errEl.style.display='block';return; }
   var btn = document.getElementById('pf-guardar-btn');
   btn.disabled=true; btn.textContent='Guardando...';
-
-  var datos;
-  if(tipo==='basico'){
-    datos={
-      plan:'basico',
-      planTipo:window._fbAdmin? window._fbAdmin.firestore.FieldValue.delete() : null,
-      planInicio:window._fbAdmin? window._fbAdmin.firestore.FieldValue.delete() : null,
-      planVence:window._fbAdmin? window._fbAdmin.firestore.FieldValue.delete() : null,
-    };
-    // Limpiar campos null (FieldValue.delete solo está en Admin SDK — en cliente usamos deleteField)
-    var FieldValue = (window.firebase && window.firebase.firestore && window.firebase.firestore.FieldValue) ||
-                     (window._firestoreModule && window._firestoreModule.deleteField && {delete:window._firestoreModule.deleteField}) || null;
-    if(FieldValue){ datos.planTipo=FieldValue.delete(); datos.planInicio=FieldValue.delete(); datos.planVence=FieldValue.delete(); }
-    else { delete datos.planTipo; delete datos.planInicio; delete datos.planVence; }
-  } else {
-    var dias = tipo==='impulsa_mes'?30:365;
-    var inicio = new Date(inicioVal+'T12:00:00');
-    var fin = new Date(inicio.getTime()+dias*86400000);
-    datos = {
-      plan:'impulsa',
-      planTipo: tipo==='impulsa_mes'?'mensual':'anual',
-      planInicio: inicio,
-      planVence: fin,
-    };
+  try {
+    var f = await import(_FBFS);
+    var datos;
+    if(tipo==='basico'){
+      datos={ plan:'basico', planTipo:f.deleteField(), planInicio:f.deleteField(), planVence:f.deleteField() };
+    } else {
+      var dias = tipo==='impulsa_mes'?30:365;
+      var inicio = new Date(inicioVal+'T12:00:00');
+      var fin = new Date(inicio.getTime()+dias*86400000);
+      datos = { plan:'impulsa', planTipo:tipo==='impulsa_mes'?'mensual':'anual', planInicio:inicio, planVence:fin };
+    }
+    await f.updateDoc(f.doc(db,'usuarios',uid), datos);
+    var idx = _planesCache.findIndex(function(x){return x.uid===uid;});
+    if(idx>=0) Object.assign(_planesCache[idx], datos);
+    btn.disabled=false;
+    window.toast && window.toast('✅ Plan actualizado correctamente');
+    go('v-admin-planes','left');
+    window.adminPlanesCargar();
+  } catch(e) {
+    btn.disabled=false; btn.textContent='⭐ Activar Plan Impulsa';
+    errEl.textContent='Error: '+e.message; errEl.style.display='block';
   }
-
-  db.collection('usuarios').doc(uid).update(datos)
-    .then(function(){
-      // Actualizar cache local
-      var idx = _planesCache.findIndex(function(x){return x.uid===uid;});
-      if(idx>=0) Object.assign(_planesCache[idx], datos);
-      btn.disabled=false;
-      window.toast && window.toast('✅ Plan actualizado correctamente');
-      go('v-admin-planes','left');
-      window.adminPlanesCargar();
-    })
-    .catch(function(e){
-      btn.disabled=false; btn.textContent='⭐ Activar Plan Impulsa';
-      errEl.textContent='Error: '+e.message; errEl.style.display='block';
-    });
 };
 
 // ═══════════════════════════════════════════
@@ -5898,17 +5895,17 @@ window.adminPlanesGuardar = function() {
 var _campanasCache = [];
 var _campanasSec = 'todas';
 
-window.adminCampanasCargar = function() {
+window.adminCampanasCargar = async function() {
   var db = window._fbDb; if(!db) return;
   var lista = document.getElementById('campanas-admin-lista');
   if(lista) lista.innerHTML='<div style="text-align:center;padding:40px;color:rgba(255,255,255,.3);font-size:13px;">Cargando... ⏳</div>';
-  db.collection('campanas').orderBy('orden','asc').get()
-    .then(function(snap){
-      _campanasCache = [];
-      snap.forEach(function(doc){ _campanasCache.push({id:doc.id,...doc.data()}); });
-      window.adminCampanasRender();
-    })
-    .catch(function(e){ if(lista) lista.innerHTML='<div style="color:#ff6b6b;padding:20px;text-align:center;">Error: '+e.message+'</div>'; });
+  try {
+    var f = await import(_FBFS);
+    var snap = await f.getDocs(f.query(f.collection(db,'campanas'), f.orderBy('orden','asc')));
+    _campanasCache = [];
+    snap.forEach(function(doc){ _campanasCache.push(Object.assign({id:doc.id}, doc.data())); });
+    window.adminCampanasRender();
+  } catch(e) { if(lista) lista.innerHTML='<div style="color:#ff6b6b;padding:20px;text-align:center;">Error: '+e.message+'</div>'; }
 };
 
 window.adminCampanasTab = function(sec) {
@@ -6029,3 +6026,214 @@ window.adminCampanasEliminar = function(id) {
 };
 
 function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════════════════════════════════════
+// ── MÓDULO IMPULSA — user-facing (negocios, proveedores, restaurantes) ───
+// ══════════════════════════════════════════════════════════════════════════
+
+var _impulsaPlanSel = null; // 'mensual' | 'anual'
+var _impulsaBrick   = null; // MP brick controller
+var MP_PUBLIC_KEY   = 'TEST-78934cff-df1d-4e84-bbd8-66bb3f704881';
+var _MP_PLANES = {
+  mensual: { monto: 199,  label: 'Plan Impulsa Mensual', meses: 1  },
+  anual:   { monto: 1999, label: 'Plan Impulsa Anual',   meses: 12 }
+};
+
+// Punto de entrada desde home o mipanel
+window._irAImpulsa = function() {
+  go('v-impulsa', 'right');
+  setTimeout(window.impulsaCargar, 200);
+};
+
+// ── Pantalla 1: Estado del plan ──────────────────────────────────────────
+window.impulsaCargar = async function() {
+  var cont = document.getElementById('impulsa-cont');
+  if (!cont) return;
+  cont.innerHTML = '<div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,.3);font-size:13px;">⏳</div>';
+
+  try {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    if (!user) { cont.innerHTML = '<div style="padding:40px;text-align:center;color:rgba(255,255,255,.4);">Sin sesión</div>'; return; }
+
+    var snap = await _fbGet2('usuarios', user.uid);
+    var d = snap.exists() ? snap.data() : {};
+
+    var ahora = Date.now();
+    var venceMs = d.planVence
+      ? (d.planVence.toMillis ? d.planVence.toMillis() : (d.planVence.seconds || 0) * 1000)
+      : 0;
+    var activo = d.plan === 'impulsa' && venceMs > ahora;
+
+    if (activo) {
+      var dias = Math.ceil((venceMs - ahora) / 86400000);
+      var venceFecha = new Date(venceMs).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+      var tipoLabel = d.planTipo === 'anual' ? 'Anual' : 'Mensual';
+
+      cont.innerHTML = [
+        '<div style="margin:20px 16px 0;background:linear-gradient(135deg,#2a1f00,#4d3900);border-radius:20px;padding:24px;text-align:center;border:1px solid rgba(245,197,24,.35);">',
+          '<div style="font-size:52px;margin-bottom:8px;">⭐</div>',
+          '<div style="font-size:20px;font-weight:900;color:#F5C518;margin-bottom:6px;">Impulsa ' + tipoLabel + '</div>',
+          '<div style="display:inline-block;background:#F5C518;color:#3d2900;font-size:10px;font-weight:900;padding:4px 18px;border-radius:20px;margin-bottom:18px;letter-spacing:.5px;">ACTIVO</div>',
+          '<div style="font-size:36px;font-weight:900;color:#fff;line-height:1;">' + dias + '</div>',
+          '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px;">días restantes · vence ' + venceFecha + '</div>',
+        '</div>',
+        '<div style="margin:14px 16px 0;background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.15);border-radius:16px;padding:16px;">',
+          '<div style="font-size:10px;font-weight:800;color:#F5C518;letter-spacing:.6px;margin-bottom:12px;">BENEFICIOS ACTIVOS</div>',
+          _impBeneficios(),
+        '</div>',
+        '<div style="padding:16px;">',
+          '<button onclick="go(\'v-impulsa-planes\',\'right\')" style="width:100%;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.35);border-radius:14px;padding:14px;color:#F5C518;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">🔄 Renovar plan</button>',
+        '</div>',
+      ].join('');
+    } else {
+      cont.innerHTML = [
+        '<div style="margin:20px 16px 0;background:rgba(255,255,255,.04);border-radius:20px;padding:24px;text-align:center;border:.5px solid rgba(255,255,255,.08);">',
+          '<div style="font-size:44px;margin-bottom:10px;">🏪</div>',
+          '<div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">Plan Básico</div>',
+          '<div style="font-size:12px;color:rgba(255,255,255,.45);">Tu perfil está visible en la app</div>',
+        '</div>',
+        '<div onclick="go(\'v-impulsa-planes\',\'right\')" style="margin:16px 16px 0;background:linear-gradient(135deg,#4d3900,#c8940a);border-radius:20px;padding:22px;text-align:center;cursor:pointer;">',
+          '<div style="font-size:36px;margin-bottom:8px;">⭐</div>',
+          '<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;">Activa IMPULSA</div>',
+          '<div style="font-size:12px;color:rgba(255,255,255,.85);margin-bottom:18px;line-height:1.6;">Aparece primero en búsquedas<br>Banners en toda la app · Más clientes</div>',
+          '<div style="background:#fff;color:#7a5000;font-size:13px;font-weight:900;padding:12px 28px;border-radius:14px;display:inline-block;">Ver planes desde $199 →</div>',
+        '</div>',
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 16px 0;">',
+          _impComparativa('Básico', false),
+          _impComparativa('Impulsa ⭐', true),
+        '</div>',
+        '<div style="height:16px;"></div>',
+      ].join('');
+    }
+  } catch(e) {
+    console.error('impulsaCargar', e);
+    if (cont) cont.innerHTML = '<div style="padding:40px;text-align:center;color:#ff6b6b;font-size:13px;">Error al cargar plan.<br><small>' + e.message + '</small></div>';
+  }
+};
+
+function _impBeneficios() {
+  var items = [
+    ['🔝','Primero en búsquedas'],
+    ['📢','Banners en toda la app'],
+    ['⭐','Badge Impulsa en tu perfil'],
+    ['🎯','Sección Destacados'],
+    ['📊','Estadísticas avanzadas'],
+    ['💬','Soporte prioritario DC'],
+  ];
+  return items.map(function(i, idx) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;' + (idx < items.length - 1 ? 'border-bottom:.5px solid rgba(255,255,255,.06);' : '') + '">'
+      + '<span style="font-size:15px;">' + i[0] + '</span>'
+      + '<span style="font-size:12px;color:rgba(255,255,255,.8);">' + i[1] + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function _impComparativa(label, esI) {
+  var c = esI ? '#F5C518' : 'rgba(255,255,255,.45)';
+  var bg = esI ? 'rgba(245,197,24,.08)' : 'rgba(255,255,255,.03)';
+  var bd = esI ? '1px solid rgba(245,197,24,.25)' : '.5px solid rgba(255,255,255,.07)';
+  var its = esI
+    ? ['✅ Primero', '✅ Banners', '✅ Badge ⭐', '✅ Destacado']
+    : ['📍 Estándar', '❌ Sin banners', '❌ Sin badge', '❌ Sin destacado'];
+  return '<div style="background:' + bg + ';border:' + bd + ';border-radius:14px;padding:12px;">'
+    + '<div style="font-size:11px;font-weight:800;color:' + c + ';margin-bottom:10px;">' + label + '</div>'
+    + its.map(function(i) { return '<div style="font-size:10px;color:rgba(255,255,255,.55);padding:3px 0;">' + i + '</div>'; }).join('')
+    + '</div>';
+}
+
+// ── Pantalla 2: Selección → va al pago ──────────────────────────────────
+window.impulsaSeleccionarPlan = function(tipo) {
+  _impulsaPlanSel = tipo;
+  var plan = _MP_PLANES[tipo];
+  var resumen = document.getElementById('impulsa-pago-resumen');
+  if (resumen) {
+    resumen.innerHTML = '<div style="display:flex;align-items:center;gap:14px;">'
+      + '<div style="font-size:32px;">⭐</div>'
+      + '<div><div style="font-size:13px;font-weight:800;color:#F5C518;">' + plan.label + '</div>'
+      + '<div style="font-size:26px;font-weight:900;color:#fff;line-height:1.2;">$' + plan.monto.toLocaleString('es-MX') + ' <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5);">MXN</span></div>'
+      + '<div style="font-size:10px;color:rgba(255,255,255,.45);">' + (tipo === 'anual' ? '12 meses de visibilidad máxima' : 'Renueva cada mes automáticamente') + '</div>'
+      + '</div></div>';
+  }
+  go('v-impulsa-pago', 'right');
+  setTimeout(function() { window.impulsaIniciarBrick && window.impulsaIniciarBrick(); }, 350);
+};
+
+// ── Pantalla 3: MP Payment Brick ─────────────────────────────────────────
+window.impulsaIniciarBrick = async function() {
+  var cont = document.getElementById('impulsa-brick-cont');
+  if (!cont) return;
+  cont.innerHTML = '<div style="text-align:center;padding:40px;color:#888;font-size:13px;">⏳ Iniciando pago seguro...</div>';
+
+  if (typeof MercadoPago === 'undefined') {
+    cont.innerHTML = '<div style="padding:20px;text-align:center;color:#c00;font-size:13px;">SDK de pago no disponible. Recarga la página e intenta de nuevo.</div>';
+    return;
+  }
+
+  // Desmontar brick anterior si existe
+  if (_impulsaBrick) {
+    try { await _impulsaBrick.unmount(); } catch(_e) {}
+    _impulsaBrick = null;
+  }
+
+  var plan = _MP_PLANES[_impulsaPlanSel];
+  if (!plan) return;
+
+  // Crear contenedor blanco para el brick
+  cont.innerHTML = '<div id="impulsa-brick-inner"></div>';
+
+  try {
+    var mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'es-MX' });
+    var userEmail = (window._fbAuth && window._fbAuth.currentUser && window._fbAuth.currentUser.email) || '';
+
+    _impulsaBrick = await mp.bricks().create('payment', 'impulsa-brick-inner', {
+      initialization: {
+        amount: plan.monto,
+        payer: { email: userEmail }
+      },
+      customization: {
+        paymentMethods: {
+          creditCard: 'all',
+          debitCard: 'all',
+          ticket: 'all'
+        }
+      },
+      callbacks: {
+        onReady: function() {},
+        onSubmit: function(_ref) {
+          var formData = _ref.formData;
+          return new Promise(async function(resolve, reject) {
+            try {
+              var user = window._fbAuth && window._fbAuth.currentUser;
+              if (!user) { reject(new Error('Sin sesión. Vuelve a iniciar sesión.')); return; }
+
+              var _fns = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-functions.js');
+              var fn = _fns.httpsCallable(window._fbFunctions, 'mpActivarImpulsa');
+              var result = await fn({ formData: formData, planTipo: _impulsaPlanSel, email: userEmail });
+
+              if (result.data && result.data.ok) {
+                // Mostrar éxito
+                var okVence = document.getElementById('impulsa-ok-vence');
+                if (okVence && result.data.planVence) {
+                  var fStr = new Date(result.data.planVence).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
+                  okVence.textContent = 'Plan activo hasta el ' + fStr;
+                }
+                resolve();
+                setTimeout(function() { go('v-impulsa-ok', 'right'); }, 100);
+              } else {
+                reject(new Error((result.data && result.data.msg) || 'Error en el pago'));
+              }
+            } catch(e) {
+              reject(e);
+            }
+          });
+        },
+        onError: function(error) {
+          console.error('[MP Brick error]', error);
+        }
+      }
+    });
+  } catch(e) {
+    console.error('impulsaIniciarBrick', e);
+    if (cont) cont.innerHTML = '<div style="padding:20px;text-align:center;color:#c00;font-size:13px;">Error al iniciar pago:<br>' + e.message + '</div>';
+  }
+};

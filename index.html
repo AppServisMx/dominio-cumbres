@@ -26,7 +26,8 @@
 
 <link rel="stylesheet" href="style.css">
 
-
+<!-- ====== MERCADOPAGO SDK ====== -->
+<script src="https://sdk.mercadopago.com/js/v2"></script>
 
 </head>
 <body>
@@ -5724,6 +5725,121 @@
 
 
 <script src="negocio.js"></script>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA — Estado del plan                ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="view go-right" id="v-impulsa">
+  <div style="background:linear-gradient(150deg,#1a1200,#3d2900);flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="padding:10px 16px 22px;display:flex;align-items:center;gap:12px;">
+      <button onclick="dcBack('v-mipanel')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+      <div>
+        <div style="font-size:11px;letter-spacing:.8px;color:rgba(255,255,255,.4);text-transform:uppercase;font-weight:700;">Tu plan</div>
+        <div style="font-size:22px;font-weight:900;color:#F5C518;letter-spacing:-.5px;">⭐ IMPULSA</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" id="impulsa-cont" style="background:#0e0a00;padding-bottom:20px;">
+    <div style="text-align:center;padding:60px 20px;color:rgba(255,255,255,.3);font-size:13px;">Cargando...</div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA-PLANES — Selección de plan       ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="view go-right" id="v-impulsa-planes">
+  <div style="background:linear-gradient(150deg,#1a1200,#3d2900);flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="padding:10px 16px 18px;display:flex;align-items:center;gap:12px;">
+      <button onclick="go('v-impulsa','left')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#fff;">Elige tu plan</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);">Sin contratos · Cancela cuando quieras</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" style="background:#0e0a00;padding:16px 14px 24px;">
+
+    <!-- Plan Anual (destacado) -->
+    <div onclick="window.impulsaSeleccionarPlan('anual')" style="position:relative;background:linear-gradient(135deg,#2a1f00,#4d3900);border:2px solid #F5C518;border-radius:20px;padding:20px 18px 18px;margin-bottom:14px;cursor:pointer;">
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F5C518;color:#3d2900;font-size:10px;font-weight:900;padding:4px 16px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;">⚡ MEJOR VALOR · AHORRA $389</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;">
+        <div style="font-size:36px;">⭐</div>
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:900;color:#F5C518;">Impulsa Anual</div>
+          <div style="font-size:28px;font-weight:900;color:#fff;line-height:1.1;">$1,999 <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5);">MXN / año</span></div>
+          <div style="font-size:11px;color:rgba(255,255,255,.55);">$166/mes · equivale a 2 meses gratis</div>
+        </div>
+        <div style="width:26px;height:26px;border-radius:50%;border:2px solid #F5C518;display:flex;align-items:center;justify-content:center;font-size:14px;color:#F5C518;">›</div>
+      </div>
+    </div>
+
+    <!-- Plan Mensual -->
+    <div onclick="window.impulsaSeleccionarPlan('mensual')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:18px;margin-bottom:22px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:36px;">⭐</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:#fff;">Impulsa Mensual</div>
+        <div style="font-size:26px;font-weight:900;color:#fff;line-height:1.1;">$199 <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5);">MXN / mes</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);">Renueva cada mes · Cancela cuando quieras</div>
+      </div>
+      <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.5);">›</div>
+    </div>
+
+    <!-- Beneficios -->
+    <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;">INCLUYE TODOS ESTOS BENEFICIOS</div>
+    <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">🔝</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Primero en resultados de búsqueda</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">📢</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Banners en Home, Food, Servicios, Plaza, Informa</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">⭐</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Badge "Impulsa" visible en tu perfil</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">🎯</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Sección "Destacados" en todas las vistas</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">📊</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Estadísticas avanzadas: vistas, contactos, conversiones</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;"><span style="font-size:16px;">💬</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Soporte prioritario del equipo DC</span></div>
+    </div>
+
+    <div style="margin-top:14px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;line-height:1.6;">
+      Pago procesado de forma segura por MercadoPago.<br>Puedes cancelar en cualquier momento desde tu panel.
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA-PAGO — Checkout MercadoPago      ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="view go-right" id="v-impulsa-pago">
+  <div style="background:#1a1200;flex-shrink:0;border-bottom:.5px solid rgba(255,255,255,.08);">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="padding:10px 16px 14px;display:flex;align-items:center;gap:12px;">
+      <button onclick="go('v-impulsa-planes','left')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+      <div style="font-size:16px;font-weight:800;color:#fff;">Completar pago</div>
+    </div>
+  </div>
+  <!-- Plan resumen (dark header) -->
+  <div id="impulsa-pago-resumen" style="background:#0e0a00;padding:14px 16px;flex-shrink:0;"></div>
+  <!-- Brick container (light bg for MP) -->
+  <div class="scroll" style="background:#f5f5f5;padding:12px;">
+    <div id="impulsa-brick-cont">
+      <div style="text-align:center;padding:40px;color:#888;font-size:13px;">⏳ Cargando pago seguro...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA-OK — Plan activado               ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="view go-right" id="v-impulsa-ok">
+  <div style="background:#0e0a00;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;min-height:100%;">
+    <div style="font-size:80px;margin-bottom:16px;animation:_ipulse 1.5s ease infinite;">⭐</div>
+    <div style="font-size:28px;font-weight:900;color:#F5C518;margin-bottom:10px;letter-spacing:-.5px;">¡Impulsa Activado!</div>
+    <div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:10px;" id="impulsa-ok-detalle">Tu plan está activo. Tu negocio ahora aparece primero en búsquedas.</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:36px;" id="impulsa-ok-vence"></div>
+    <button onclick="go('v-home','left');setTimeout(window.renderHomeM2,200)" style="width:100%;max-width:300px;background:#F5C518;color:#3d2900;border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:14px;">🏠 Ir al inicio</button>
+    <button onclick="go('v-impulsa','left');setTimeout(window.impulsaCargar,200)" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">Ver mi plan →</button>
+  </div>
+</div>
+<style>
+@keyframes _ipulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+</style>
 
 <script src="campanas.js?v=20260713a"></script>
 <script src="app.js?v=20260706j"></script>
