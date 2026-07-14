@@ -21,7 +21,7 @@
 <!-- ====== FIN FIREBASE ====== -->
 
 <!-- ====== REPORTES ====== -->
-<script src="reportes.js?v=20260706c"></script>
+<script src="reportes.js?v=20260706d"></script>
 <!-- ====== FIN REPORTES ====== -->
 
 <link rel="stylesheet" href="style.css">
@@ -2774,14 +2774,17 @@
           <div>
             <div class="sec-lbl">Accesos rápidos</div>
             <div class="quick-grid">
-              <div class="qi" onclick="navTo('vr-pedidos')">
-                <div class="qi-icon" style="background:#FFF8E1;">📦</div>
-                <div class="qi-lbl">Pedidos</div>
-                <div class="qi-badge" id="qi-badge-ped" style="display:none;"></div>
+              <div class="qi" onclick="window.marcarModuloVisto&&window.marcarModuloVisto('informa');go('v-informa','right')">
+                <div class="qi-icon" style="background:#FFF8E1;">📰</div>
+                <div class="qi-lbl">Informa</div>
               </div>
-              <div class="qi" onclick="navTo('vr-menu')">
-                <div class="qi-icon" style="background:#E8F5EE;">✏️</div>
-                <div class="qi-lbl">Mi Menú</div>
+              <div class="qi" onclick="go('v-eventos','right')">
+                <div class="qi-icon" style="background:#E8F5EE;">🎪</div>
+                <div class="qi-lbl">Eventos</div>
+              </div>
+              <div class="qi" onclick="go('v-seguridad','right')">
+                <div class="qi-icon" style="background:#FFF8E1;">🚨</div>
+                <div class="qi-lbl">Seguridad</div>
               </div>
               <div class="qi" onclick="navTo('vr-promos')">
                 <div class="qi-icon" style="background:#FFF8E1;">📣</div>
@@ -3482,9 +3485,9 @@
       </div>
       <div class="sec-lbl">Accesos rápidos</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:0 14px;">
-        <div class="qi" onclick="negTo('vn-pedidos')"><div class="qi-icon" style="background:#F0EBF8;">📦</div><div class="qi-lbl">Pedidos</div></div>
-        <div class="qi" onclick="negTo('vn-menu')"><div class="qi-icon" style="background:#F0EBF8;">✏️</div><div class="qi-lbl">Productos</div></div>
-        <div class="qi" onclick="negTo('vn-promos')"><div class="qi-icon" style="background:#F0EBF8;">📣</div><div class="qi-lbl">Promos</div></div>
+        <div class="qi" onclick="window.marcarModuloVisto&&window.marcarModuloVisto('informa');go('v-informa','right')"><div class="qi-icon" style="background:#F0EBF8;">📰</div><div class="qi-lbl">Informa</div></div>
+        <div class="qi" onclick="go('v-eventos','right')"><div class="qi-icon" style="background:#F0EBF8;">🎪</div><div class="qi-lbl">Eventos</div></div>
+        <div class="qi" onclick="go('v-seguridad','right')"><div class="qi-icon" style="background:#F0EBF8;">🚨</div><div class="qi-lbl">Seguridad</div></div>
         <div class="qi" onclick="negTo('vn-ventas')"><div class="qi-icon" style="background:#F0EBF8;">📊</div><div class="qi-lbl">Ventas</div></div>
       </div>
 
@@ -4712,7 +4715,7 @@
   </div>
 </div>
 
-<script src="chat.js?v=20260706c"></script>
+<script src="chat.js?v=20260706d"></script>
 
 
 <!-- ══ MI AGENDA (vecino) ══════════════════════════════════════
@@ -4728,7 +4731,7 @@
 
 <script src="negocio.js"></script>
 
-<script src="app.js?v=20260706c"></script>
+<script src="app.js?v=20260706d"></script>
 
 <!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
 <div id="dc-com-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9600;align-items:flex-end;justify-content:center;" onclick="window.dcComCerrar&&window.dcComCerrar()">

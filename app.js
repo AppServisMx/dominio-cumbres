@@ -3391,12 +3391,12 @@ window.renderHomeM2 = function() {
       // Accesos rápidos proveedor
       html += secLabel('Accesos rápidos');
       html += '<div style="display:flex;gap:10px;padding:0 14px;margin-bottom:18px;overflow-x:auto;">'
-        + '<div onclick="go(\'v-mis-chats\',\'right\');setTimeout(cargarMisChats,200)" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
-        + '<span style="font-size:18px;">💬</span><span style="font-size:12px;font-weight:700;color:#111;">Mis chats</span></div>'
-        + '<div onclick="go(\'v-mis-reportes\',\'right\');setTimeout(function(){window.cargarMisReportes&&window.cargarMisReportes();},300)" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
-        + '<span style="font-size:18px;">📋</span><span style="font-size:12px;font-weight:700;color:#111;">Historial</span></div>'
-        + '<div onclick="go(\'v-notificaciones\',\'right\');setTimeout(window.renderNotificaciones,300)" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
-        + '<span style="font-size:18px;">🔔</span><span style="font-size:12px;font-weight:700;color:#111;">Alertas</span></div>'
+        + '<div onclick="window.marcarModuloVisto(\'informa\');go(\'v-informa\',\'right\')" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
+        + '<span style="font-size:18px;">📰</span><span style="font-size:12px;font-weight:700;color:#111;">Informa</span></div>'
+        + '<div onclick="go(\'v-eventos\',\'right\')" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
+        + '<span style="font-size:18px;">🎪</span><span style="font-size:12px;font-weight:700;color:#111;">Eventos</span></div>'
+        + '<div onclick="go(\'v-seguridad\',\'right\')" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
+        + '<span style="font-size:18px;">🚨</span><span style="font-size:12px;font-weight:700;color:#111;">Seguridad</span></div>'
         + '<div onclick="go(\'v-agenda\',\'right\');setTimeout(function(){window._renderAgenda&&window._renderAgenda();},100)" style="flex-shrink:0;background:#fff;border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:8px;border:.5px solid #e8e8e8;cursor:pointer;">'
         + '<span style="font-size:18px;">📅</span><span style="font-size:12px;font-weight:700;color:#111;">Agenda</span></div>'
         + '</div>';
