@@ -1676,9 +1676,15 @@
       <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Datos bancarios del restaurante</div>
       <div id="transf-banco-contenido"></div>
     </div>
-    <div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:16px;border:.5px solid #e8e8e8;">
-      <label class="lbl">Referencia / folio / comentario de transferencia (opcional)</label>
-      <textarea class="nota" id="transf-referencia" rows="3" placeholder="Ej: número de transacción, folio SPEI, hora de transferencia..."></textarea>
+    <div style="background:#FFF8E1;border-radius:16px;padding:16px;margin-bottom:16px;border:2px solid #F59E0B;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="width:28px;height:28px;background:#F59E0B;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">📋</div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#92400E;">Captura tu referencia</div>
+          <div style="font-size:11px;color:#B45309;">Folio, número de transacción o comentario</div>
+        </div>
+      </div>
+      <textarea id="transf-referencia" rows="3" placeholder="Ej: folio SPEI 12345, transferí a las 3:15pm..." style="width:100%;box-sizing:border-box;background:#fff;border:1.5px solid #F59E0B;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Inter',sans-serif;color:#111;resize:none;outline:none;line-height:1.5;"></textarea>
     </div>
     <button class="dcf-btn dcf-btn-yellow" id="btn-ya-transferi" onclick="dcFood_confirmarTransferencia()">✅ Ya transferí — Confirmar pedido →</button>
   </div>
