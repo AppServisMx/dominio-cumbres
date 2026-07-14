@@ -28,6 +28,7 @@
 
   // enviarMensaje DENTRO del módulo — acceso directo a Firestore
   window.enviarMensaje = async function() {
+    if (!auth.currentUser) { if(typeof toast==='function') toast('⚠️ Inicia sesión para enviar mensajes.'); return; }
     const input = document.getElementById('chat-input');
     if(!input || !input.value.trim()) return;
     const texto = input.value.trim();
@@ -44,7 +45,7 @@
     divLocal.appendChild(_tLocal);
     divLocal.appendChild(_hLocal);
     if(container) { container.appendChild(divLocal); container.scrollTop = container.scrollHeight; }
-    const userId = auth.currentUser ? auth.currentUser.uid : (window._chatUserId || 'anonimo');
+    const userId = auth.currentUser.uid;
     const userName = localStorage.getItem('dcuser') || 'Vecino';
     const provId = window._chatProveedorId || '';
     if (!provId) { if(typeof toast==='function') toast('⚠️ Selecciona un proveedor para chatear.'); return; }
@@ -466,7 +467,7 @@
       + '<div style="font-size:11px;color:#999;" id="mp2-notif-sub"></div>'
       + '</div>';
 
-    // ── 5. REPUTACIÓN (placeholder, M2-C conectará) ────────────
+    // ── 5. REPUTACIÓN ──────────────────────────────────────────
     if (tipo !== 'vecino') {
       html += SEC('Reputación');
       html += CARD(
@@ -480,7 +481,7 @@
       );
     }
 
-    // ── 6. MÉTRICAS (placeholder, M2-C conectará) ──────────────
+    // ── 6. MÉTRICAS ────────────────────────────────────────────
     if (tipo !== 'vecino') {
       html += SEC('Métricas (últimos 7 días)');
       html += CARD(
@@ -489,7 +490,7 @@
         + '<div style="flex:1;background:#f8f8f8;border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:'+color+';" id="mp2-met-cont">—</div><div style="font-size:9px;color:#888;margin-top:2px;">Contactos</div></div>'
         + '<div style="flex:1;background:#f8f8f8;border-radius:10px;padding:10px 8px;text-align:center;"><div style="font-size:18px;font-weight:700;color:'+color+';" id="mp2-met-conv">—</div><div style="font-size:9px;color:#888;margin-top:2px;">Conversiones</div></div>'
         + '</div>'
-        + '<div style="font-size:11px;color:#888;line-height:1.45;" id="mp2-met-insight">Conectando con datos reales en M2-C.</div>'
+        + '<div style="font-size:11px;color:#888;line-height:1.45;" id="mp2-met-insight">Estadísticas en tiempo real.</div>'
       );
     }
 
@@ -923,7 +924,6 @@ window.plazaAbrirComercio = async function(id) {
 window._plazaProdDocsCache = [];
 window._plazaProdFiltro = 'todos';
 window._plazaSetProdFiltro = window._plazaSetProdFiltro || function(ev, cat) {
-  // BLOQUE 1 PLAZA ONLINE: pestañas de productos robustas.
   // Soporta llamada desde onclick(event,'cat') y llamada directa _plazaSetProdFiltro('cat').
   if (ev && typeof ev === 'object' && ev.preventDefault) {
     ev.preventDefault();
@@ -1139,35 +1139,12 @@ window.plazaCargarProductos = async function(uidNegocio, negocio, estOp) {
 var _misComprasPlazaTab = 'proceso';
 window.cambiarTabMisComprasPlaza = function(tab) {
   _misComprasPlazaTab = tab || 'proceso';
-  window.cargarMisComprasPlaza && window.cargarMisComprasPlaza();
+  window._misComprasPlazaTab = _misComprasPlazaTab;
+  try { if (typeof window.dcPlazaLimpieza15Render === 'function') window.dcPlazaLimpieza15Render(); } catch(e) {}
 };
 
-window.cargarMisComprasPlaza = async function() {
-  var el = document.getElementById('miscompras-plaza-lista');
-  var sub = document.getElementById('miscompras-plaza-sub');
-  var bProc = document.getElementById('miscompras-tab-proceso');
-  var bAnt  = document.getElementById('miscompras-tab-anteriores');
-  if (!el) return;
-  if (!_misComprasPlazaTab) _misComprasPlazaTab = 'proceso';
-  if (sub) sub.textContent = _misComprasPlazaTab === 'anteriores' ? 'Compras anteriores' : 'Compras en proceso';
-  if (bProc && bAnt) {
-    bProc.style.background = _misComprasPlazaTab === 'proceso' ? 'var(--blue)' : 'rgba(255,255,255,.18)';
-    bProc.style.color = '#fff';
-    bAnt.style.background = _misComprasPlazaTab === 'anteriores' ? 'var(--blue)' : 'rgba(255,255,255,.18)';
-    bAnt.style.color = '#fff';
-  }
-  try {
-    // Por ahora Plaza Online no genera orden de compra cerrada; dejamos ambas pestañas listas para conectar.
-    el.scrollTop = 0;
-    var esAnt = _misComprasPlazaTab === 'anteriores';
-    el.innerHTML = '<div style="padding:36px 20px;text-align:center;">'
-      + '<div style="font-size:42px;margin-bottom:12px;">'+(esAnt?'📦':'🛒')+'</div>'
-      + '<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:6px;">'+(esAnt?'Sin compras anteriores':'Sin compras en proceso')+'</div>'
-      + '<div style="font-size:12px;color:#777;line-height:1.5;">'+(esAnt?'Cuando finalices compras en Plaza Online, aparecerán aquí.':'Cuando compres productos en Plaza Online, aparecerán aquí.')+'</div>'
-      + '</div>';
-  } catch(e) {
-    el.innerHTML = '<div class="si24">Error al cargar Mis compras: '+e.message+'</div>';
-  }
+window.cargarMisComprasPlaza = function() {
+  try { if (typeof window.dcPlazaLimpieza15Render === 'function') window.dcPlazaLimpieza15Render(); } catch(e) {}
 };
 
 
@@ -3100,11 +3077,20 @@ window.cargarMisComprasPlaza = async function() {
     } catch(e) {}
     // 2. Limpiar localStorage de sesión
     localStorage.removeItem('dcuser');
-    localStorage.removeItem('dc_badges_v1'); // limpiar badges al cerrar sesión
+    localStorage.removeItem('dc_badges_v1');
     // G1: guardar uid ANTES de eliminarlo para poder limpiar claves por uid
     var _dcLogoutUid = localStorage.getItem('dcuserUid') || '';
-    localStorage.removeItem('dcuserUid');    // limpiar uid guardado
+    localStorage.removeItem('dcuserUid');
     localStorage.removeItem('dcuserTipo');
+    // Limpiar datos de plaza para evitar fuga entre usuarios en mismo dispositivo
+    ['dcPlazaCartV61','dcPlazaOrdenActivaV62','dcPlazaCompraSeleccionada',
+     'dcPlazaComprasHistorial','dcPlazaOrdenesPlazaV62',
+     'dcPlazaCartV61Meta','dcPlazaB2AMeta','dcPlazaCartMetaV63',
+     'dcPlazaQF42Tab','dcPlazaL14CartOpen','dcPlazaL14VaciarOpen',
+     'dcPlazaL14OrderOpen','dcPlazaTransferenciaRef',
+     'dcPlazaCarrito','dcPlazaCarritoEnProceso','dcPlazaCart','dc_plaza_cart',
+     'dcPlazaComproProceso','dcPlazaCompraProceso','dcPlazaTipoEntrega','dcPlazaTipoPago'
+    ].forEach(function(k){ try{localStorage.removeItem(k);}catch(_){} });
     localStorage.removeItem('dcuserEstado');
     // 3. Cancelar subscripciones activas
     if(window._chatUnsubscribe){window._chatUnsubscribe();window._chatUnsubscribe=null;}
