@@ -1943,6 +1943,10 @@
     e.preventDefault();
     e.stopPropagation();
     if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    if(btn.closest('#v-mis-compras-plaza')){
+      try{if(typeof window.go==='function')window.go('v-plaza','left');}catch(_){}
+      return false;
+    }
     window.dcBack('v-home');
   }, true);
 })();
@@ -2031,15 +2035,5 @@
     if(typeof origCMCP === 'function') return origCMCP.apply(this, arguments);
   };
 
-  // 2. Flecha de Mis Compras siempre va a Plaza Online, no al stack (evita regresar a COMPRANDO).
-  document.addEventListener('click', function(e){
-    var btn = e.target && e.target.closest ? e.target.closest('.btn-back') : null;
-    if(!btn) return;
-    if(!btn.closest('#v-mis-compras-plaza')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
-    try{if(typeof window.go==='function')window.go('v-plaza','left');}catch(_){}
-    return false;
-  }, true);
+  // Flecha de Mis Compras: manejada directamente en el handler global (línea ~1946).
 })();
