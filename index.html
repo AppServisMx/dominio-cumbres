@@ -6543,7 +6543,7 @@ document.addEventListener('click',function(ev){
 // Al intentar REGRESAR de esa pantalla, se pide confirmación.
 // Excepciones: búsquedas, chat y login (no son capturas que se "guarden").
 window._dcDirtyV = null;
-var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat'];
+var _DC_DIRTY_VISTAS_EXCL = ['v-login','v-admin-login','v-busqueda','v-chat','v-prov-cmv'];
 var _DC_DIRTY_IDS_EXCL = ['busqueda-input','chat-input','menu-search-inp'];
 document.addEventListener('change', _dcDirtyUniv, true);
 document.addEventListener('input',  _dcDirtyUniv, true);
@@ -13774,6 +13774,23 @@ function _feliz(msg) {
 /* ── 1. RATING PROVEEDOR ─────────────────────────────────────── */
 var _ratingSeleccionado = 0;
 
+window.dcProvRatingModoEditar = function() {
+  var blk = document.getElementById('det-rating-block');
+  if (!blk) return;
+  blk.innerHTML = ''
+    + '<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:4px;">⭐ Editar tu calificación</div>'
+    + '<div style="font-size:11px;color:#9a7020;margin-bottom:10px;" id="det-rating-avg"></div>'
+    + '<div id="det-stars" style="display:flex;gap:6px;margin-bottom:10px;">'
+    + '<span onclick="dcProvRatingSet(1)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
+    + '<span onclick="dcProvRatingSet(2)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
+    + '<span onclick="dcProvRatingSet(3)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
+    + '<span onclick="dcProvRatingSet(4)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
+    + '<span onclick="dcProvRatingSet(5)" style="font-size:28px;cursor:pointer;transition:transform .1s;">☆</span>'
+    + '</div>'
+    + '<textarea id="det-rating-com" class="nota" rows="2" placeholder="Comentario opcional..."></textarea>'
+    + '<button onclick="dcProvRatingEnviar()" style="width:100%;margin-top:8px;background:#F5C518;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;color:#1a1200;cursor:pointer;font-family:\'Inter\',sans-serif;">Enviar calificación →</button>';
+};
+
 window.dcProvRatingSet = function(n) {
   _ratingSeleccionado = n;
   document.querySelectorAll('#det-stars span').forEach(function(s, i) {
@@ -13806,10 +13823,15 @@ window.dcProvRatingEnviar = async function() {
     try { await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',provUid), { ratingPromedio: promedio, ratingTotal: count }); } catch(e){}
     var avg = document.getElementById('det-rating-avg');
     if (avg) avg.textContent = '⭐ ' + promedio + ' (' + count + ' opiniones)';
-    if (btn) { btn.disabled = false; btn.textContent = 'Enviar calificación →'; }
     document.getElementById('det-rating-com') && (document.getElementById('det-rating-com').value='');
+    // Cambiar bloque a modo "ya calificaste"
+    var blk = document.getElementById('det-rating-block');
+    if (blk) blk.innerHTML = ''
+      + '<div style="font-size:12px;font-weight:700;color:#7a5000;margin-bottom:6px;">⭐ Tu calificación</div>'
+      + '<div style="font-size:22px;margin-bottom:6px;">' + '⭐'.repeat(_ratingSeleccionado) + '☆'.repeat(5-_ratingSeleccionado) + '</div>'
+      + '<div style="font-size:11px;color:#9a7020;margin-bottom:10px;" id="det-rating-avg">⭐ ' + promedio + ' (' + count + ' opiniones)</div>'
+      + '<button onclick="dcProvRatingModoEditar()" style="background:none;border:1px solid #d4a020;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;">✏️ Editar calificación</button>';
     _ratingSeleccionado = 0;
-    document.querySelectorAll('#det-stars span').forEach(function(s){ s.textContent='☆'; s.style.transform='scale(1)'; });
     _feliz('¡Gracias por calificar!');
   } catch(e) {
     console.error('rating',e);
@@ -13880,19 +13902,29 @@ window.vprovCmvFotoChange = function(inp) {
 };
 
 var _vprovFotosTrabajo = [];
+window.vprovCmvQuitarFoto = function(idx) {
+  _vprovFotosTrabajo.splice(idx, 1);
+  var grid = document.getElementById('vprov-cmv-fotos-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  _vprovFotosTrabajo.forEach(function(src, i) { _vprovCmvAddFotoGrid(grid, src, i); });
+};
+function _vprovCmvAddFotoGrid(grid, src, idx) {
+  var d = document.createElement('div');
+  d.style.cssText = 'position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
+  d.innerHTML = '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;">'
+    + '<button onclick="vprovCmvQuitarFoto('+idx+')" style="position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;">×</button>';
+  grid.appendChild(d);
+}
 window.vprovCmvFotosChange = function(inp) {
   if (!inp.files || !inp.files.length) return;
   var grid = document.getElementById('vprov-cmv-fotos-grid');
   Array.from(inp.files).forEach(function(file) {
     var r = new FileReader();
     r.onload = function(e) {
+      var idx = _vprovFotosTrabajo.length;
       _vprovFotosTrabajo.push(e.target.result);
-      if (grid) {
-        var d = document.createElement('div');
-        d.style.cssText = 'width:80px;height:80px;border-radius:10px;overflow:hidden;background:#eee;flex-shrink:0;';
-        d.innerHTML = '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;">';
-        grid.appendChild(d);
-      }
+      if (grid) _vprovCmvAddFotoGrid(grid, e.target.result, idx);
     };
     r.readAsDataURL(file);
   });
@@ -13945,9 +13977,8 @@ window.vprovCmvGuardar = async function() {
   if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
   try {
     var fs = _fs(); var db = _db();
+    // Las fotos base64 superan el límite de 1MB de Firestore — solo guardamos texto
     var upd = { nombre: nm, descripcion: ds };
-    if (_vprovFotoBase64) upd.fotoUrl = _vprovFotoBase64;
-    if (_vprovFotosTrabajo.length) upd.fotosTrabajo = _vprovFotosTrabajo;
     await _updateDoc((fs.fsDoc||fs.doc)(db,'usuarios',uid), upd);
     if (btn) { btn.disabled=false; btn.textContent='Guardar cambios'; }
     _feliz('¡Perfil actualizado!');
