@@ -4838,11 +4838,11 @@
       </div>
 
       <!-- CONFIGURACIÓN -->
-      <div class="admin-card" id="card-config" onclick="goAdminSec('config');setTimeout(function(){window.adminImpulsaConfigCargar&&window.adminImpulsaConfigCargar();},250)">
+      <div class="admin-card" id="card-config" onclick="goAdminSec('config')">
         <div>
           <div class="admin-card-ic" style="background:rgba(245,197,24,.15);">⚙️</div>
           <div class="admin-card-title">Configuración</div>
-          <div class="admin-card-sub">Comisiones · SPEI · zonas</div>
+          <div class="admin-card-sub">Comisiones · zonas</div>
         </div>
       </div>
 
@@ -5299,33 +5299,6 @@
         <button class="toggle" onclick="this.classList.toggle('off')"></button>
       </div>
     </div>
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🏦 SPEI / Transferencias</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:12px;">
-        Datos bancarios que verá el usuario al pagar por transferencia. Se aplican de inmediato.
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">Banco</div>
-        <input id="ic-banco" type="text" placeholder="Ej: BBVA" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">CLABE (18 dígitos)</div>
-        <input id="ic-clabe" type="text" maxlength="18" placeholder="000000000000000000" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#F5C518;font-family:'Inter',sans-serif;outline:none;letter-spacing:2px;">
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">Beneficiario</div>
-        <input id="ic-beneficiario" type="text" placeholder="Ej: Dominio Cumbres" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
-      </div>
-      <div id="ic-status" style="display:none;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:700;margin-bottom:10px;text-align:center;"></div>
-      <button onclick="window.adminImpulsaConfigGuardar()" id="ic-guardar-btn"
-        style="width:100%;background:linear-gradient(135deg,#0d3d24,#1FC26A);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
-        💾 Guardar datos bancarios
-      </button>
-      <div style="margin-top:16px;padding-top:12px;border-top:.5px solid rgba(255,255,255,.07);">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase;">Transferencias pendientes de validar</div>
-        <div id="ic-pendientes" style="font-size:12px;color:rgba(255,255,255,.4);">—</div>
-      </div>
-    </div>
     <div onclick="irAdministradores()" style="background:var(--card-dark);border-radius:14px;padding:14px 16px;border:1px solid var(--card-border);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
       <div>
         <div class="si43">👥 Administradores</div>
@@ -5733,17 +5706,17 @@
 <!-- cnt-preview-overlay — Vista previa de publicación -->
 <div id="cnt-preview-overlay" style="display:none;position:absolute;inset:0;z-index:9700;"></div>
 
-<!-- ╔══════════════════════════════════════════════════════╗
-     ║  V-IMPULSA — Estado + Selección de plan (fusionado) ║
-     ╚══════════════════════════════════════════════════════╝ -->
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA — Estado del plan                ║
+     ╚══════════════════════════════════════════════╝ -->
 <div class="view go-right" id="v-impulsa">
   <div style="background:linear-gradient(150deg,#1a1200,#3d2900);flex-shrink:0;">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
-    <div style="padding:10px 16px 18px;display:flex;align-items:center;gap:12px;">
-      <button onclick="dcBack('v-home')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+    <div style="padding:10px 16px 22px;display:flex;align-items:center;gap:12px;">
+      <button onclick="dcBack('v-mipanel')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
       <div>
-        <div style="font-size:18px;font-weight:900;color:#fff;line-height:1.1;">Impulsa tu negocio</div>
-        <div id="impulsa-plan-badge" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px;">🏪 Plan Básico · activo</div>
+        <div style="font-size:11px;letter-spacing:.8px;color:rgba(255,255,255,.4);text-transform:uppercase;font-weight:700;">Tu plan</div>
+        <div style="font-size:22px;font-weight:900;color:#F5C518;letter-spacing:-.5px;">⭐ IMPULSA</div>
       </div>
     </div>
   </div>
@@ -5752,8 +5725,56 @@
   </div>
 </div>
 
-<!-- v-impulsa-planes se mantiene como alias vacío para no romper navegación antigua -->
-<div class="view go-right" id="v-impulsa-planes" style="display:none;"></div>
+<!-- ╔══════════════════════════════════════════════╗
+     ║  V-IMPULSA-PLANES — Selección de plan       ║
+     ╚══════════════════════════════════════════════╝ -->
+<div class="view go-right" id="v-impulsa-planes">
+  <div style="background:linear-gradient(150deg,#1a1200,#3d2900);flex-shrink:0;">
+    <div class="sbar dk"><span>9:41</span><span>▲</span></div>
+    <div style="padding:10px 16px 18px;display:flex;align-items:center;gap:12px;">
+      <button onclick="go('v-impulsa','left')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#fff;">Elige tu plan</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);">Sin contratos · Cancela cuando quieras</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll" style="background:#0e0a00;padding:16px 14px 24px;">
+    <div onclick="window.impulsaSeleccionarPlan('anual')" style="position:relative;background:linear-gradient(135deg,#2a1f00,#4d3900);border:2px solid #F5C518;border-radius:20px;padding:20px 18px 18px;margin-bottom:14px;cursor:pointer;">
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#F5C518;color:#3d2900;font-size:10px;font-weight:900;padding:4px 16px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;">⚡ MEJOR VALOR · AHORRA $389</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;">
+        <div style="font-size:36px;">⭐</div>
+        <div style="flex:1;">
+          <div style="font-size:16px;font-weight:900;color:#F5C518;">Impulsa Anual</div>
+          <div style="font-size:28px;font-weight:900;color:#fff;line-height:1.1;">$1,999 <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5);">MXN / año</span></div>
+          <div style="font-size:11px;color:rgba(255,255,255,.55);">$166/mes · equivale a 2 meses gratis</div>
+        </div>
+        <div style="width:26px;height:26px;border-radius:50%;border:2px solid #F5C518;display:flex;align-items:center;justify-content:center;font-size:14px;color:#F5C518;">›</div>
+      </div>
+    </div>
+    <div onclick="window.impulsaSeleccionarPlan('mensual')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:18px;margin-bottom:22px;cursor:pointer;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:36px;">⭐</div>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:800;color:#fff;">Impulsa Mensual</div>
+        <div style="font-size:26px;font-weight:900;color:#fff;line-height:1.1;">$199 <span style="font-size:12px;font-weight:500;color:rgba(255,255,255,.5);">MXN / mes</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);">Renueva cada mes · Cancela cuando quieras</div>
+      </div>
+      <div style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.5);">›</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.35);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;">INCLUYE TODOS ESTOS BENEFICIOS</div>
+    <div style="background:rgba(255,255,255,.04);border-radius:14px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">🔝</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Primero en resultados de búsqueda</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">📢</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Banners en Home, Food, Servicios, Plaza, Informa</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">⭐</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Badge "Impulsa" visible en tu perfil</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">🎯</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Sección "Destacados" en todas las vistas</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);"><span style="font-size:16px;">📊</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Estadísticas avanzadas: vistas, contactos, conversiones</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;"><span style="font-size:16px;">💬</span><span style="font-size:12px;color:rgba(255,255,255,.8);">Soporte prioritario del equipo DC</span></div>
+    </div>
+    <div style="margin-top:14px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;font-size:10px;color:rgba(255,255,255,.35);text-align:center;line-height:1.6;">
+      Pago procesado de forma segura por MercadoPago.<br>Puedes cancelar en cualquier momento desde tu panel.
+    </div>
+  </div>
+</div>
 
 <!-- ╔══════════════════════════════════════════════╗
      ║  V-IMPULSA-PAGO — Checkout MercadoPago      ║
@@ -5762,71 +5783,15 @@
   <div style="background:#1a1200;flex-shrink:0;border-bottom:.5px solid rgba(255,255,255,.08);">
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div style="padding:10px 16px 14px;display:flex;align-items:center;gap:12px;">
-      <button onclick="dcBack('v-impulsa')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
+      <button onclick="go('v-impulsa-planes','left')" style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-family:'Inter',sans-serif;line-height:1;">‹</button>
       <div style="font-size:16px;font-weight:800;color:#fff;">Completar pago</div>
     </div>
   </div>
   <div id="impulsa-pago-resumen" style="background:#0e0a00;padding:14px 16px;flex-shrink:0;"></div>
-  <div class="scroll" style="background:#0e0a00;padding:16px 16px 32px;">
-
-    <!-- Selector de método de pago -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
-      <button id="impulsa-tab-mp" onclick="window.impulsaTabPago('mp')" style="padding:12px 8px;border-radius:14px;border:2px solid #009ee3;background:rgba(0,158,227,.15);color:#009ee3;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;">💳 Tarjeta / MP</button>
-      <button id="impulsa-tab-spei" onclick="window.impulsaTabPago('spei')" style="padding:12px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;">🏦 Transferencia</button>
+  <div class="scroll" style="background:#f5f5f5;padding:12px;">
+    <div id="impulsa-brick-cont">
+      <div style="text-align:center;padding:40px;color:#888;font-size:13px;">⏳ Cargando pago seguro...</div>
     </div>
-
-    <!-- Panel: MercadoPago -->
-    <div id="impulsa-panel-mp">
-      <button id="impulsa-btn-pagar" onclick="window.impulsaAbrirCheckout()" style="width:100%;background:#009ee3;color:#fff;border:none;border-radius:16px;padding:18px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px;">
-        <span>💳</span> Pagar con MercadoPago
-      </button>
-      <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;line-height:1.6;margin-bottom:14px;">
-        Tarjeta de crédito · débito · OXXO Pay · SPEI · y más.<br>Serás redirigido a la página segura de MercadoPago.
-      </div>
-      <div id="impulsa-checkout-error" style="display:none;padding:12px 14px;background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);border-radius:12px;font-size:12px;color:#ff8080;text-align:center;"></div>
-    </div>
-
-    <!-- Panel: Transferencia SPEI -->
-    <div id="impulsa-panel-spei" style="display:none;">
-      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:.6px;margin-bottom:14px;">DATOS PARA TRANSFERENCIA</div>
-
-        <div style="margin-bottom:12px;">
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">BANCO</div>
-          <div style="font-size:14px;font-weight:700;color:#fff;" id="impulsa-spei-banco">BBVA</div>
-        </div>
-        <div style="margin-bottom:12px;">
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">CLABE INTERBANCARIA</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="font-size:15px;font-weight:900;color:#F5C518;letter-spacing:1px;" id="impulsa-spei-clabe">012 345 678 901 234 567</div>
-            <button onclick="window.impulsaCopiarClabe()" style="background:rgba(245,197,24,.15);border:none;border-radius:8px;padding:5px 10px;color:#F5C518;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Copiar</button>
-          </div>
-        </div>
-        <div style="margin-bottom:12px;">
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">BENEFICIARIO</div>
-          <div style="font-size:14px;font-weight:700;color:#fff;" id="impulsa-spei-beneficiario">Dominio Cumbres</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">CONCEPTO / REFERENCIA</div>
-          <div style="font-size:13px;font-weight:700;color:#fff;" id="impulsa-spei-concepto">IMPULSA</div>
-        </div>
-      </div>
-
-      <button id="impulsa-spei-btn" onclick="window.impulsaNotificarTransferenciaApp()" style="width:100%;background:linear-gradient(135deg,#1a4a2a,#1FC26A);color:#fff;border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
-        ✅ Ya transferí — avisar al administrador
-      </button>
-      <div id="impulsa-spei-ok" style="display:none;margin-top:4px;padding:14px;background:rgba(31,194,106,.1);border:1px solid rgba(31,194,106,.3);border-radius:14px;font-size:12px;color:#1FC26A;text-align:center;line-height:1.6;">
-        ✅ ¡Aviso enviado!<br><span style="color:rgba(255,255,255,.5);">El administrador verificará tu transferencia y activará tu plan en menos de 24 horas.</span>
-      </div>
-    </div>
-
-    <!-- Verificar activación -->
-    <div style="margin-top:20px;padding-top:16px;border-top:.5px solid rgba(255,255,255,.07);text-align:center;">
-      <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px;">¿Ya pagaste y quieres confirmar?</div>
-      <button id="impulsa-verificar-btn" onclick="window.impulsaVerificarPago()" style="background:rgba(31,194,106,.08);border:1.5px solid rgba(31,194,106,.35);color:rgba(31,194,106,.9);border-radius:12px;padding:11px 26px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.2px;">✓ Verificar activación</button>
-      <div id="impulsa-verificar-error" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,80,80,.08);border:1px solid rgba(255,80,80,.25);border-radius:10px;font-size:11px;color:rgba(255,130,130,.9);line-height:1.6;"></div>
-    </div>
-
   </div>
 </div>
 
@@ -5841,63 +5806,6 @@
     <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:36px;" id="impulsa-ok-vence"></div>
     <button onclick="go('v-home','left');setTimeout(window.renderHomeM2,200)" style="width:100%;max-width:300px;background:#F5C518;color:#3d2900;border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:14px;">🏠 Ir al inicio</button>
     <button onclick="go('v-impulsa','left');setTimeout(window.impulsaCargar,200)" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;">Ver mi plan →</button>
-  </div>
-</div>
-
-<!-- ╔═══════════════════════════════════════════════════════╗
-     ║  FAB GLOBAL — Impulsa / Publicidad (flota sobre todo) ║
-     ╚═══════════════════════════════════════════════════════╝ -->
-<style>
-@keyframes dc-fab-float {
-  0%,100% { transform: translateY(0px) rotate(-2deg); }
-  50%      { transform: translateY(-8px) rotate(2deg); }
-}
-@keyframes dc-fab-pulse {
-  0%,100% { box-shadow: 0 4px 22px rgba(245,197,24,.45), 0 0 0 0 rgba(245,197,24,.25); }
-  50%      { box-shadow: 0 8px 30px rgba(245,197,24,.65), 0 0 0 8px rgba(245,197,24,.0); }
-}
-#dc-fab-global {
-  position: absolute;
-  bottom: 80px;
-  right: 14px;
-  z-index: 9500;
-  display: none;
-  pointer-events: none;
-  transition: opacity .25s;
-}
-#dc-fab-global.visible { display: block; pointer-events: auto; }
-#dc-fab-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  cursor: pointer;
-  animation: dc-fab-float 3s ease-in-out infinite;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-#dc-fab-inner:active { animation: none; transform: scale(.88); }
-#dc-fab-star {
-  font-size: 40px;
-  line-height: 1;
-  filter: drop-shadow(0 0 8px rgba(31,194,106,.9)) drop-shadow(0 4px 12px rgba(31,194,106,.5));
-  display: block;
-}
-#dc-fab-label {
-  font-size: 11px;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: .5px;
-  text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 10px rgba(31,194,106,.6);
-  line-height: 1;
-}
-</style>
-
-<div id="dc-fab-global">
-  <div id="dc-fab-inner" onclick="window._dcFabAccion&&window._dcFabAccion()">
-    <span id="dc-fab-star">⭐</span>
-    <span id="dc-fab-label">IMPULSA</span>
   </div>
 </div>
 
@@ -5920,6 +5828,38 @@
 
 
 <script src="negocio.js"></script>
+
+<style>
+@keyframes dc-fab-float {
+  0%,100% { transform: translateY(0px) rotate(-2deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+#dc-fab-global {
+  position: absolute; bottom: 80px; right: 14px; z-index: 9500;
+  display: none; pointer-events: none; transition: opacity .25s;
+}
+#dc-fab-global.visible { display: block; pointer-events: auto; }
+#dc-fab-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer;
+  animation: dc-fab-float 3s ease-in-out infinite;
+}
+#dc-fab-star {
+  font-size: 40px; line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(31,194,106,.9)) drop-shadow(0 4px 12px rgba(31,194,106,.5));
+}
+#dc-fab-label {
+  font-size: 11px; font-weight: 900; color: #fff; letter-spacing: .5px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 10px rgba(31,194,106,.6);
+}
+</style>
+<div id="dc-fab-global">
+  <div id="dc-fab-inner" onclick="window._dcFabAccion&&window._dcFabAccion()">
+    <span id="dc-fab-star">⭐</span>
+    <span id="dc-fab-label">IMPULSA</span>
+  </div>
+</div>
 
 <script src="campanas.js?v=20260713a"></script>
 <script src="app.js?v=20260706j"></script>
