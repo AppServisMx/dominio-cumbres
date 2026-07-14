@@ -6210,13 +6210,117 @@ window.impulsaVerificarPago = async function() {
       if (okVence) okVence.textContent = 'Plan activo hasta el ' + fin.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
       go('v-impulsa-ok', 'right');
     } else {
-      var errDiv = document.getElementById('impulsa-checkout-error');
+      var errDiv = document.getElementById('impulsa-verificar-error');
       if (errDiv) {
-        errDiv.textContent = 'El pago aún no está confirmado. Si ya pagaste, espera unos segundos e intenta de nuevo.';
+        errDiv.textContent = 'El plan aún no está activo. Si ya pagaste, espera unos minutos e intenta de nuevo.';
         errDiv.style.display = 'block';
       }
     }
   } catch(e) {
     console.error('impulsaVerificarPago', e);
+  }
+};
+
+// Datos de transferencia (cambiar a los datos reales)
+var _IMPULSA_SPEI = {
+  banco:        'BBVA',
+  clabe:        '012 180 034 567 890 123',  // ← CAMBIA por tu CLABE real
+  beneficiario: 'Dominio Cumbres',
+  whatsapp:     '5218110000000',            // ← CAMBIA por tu número de WhatsApp
+};
+
+// ── Tabs de método de pago ─────────────────────────────────────────────────
+window.impulsaTabPago = function(tab) {
+  var panelMp   = document.getElementById('impulsa-panel-mp');
+  var panelSpei = document.getElementById('impulsa-panel-spei');
+  var tabMp     = document.getElementById('impulsa-tab-mp');
+  var tabSpei   = document.getElementById('impulsa-tab-spei');
+  if (!panelMp || !panelSpei) return;
+
+  if (tab === 'mp') {
+    panelMp.style.display   = '';
+    panelSpei.style.display = 'none';
+    tabMp.style.border      = '2px solid #009ee3';
+    tabMp.style.background  = 'rgba(0,158,227,.15)';
+    tabMp.style.color       = '#009ee3';
+    tabSpei.style.border    = '1px solid rgba(255,255,255,.15)';
+    tabSpei.style.background= 'rgba(255,255,255,.04)';
+    tabSpei.style.color     = 'rgba(255,255,255,.5)';
+  } else {
+    panelMp.style.display   = 'none';
+    panelSpei.style.display = '';
+    tabSpei.style.border    = '2px solid #F5C518';
+    tabSpei.style.background= 'rgba(245,197,24,.12)';
+    tabSpei.style.color     = '#F5C518';
+    tabMp.style.border      = '1px solid rgba(255,255,255,.15)';
+    tabMp.style.background  = 'rgba(255,255,255,.04)';
+    tabMp.style.color       = 'rgba(255,255,255,.5)';
+    // Rellenar datos
+    var plan = _MP_PLANES[_impulsaPlanSel] || {};
+    var concepto = 'IMPULSA ' + (_impulsaPlanSel || '').toUpperCase();
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    if (user) concepto += ' ' + user.uid.slice(0,6).toUpperCase();
+    var elBanco  = document.getElementById('impulsa-spei-banco');
+    var elClabe  = document.getElementById('impulsa-spei-clabe');
+    var elBenef  = document.getElementById('impulsa-spei-beneficiario');
+    var elConc   = document.getElementById('impulsa-spei-concepto');
+    if (elBanco)  elBanco.textContent  = _IMPULSA_SPEI.banco;
+    if (elClabe)  elClabe.textContent  = _IMPULSA_SPEI.clabe;
+    if (elBenef)  elBenef.textContent  = _IMPULSA_SPEI.beneficiario;
+    if (elConc)   elConc.textContent   = concepto;
+  }
+};
+
+window.impulsaCopiarClabe = function() {
+  var clabe = (_IMPULSA_SPEI.clabe || '').replace(/\s/g,'');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(clabe).then(function() {
+      var btn = document.querySelector('[onclick="window.impulsaCopiarClabe()"]');
+      if (btn) { btn.textContent = '✓ Copiado'; setTimeout(function(){ btn.textContent = 'Copiar'; }, 2000); }
+    });
+  }
+};
+
+window.impulsaNotificarTransferencia = function() {
+  var plan = _MP_PLANES[_impulsaPlanSel] || {};
+  var user = window._fbAuth && window._fbAuth.currentUser;
+  var uid6 = user ? user.uid.slice(0,6).toUpperCase() : '------';
+  var concepto = 'IMPULSA ' + (_impulsaPlanSel || '').toUpperCase() + ' ' + uid6;
+  var msg = encodeURIComponent(
+    '¡Hola! Acabo de hacer una transferencia para activar mi Plan Impulsa en Dominio Cumbres.\n\n'
+    + '• Plan: ' + (plan.label || _impulsaPlanSel) + '\n'
+    + '• Monto: $' + (plan.monto || '').toLocaleString('es-MX') + ' MXN\n'
+    + '• Concepto usado: ' + concepto + '\n\n'
+    + '¿Podrían confirmar la activación? Gracias.'
+  );
+  window.open('https://wa.me/' + _IMPULSA_SPEI.whatsapp + '?text=' + msg, '_blank');
+};
+
+window.impulsaNotificarTransferenciaApp = async function() {
+  try {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    if (!user) { alert('Sin sesión'); return; }
+    var plan = _MP_PLANES[_impulsaPlanSel] || {};
+    var _FS = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+    var col = _FS.collection(window._fbDb, 'notificaciones');
+    await _FS.addDoc(col, {
+      uid:       'ADMIN',
+      tipo:      'impulsa_transferencia',
+      titulo:    '💰 Transferencia SPEI pendiente',
+      mensaje:   'El usuario ' + user.email + ' reporta haber transferido para ' + (plan.label || _impulsaPlanSel) + '. UID: ' + user.uid,
+      leida:     false,
+      eliminada: false,
+      prioridad: 'high',
+      fecha:     _FS.serverTimestamp(),
+      solicitanteUid:   user.uid,
+      solicitanteEmail: user.email || '',
+      planTipo:  _impulsaPlanSel,
+      planMonto: plan.monto || 0,
+    });
+    var ok = document.getElementById('impulsa-spei-ok');
+    if (ok) ok.style.display = 'block';
+  } catch(e) {
+    console.error('impulsaNotificarTransferenciaApp', e);
+    alert('Error al enviar notificación: ' + e.message);
   }
 };

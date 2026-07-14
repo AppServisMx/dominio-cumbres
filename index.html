@@ -5788,31 +5788,71 @@
     </div>
   </div>
   <div id="impulsa-pago-resumen" style="background:#0e0a00;padding:14px 16px;flex-shrink:0;"></div>
-  <div class="scroll" style="background:#0e0a00;padding:20px 16px 32px;display:flex;flex-direction:column;align-items:center;">
+  <div class="scroll" style="background:#0e0a00;padding:16px 16px 32px;">
 
-    <!-- Botón principal Checkout Pro -->
-    <div id="impulsa-checkout-cont" style="width:100%;max-width:340px;">
-      <div style="text-align:center;padding:40px 0 20px;">
-        <div style="font-size:48px;margin-bottom:12px;">🔒</div>
-        <div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:6px;">Pago 100% seguro procesado por</div>
-        <div style="font-size:20px;font-weight:900;color:#009ee3;margin-bottom:24px;">MercadoPago</div>
-      </div>
-
-      <button id="impulsa-btn-pagar" onclick="window.impulsaAbrirCheckout()" style="width:100%;background:#009ee3;color:#fff;border:none;border-radius:16px;padding:18px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
-        <span>💳</span> Pagar con MercadoPago
-      </button>
-
-      <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;line-height:1.6;">
-        Al hacer clic serás redirigido a MercadoPago para completar tu pago de forma segura. Una vez aprobado, tu plan se activa automáticamente.
-      </div>
-
-      <div id="impulsa-checkout-error" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);border-radius:12px;font-size:12px;color:#ff8080;text-align:center;"></div>
+    <!-- Selector de método de pago -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+      <button id="impulsa-tab-mp" onclick="window.impulsaTabPago('mp')" style="padding:12px 8px;border-radius:14px;border:2px solid #009ee3;background:rgba(0,158,227,.15);color:#009ee3;font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;">💳 Tarjeta / MP</button>
+      <button id="impulsa-tab-spei" onclick="window.impulsaTabPago('spei')" style="padding:12px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);font-size:12px;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;">🏦 Transferencia</button>
     </div>
 
-    <!-- Confirmación: ya pagué -->
-    <div style="margin-top:28px;padding-top:20px;border-top:.5px solid rgba(255,255,255,.08);width:100%;max-width:340px;text-align:center;">
-      <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:10px;">¿Ya completaste el pago?</div>
-      <button onclick="window.impulsaVerificarPago()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);border-radius:12px;padding:10px 24px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">✓ Ya pagué — verificar</button>
+    <!-- Panel: MercadoPago -->
+    <div id="impulsa-panel-mp">
+      <button id="impulsa-btn-pagar" onclick="window.impulsaAbrirCheckout()" style="width:100%;background:#009ee3;color:#fff;border:none;border-radius:16px;padding:18px;font-size:16px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px;">
+        <span>💳</span> Pagar con MercadoPago
+      </button>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;line-height:1.6;margin-bottom:14px;">
+        Tarjeta de crédito · débito · OXXO Pay · SPEI · y más.<br>Serás redirigido a la página segura de MercadoPago.
+      </div>
+      <div id="impulsa-checkout-error" style="display:none;padding:12px 14px;background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);border-radius:12px;font-size:12px;color:#ff8080;text-align:center;"></div>
+    </div>
+
+    <!-- Panel: Transferencia SPEI -->
+    <div id="impulsa-panel-spei" style="display:none;">
+      <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.4);letter-spacing:.6px;margin-bottom:14px;">DATOS PARA TRANSFERENCIA</div>
+
+        <div style="margin-bottom:12px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">BANCO</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;" id="impulsa-spei-banco">BBVA</div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">CLABE INTERBANCARIA</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:15px;font-weight:900;color:#F5C518;letter-spacing:1px;" id="impulsa-spei-clabe">012 345 678 901 234 567</div>
+            <button onclick="window.impulsaCopiarClabe()" style="background:rgba(245,197,24,.15);border:none;border-radius:8px;padding:5px 10px;color:#F5C518;font-size:10px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Copiar</button>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">BENEFICIARIO</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;" id="impulsa-spei-beneficiario">Dominio Cumbres</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:2px;">CONCEPTO / REFERENCIA</div>
+          <div style="font-size:13px;font-weight:700;color:#fff;" id="impulsa-spei-concepto">IMPULSA</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,197,24,.06);border:1px solid rgba(245,197,24,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:rgba(255,255,255,.6);line-height:1.7;">
+        📌 Una vez hecha la transferencia, avísanos por WhatsApp o toca el botón de abajo. Tu plan se activa en menos de 24 horas.
+      </div>
+
+      <button onclick="window.impulsaNotificarTransferencia()" style="width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
+        📲 Ya transferí — avisar por WhatsApp
+      </button>
+      <button onclick="window.impulsaNotificarTransferenciaApp()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-radius:14px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">
+        ✉️ Ya transferí — notificar en la app
+      </button>
+      <div id="impulsa-spei-ok" style="display:none;margin-top:12px;padding:12px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);border-radius:12px;font-size:12px;color:#25D366;text-align:center;">
+        ✅ ¡Notificación enviada! Te confirmaremos en menos de 24 horas.
+      </div>
+    </div>
+
+    <!-- Verificar pago -->
+    <div style="margin-top:20px;padding-top:16px;border-top:.5px solid rgba(255,255,255,.07);text-align:center;">
+      <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:8px;">¿Tu plan ya fue activado?</div>
+      <button onclick="window.impulsaVerificarPago()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);border-radius:12px;padding:10px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">✓ Verificar activación</button>
+      <div id="impulsa-verificar-error" style="display:none;margin-top:10px;font-size:11px;color:rgba(255,100,100,.8);"></div>
     </div>
 
   </div>
