@@ -8181,8 +8181,8 @@ function _dcfRenderLista(docs) {
       +'<div class="rname">'+(r.nombreNegocio||r.nombre||'—')+'</div>'
       +'<span style="'+estStyle+'">'+estLabel+'</span></div>'
       +'<div style="font-size:11px;color:var(--tx2);margin-top:3px;">'+(r.ratingPromedio?'⭐ '+Number(r.ratingPromedio).toFixed(1)+' ('+( r.ratingTotal||0)+' op.) · ':'')+(r.descripcion||cat)+'</div>'
-      +'<div class="rfooter">'
-      +'<span style="font-size:11px;color:var(--tx2);">'+envStr+'</span>'
+      +'<div class="rfooter" style="align-items:center;">'
+      +'<button onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button>'
       +'<span class="link-green">Pedir →</span>'
       +'</div></div></div>';
   }).join('');
@@ -8246,14 +8246,6 @@ window.dcFood_abrirRest = async function(restId) {
   }
   _dcfNav('v-food-det');
   await dcFood_cargarMenu(restId);
-  try {
-    var _rTipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
-    if(_rTipo==='vecino'){
-      var _dm=document.getElementById('det-menu');
-      if(_dm){var _oRs=_dm.querySelector('.dc-rating-inject');if(_oRs)_oRs.remove();var _rs=document.createElement('div');_rs.className='dc-rating-inject';_rs.style.cssText='padding:14px;margin:8px 14px;background:#FFF8DC;border-radius:14px;border:.5px solid #f0e0a0;';_rs.innerHTML='<div style="font-size:11px;font-weight:700;color:#9a7020;margin-bottom:6px;" id="food-det-rating-avg">⭐ Cargando...</div><div id="food-det-rating-block"></div><div id="food-det-opiniones-block" style="display:none;margin-top:12px;"></div>';_dm.insertBefore(_rs,_dm.firstChild);}
-      window.dcRatingCargar&&window.dcRatingCargar(restId,'food-det','Calificar restaurante');
-    }
-  }catch(e){}
 };
 
 /* ── Cargar menú ────────────────────────────────────── */
@@ -14162,5 +14154,135 @@ window.cargarMembresia=async function(){
 </script>
 
 <script src="app.js"></script>
+
+<!-- ═══ POPUP CALIFICACIÓN (restaurantes + negocios) ═══ -->
+<div id="dc-rp-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9500;align-items:flex-end;justify-content:center;" onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()">
+  <div id="dc-rp-sheet" style="background:#fff;border-radius:24px 24px 0 0;padding:22px 20px 32px;width:100%;max-width:430px;box-shadow:0 -6px 40px rgba(0,0,0,.18);font-family:'Inter',sans-serif;transform:translateY(100%);transition:transform .32s cubic-bezier(.32,1,.56,1);" onclick="event.stopPropagation()">
+    <div style="width:36px;height:4px;background:#e0e0e0;border-radius:4px;margin:0 auto 18px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+      <div>
+        <div style="font-size:16px;font-weight:800;color:#111;line-height:1.2;" id="dc-rp-nombre">—</div>
+        <div style="font-size:12px;color:#888;margin-top:3px;">Comparte tu experiencia</div>
+      </div>
+      <button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#f5f5f5;border:none;width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0;margin-left:10px;">✕</button>
+    </div>
+    <div id="dc-rp-avg" style="font-size:11px;color:#9a7020;margin-bottom:16px;min-height:14px;"></div>
+    <div id="dc-rp-content" style="display:flex;flex-direction:column;gap:12px;">
+      <div id="dc-rp-stars" style="display:flex;gap:10px;justify-content:center;margin:4px 0 2px;"></div>
+      <textarea id="dc-rp-com" class="nota" rows="2" placeholder="Comentario opcional..." style="resize:none;"></textarea>
+      <button id="dc-rp-btn" onclick="window.dcRatingPopupEnviar&&window.dcRatingPopupEnviar()" style="background:#F5C518;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;color:#1a1200;cursor:pointer;font-family:inherit;width:100%;">Enviar calificación →</button>
+    </div>
+    <div id="dc-rp-votado" style="display:none;"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var _rpUid='', _rpSel=0;
+
+  window.dcRatingAbrirPopup=function(pUid,nombre,e){
+    if(e){e.stopPropagation();}
+    var tipo=(localStorage.getItem('dcuserTipo')||'').toLowerCase();
+    if(tipo!=='vecino'){alert('Solo los vecinos pueden calificar.');return;}
+    _rpUid=pUid; _rpSel=0;
+    var ov=document.getElementById('dc-rp-overlay');
+    var sh=document.getElementById('dc-rp-sheet');
+    if(!ov||!sh)return;
+    document.getElementById('dc-rp-nombre').textContent=nombre||'—';
+    document.getElementById('dc-rp-avg').textContent='';
+    document.getElementById('dc-rp-votado').style.display='none';
+    document.getElementById('dc-rp-content').style.display='flex';
+    document.getElementById('dc-rp-com').value='';
+    document.getElementById('dc-rp-btn').disabled=false;
+    document.getElementById('dc-rp-btn').textContent='Enviar calificación →';
+    _rpRenderStars(0);
+    ov.style.display='flex';
+    requestAnimationFrame(function(){sh.style.transform='translateY(0)';});
+    _rpCargarPromedio(pUid);
+    _rpCargarMiVoto(pUid);
+  };
+
+  window.dcRatingCerrarPopup=function(){
+    var sh=document.getElementById('dc-rp-sheet');
+    var ov=document.getElementById('dc-rp-overlay');
+    if(!sh||!ov)return;
+    sh.style.transform='translateY(100%)';
+    setTimeout(function(){ov.style.display='none';},320);
+  };
+
+  function _rpRenderStars(sel){
+    _rpSel=sel;
+    var cont=document.getElementById('dc-rp-stars'); if(!cont)return;
+    cont.innerHTML='';
+    for(var i=1;i<=5;i++){
+      var s=document.createElement('span');
+      s.innerHTML=i<=sel?'⭐':'☆';
+      s.style.cssText='font-size:38px;cursor:pointer;transition:transform .12s;line-height:1;';
+      s.dataset.n=i;
+      (function(n,el){
+        el.onmouseenter=function(){if(n>_rpSel)el.style.transform='scale(1.18)';};
+        el.onmouseleave=function(){el.style.transform='scale(1)';};
+        el.onclick=function(){_rpRenderStars(n);};
+      })(i,s);
+      cont.appendChild(s);
+    }
+  }
+
+  async function _rpCargarPromedio(pUid){
+    try{
+      var snap=await _fbGet4('calificaciones',pUid,'resumen','datos');
+      var avg=document.getElementById('dc-rp-avg'); if(!avg)return;
+      if(snap.exists()){var d=snap.data();avg.textContent=d.promedio?'⭐ '+d.promedio+' ('+d.total+' opiniones)':'Sé el primero en calificar';}
+      else avg.textContent='Sé el primero en calificar';
+    }catch(e){}
+  }
+
+  async function _rpCargarMiVoto(pUid){
+    try{
+      var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid; if(!myUid)return;
+      var mv=await _fbGet4('calificaciones',pUid,'votos',myUid);
+      if(mv.exists()){
+        var vd=mv.data();
+        _rpSel=vd.rating||0;
+        _rpRenderStars(_rpSel);
+        var com=document.getElementById('dc-rp-com'); if(com)com.value=vd.comentario||'';
+      }
+    }catch(e){}
+  }
+
+  window.dcRatingPopupEnviar=async function(){
+    if(!_rpSel){alert('Selecciona una calificación');return;}
+    var auth=window._fbAuth; var myUid=auth&&auth.currentUser&&auth.currentUser.uid;
+    if(!myUid){alert('Inicia sesión');return;}
+    var com=(document.getElementById('dc-rp-com')||{}).value||'';
+    var btn=document.getElementById('dc-rp-btn');
+    if(btn){btn.disabled=true;btn.textContent='⏳ Guardando...';}
+    try{
+      var miNombre=localStorage.getItem('dcuser')||'Vecino';
+      await _fbSet4('calificaciones',_rpUid,'votos',myUid,{rating:_rpSel,comentario:com,fecha:new Date().toISOString(),vecUid:myUid,nombre:miNombre});
+      var snap=await _fbColSub3('calificaciones',_rpUid,'votos');
+      var tot=0,cnt=0; snap.forEach(function(d){tot+=(d.data().rating||0);cnt++;});
+      var prom=cnt?Math.round((tot/cnt)*10)/10:0;
+      await _fbSet4('calificaciones',_rpUid,'resumen','datos',{promedio:prom,total:cnt});
+      try{await _fbUpd2('usuarios',_rpUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
+      var cont=document.getElementById('dc-rp-content');
+      var vot=document.getElementById('dc-rp-votado');
+      if(cont)cont.style.display='none';
+      if(vot){
+        vot.style.display='block';
+        vot.innerHTML='<div style="text-align:center;padding:12px 0;">'
+          +'<div style="font-size:40px;margin-bottom:10px;">✅</div>'
+          +'<div style="font-size:15px;font-weight:800;color:#111;margin-bottom:4px;">¡Gracias por calificar!</div>'
+          +'<div style="font-size:22px;margin:10px 0;">'+'⭐'.repeat(_rpSel)+'☆'.repeat(5-_rpSel)+'</div>'
+          +'<div style="font-size:12px;color:#9a7020;margin-bottom:16px;">Promedio: ⭐ '+prom+' ('+cnt+' opiniones)</div>'
+          +'<button onclick="window.dcRatingCerrarPopup&&window.dcRatingCerrarPopup()" style="background:#1FC26A;border:none;border-radius:14px;padding:12px 28px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">Cerrar</button>'
+          +'</div>';
+      }
+    }catch(e){
+      if(btn){btn.disabled=false;btn.textContent='Enviar calificación →';}
+      alert('Error: '+e.message);
+    }
+  };
+})();
+</script>
 </body>
 </html>
