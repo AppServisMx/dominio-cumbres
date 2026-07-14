@@ -13192,8 +13192,8 @@ if (typeof window.go !== 'function') {
         ov.style.display='none';
         try{ if(window.cargarMisComprasPlaza) window.cargarMisComprasPlaza(); }catch(e){}
         if(typeof onDone==='function') onDone();
-      },2000);
-    },3000);
+      },1000);
+    },800);
   }
 
   // Punto único usado por el botón activo de Plaza. No se toca el render del modal.
@@ -13538,7 +13538,8 @@ if (typeof window.go !== 'function') {
     document.querySelectorAll('[id^="plaza-prod-det-ov"],#plaza-prod-modal,#plaza-detalle-modal,#plaza-producto-modal,#plaza-modal-producto,#plaza-detalle-producto,[class*="plaza"][class*="modal"]').forEach(function(el){
       el.style.display='none';el.style.visibility='hidden';el.style.pointerEvents='none';el.classList&&el.classList.remove('active','show','open');
     });
-    try{document.body.style.overflow='';document.documentElement.style.overflow='';}catch(e){}
+    try{document.body.style.overflow='';document.body.style.touchAction='';document.documentElement.style.overflow='';}catch(e){}
+    if(document.body.dataset)document.body.dataset.dcModalLocked='';
   }
   function finalFeliz(done){
     if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(done);
@@ -13561,8 +13562,9 @@ if (typeof window.go !== 'function') {
     if(found){found.cantidad=cleanQty(Number(found.cantidad||found.qty||0)+q);found.qty=found.cantidad;}
     else cart.push({id:id,productoId:id,key:key,negocioId:negocio,nombre:p.nombre||p.nombreProducto||'Producto',precio:cleanPrice(p.precio||p.price||0),cantidad:q,qty:q,foto:p.foto||p.fotoProducto||p.fotoPublica||'',categoria:p.categoria||p.categoriaPublica||''});
     save(cart);
+    window.__dcPlazaAddLockV62=false;
     closeDetail();
-    finalFeliz(function(){closeDetail();renderMisCompras();setTimeout(function(){window.__dcPlazaAddLockV62=false;},250);});
+    finalFeliz(function(){closeDetail();renderMisCompras();});
     return false;
   }
 
