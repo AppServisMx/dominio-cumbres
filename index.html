@@ -4771,7 +4771,7 @@
     <div class="admin-cards-grid">
 
       <!-- SOLICITUDES PENDIENTES -->
-      <div class="admin-card highlight" id="card-solicitudes" onclick="goAdminSec('solicitudes')">
+      <div class="admin-card" id="card-solicitudes" onclick="window._dcAdminMarkLast('card-solicitudes');goAdminSec('solicitudes')">
         <div>
           <div class="admin-card-ic" style="background:rgba(245,197,24,.15);">📋</div>
           <div class="admin-card-title">Solicitudes</div>
@@ -4781,7 +4781,7 @@
       </div>
 
       <!-- ADMINISTRACIÓN DE USUARIOS -->
-      <div class="admin-card" id="card-usuarios" onclick="goAdminSec('usuarios')">
+      <div class="admin-card" id="card-usuarios" onclick="window._dcAdminMarkLast('card-usuarios');goAdminSec('usuarios')">
         <div>
           <div class="admin-card-ic" style="background:rgba(139,92,246,.15);">👥</div>
           <div class="admin-card-title">Usuarios</div>
@@ -4790,7 +4790,7 @@
       </div>
 
       <!-- CENTRO DE CONTENIDO -->
-      <div class="admin-card" id="card-contenido" onclick="go('v-cnt-contenido','right')">
+      <div class="admin-card" id="card-contenido" onclick="window._dcAdminMarkLast('card-contenido');go('v-cnt-contenido','right')">
         <div>
           <div class="admin-card-ic" style="background:rgba(26,122,181,.2);">🌐</div>
           <div class="admin-card-title">Contenido</div>
@@ -4799,7 +4799,7 @@
       </div>
 
       <!-- MONETIZACIÓN -->
-      <div class="admin-card" id="card-monetizacion" onclick="goAdminSec('monetizacion')">
+      <div class="admin-card" id="card-monetizacion" onclick="window._dcAdminMarkLast('card-monetizacion');goAdminSec('monetizacion')">
         <div>
           <div class="admin-card-ic" style="background:rgba(31,194,106,.2);">💰</div>
           <div class="admin-card-title">Monetización</div>
@@ -4809,7 +4809,7 @@
       </div>
 
       <!-- ANALYTICS -->
-      <div class="admin-card" id="card-analytics" onclick="goAdminSec('analytics')">
+      <div class="admin-card" id="card-analytics" onclick="window._dcAdminMarkLast('card-analytics');goAdminSec('analytics')">
         <div>
           <div class="admin-card-ic" style="background:rgba(26,122,181,.2);">📊</div>
           <div class="admin-card-title">Analítics</div>
@@ -4818,7 +4818,7 @@
       </div>
 
       <!-- PUBLICACIONES -->
-      <div class="admin-card" id="card-publicaciones" onclick="goAdminSec('publicaciones')">
+      <div class="admin-card" id="card-publicaciones" onclick="window._dcAdminMarkLast('card-publicaciones');goAdminSec('publicaciones')">
         <div>
           <div class="admin-card-ic" style="background:rgba(88,101,242,.2);">📰</div>
           <div class="admin-card-title">Publicaciones</div>
@@ -4828,7 +4828,7 @@
       </div>
 
       <!-- ALERTAS -->
-      <div class="admin-card" id="card-alertas" onclick="goAdminSec('alertas')">
+      <div class="admin-card" id="card-alertas" onclick="window._dcAdminMarkLast('card-alertas');goAdminSec('alertas')">
         <div>
           <div class="admin-card-ic" style="background:rgba(214,58,42,.2);">🚨</div>
           <div class="admin-card-title">Alertas</div>
@@ -4838,7 +4838,7 @@
       </div>
 
       <!-- CONFIGURACIÓN -->
-      <div class="admin-card" id="card-config" onclick="goAdminSec('config');setTimeout(function(){window.adminImpulsaConfigCargar&&window.adminImpulsaConfigCargar();},250)">
+      <div class="admin-card" id="card-config" onclick="window._dcAdminMarkLast('card-config');goAdminSec('config');setTimeout(function(){window.adminImpulsaConfigCargar&&window.adminImpulsaConfigCargar();},250)">
         <div>
           <div class="admin-card-ic" style="background:rgba(245,197,24,.15);">⚙️</div>
           <div class="admin-card-title">Configuración</div>
@@ -4847,7 +4847,7 @@
       </div>
 
       <!-- PLANES IMPULSA -->
-      <div class="admin-card" id="card-planes" onclick="go('v-admin-planes','right');setTimeout(window.adminPlanesCargar,200)">
+      <div class="admin-card" id="card-planes" onclick="window._dcAdminMarkLast('card-planes');go('v-admin-planes','right');setTimeout(window.adminPlanesCargar,200)">
         <div>
           <div class="admin-card-ic" style="background:rgba(245,197,24,.15);">⭐</div>
           <div class="admin-card-title">Plan Impulsa</div>
@@ -4857,7 +4857,7 @@
       </div>
 
       <!-- CAMPAÑAS -->
-      <div class="admin-card" id="card-campanas" onclick="go('v-admin-campanas','right');setTimeout(window.adminCampanasCargar,200)">
+      <div class="admin-card" id="card-campanas" onclick="window._dcAdminMarkLast('card-campanas');go('v-admin-campanas','right');setTimeout(window.adminCampanasCargar,200)">
         <div>
           <div class="admin-card-ic" style="background:rgba(46,134,193,.15);">📢</div>
           <div class="admin-card-title">Campañas</div>
@@ -6053,14 +6053,36 @@ select.cnt-form-input option{background:#1a1f1a;color:#fff;}
       delayOnTouchOnly: true,
       ghostClass: 'admin-card-drag-ghost',
       chosenClass: 'admin-card-drag-chosen',
-      onEnd: function() { saveOrder(grid); try { window._dcDirtyV = null; } catch(e) {} }
+      onEnd: function() { saveOrder(grid); try { window._dcDirtyV = null; } catch(e) {} },
+      onStart: function() { try { window._dcDirtyV = null; } catch(e) {} }
     });
   }
 
+  // Resaltar última tarjeta visitada
+  var LAST_KEY = 'dc_admin_last_card';
+  window._dcAdminMarkLast = function(cardId) {
+    localStorage.setItem(LAST_KEY, cardId);
+    var grid = document.querySelector('.admin-cards-grid');
+    if (!grid) return;
+    grid.querySelectorAll('.admin-card').forEach(function(el) { el.classList.remove('highlight'); });
+    var el = document.getElementById(cardId);
+    if (el) el.classList.add('highlight');
+  };
+  function restoreLastCard() {
+    var last = localStorage.getItem(LAST_KEY);
+    if (!last) return;
+    var grid = document.querySelector('.admin-cards-grid');
+    if (!grid) return;
+    grid.querySelectorAll('.admin-card').forEach(function(el) { el.classList.remove('highlight'); });
+    var el = document.getElementById(last);
+    if (el) el.classList.add('highlight');
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAdminDrag);
+    document.addEventListener('DOMContentLoaded', function() { initAdminDrag(); restoreLastCard(); });
   } else {
     initAdminDrag();
+    restoreLastCard();
   }
 })();
 </script>
