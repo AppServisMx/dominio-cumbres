@@ -14455,6 +14455,28 @@ window.cargarMembresia=async function(){
     setTimeout(function(){ov.style.display='none';ov.style.pointerEvents='';},320);
   };
 
+  if(!window.__dcRatingGoWrap){
+    window.__dcRatingGoWrap=true;
+    var _origGoR=window.go;
+    window.go=function(view,dir){
+      try{
+        var rp=document.getElementById('dc-rp-overlay');
+        if(rp&&rp.style.display==='flex'){
+          rp.style.pointerEvents='none';
+          var rs=document.getElementById('dc-rp-sheet'); if(rs)rs.style.transform='translateY(100%)';
+          setTimeout(function(){rp.style.display='none';rp.style.pointerEvents='';},320);
+        }
+        var cp=document.getElementById('dc-com-overlay');
+        if(cp&&cp.style.display==='flex'){
+          cp.style.pointerEvents='none';
+          var cs=document.getElementById('dc-com-sheet'); if(cs)cs.style.transform='translateY(100%)';
+          setTimeout(function(){cp.style.display='none';cp.style.pointerEvents='';},320);
+        }
+      }catch(e){}
+      return (typeof _origGoR==='function')?_origGoR.apply(this,arguments):undefined;
+    };
+  }
+
 })();
 </script>
 </body>
