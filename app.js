@@ -3377,7 +3377,7 @@ window.renderHomeM2 = function() {
         + modulo('💬','#e8f5e1','Mis Chats','Mensajes activos',
             "window.marcarModuloVisto('chats');go('v-mis-chats','right');setTimeout(cargarMisChats,200)",
             'chats')
-        + modulo('🔧','#FFF8DC','Mi Servicio','Editar perfil',"go('v-mipanel','right')")
+        + modulo('👁','#E8F5EE','Como me ve','Mi perfil público',"go('v-prov-cmv','right');setTimeout(window.vprovCmvCargar,200)")
         + modulo('⭐','#FFF8DC','Membresía','Estado y plan',"go('v-membresia','right');setTimeout(window.cargarMembresia,200)")
         + '</div>';
 
