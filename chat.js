@@ -1865,3 +1865,35 @@ function showAdminTab(i,btn){
     errEl.style.display = 'none';
     go('v-home', 'right');
   };
+
+// ══════════════════════════════════════════════════════════════
+// EXTRAÍDO DE firebase.js — cargarRepartidores
+// ══════════════════════════════════════════════════════════════
+  // ===== CARGAR REPARTIDORES (Ride) con acceso directo a window._fbDb =====
+  window.cargarRepartidores = async function() {
+    const demoChips = document.getElementById('ride-demo-chips');
+    const container = document.querySelector('#v-ride .rider-chips-container');
+    try {
+      const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+      const snap = await getDocs(query(collection(window._fbDb,'usuarios'), where('tipo','==','repartidor')));
+      const docs = [];
+      snap.forEach(d => { const r=d.data(); if(r.estado==='activo') docs.push({_id:d.id,...r}); });
+      if(docs.length === 0) {
+        // No hay reales — mostrar demo
+        if(demoChips) demoChips.style.display='flex';
+        return;
+      }
+      // Hay reales — ocultar demo y mostrar reales
+      if(demoChips) demoChips.style.display='none';
+      // Crear chips reales
+      docs.forEach((r,i) => {
+        const chip = document.createElement('div');
+        chip.className = 'rider-chip' + (i===0?' on':'');
+        chip.innerHTML = '<div class="si11">🏍️</div><div class="si49">'+window.dcEscHTML(r.nombre||'—')+'</div><div class="si50">~'+(3+i*2)+' min</div><div class="si63">★ Nuevo</div>';
+        chip.onclick = () => selRider(chip, 55+i*5, r.nombre||'Repartidor', '~'+(3+i*2)+' min');
+        if(container) container.appendChild(chip);
+      });
+    } catch(e) {
+      if(demoChips) demoChips.style.display='flex';
+    }
+  };

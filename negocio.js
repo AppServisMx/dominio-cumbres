@@ -405,3 +405,192 @@ window.vnegGuardarProd = async function(){
       }
     }
 };
+
+// ══════════════════════════════════════════════════════════════
+// EXTRAÍDO DE firebase.js — promos, bizStats, ventas negocio
+// ══════════════════════════════════════════════════════════════
+  window.getPromoActivas = function() {
+    try {
+      var all = JSON.parse(localStorage.getItem('dcPromoActivas') || '[]');
+      var now = Date.now();
+      // Solo promos con estado activa y no vencidas
+      return all.filter(function(p) {
+        return p.estado === 'activa' && p.expira > now;
+      });
+    } catch(e) { return []; }
+  };
+
+  window.crearPromoDraft = function(data) {
+    localStorage.setItem('dcPromoDraft', JSON.stringify(data));
+  };
+
+  window.activarPromo = function() {
+    try {
+      var draft = JSON.parse(localStorage.getItem('dcPromoDraft') || 'null');
+      if (!draft) return false;
+      var durMs = { '24h': 86400000, '3d': 259200000, '7d': 604800000 };
+      var ms = durMs[draft.duracion] || 86400000;
+      draft.id = 'p_' + Date.now();
+      draft.estado = 'pendiente_pago'; // NO activa hasta pago o admin
+      draft.creada = Date.now();
+      draft.expira = Date.now() + ms;
+      var all = JSON.parse(localStorage.getItem('dcPromoActivas') || '[]');
+      all.unshift(draft);
+      localStorage.setItem('dcPromoActivas', JSON.stringify(all));
+      localStorage.removeItem('dcPromoDraft');
+      localStorage.removeItem('dcPromoCarrito');
+      return true;
+    } catch(e) { return false; }
+  };
+
+  // Inyecta slides de promos activas al inicio del carrusel del home
+  window.renderPromoEnCarrusel = function() {
+    var track = document.getElementById('home-ads-track');
+    var dots  = document.getElementById('home-ads-dots');
+    if (!track) return;
+    // Quitar slides de promo anteriores
+    Array.from(track.querySelectorAll('[data-promo]')).forEach(function(el){ el.remove(); });
+    var promos = window.getPromoActivas();
+    if (!promos.length) return;
+    // Insertar al inicio (máximo 1 promo visible)
+    var p = promos[0];
+    var TIPOS = {
+      destacado: { bg:'linear-gradient(120deg,#1a3a2a,#2d6e3a)', ic:'⭐' },
+      promocion:  { bg:'linear-gradient(120deg,#2a1a3a,#5a2a80)', ic:'🏷️' },
+      oferta:     { bg:'linear-gradient(120deg,#3a1a1a,#8a2020)', ic:'🔥' },
+      impulso:    { bg:'linear-gradient(120deg,#1a2a3a,#1a5a8a)', ic:'🚀' },
+    };
+    var t = TIPOS[p.tipo] || TIPOS.promocion;
+    var slide = document.createElement('div');
+    slide.setAttribute('data-promo', p.id);
+    slide.setAttribute('data-ad-category', 'promo');
+    slide.style.cssText = 'min-width:100%;height:95px;border-radius:16px;overflow:hidden;position:relative;flex-shrink:0;background:'+t.bg+';';
+    slide.innerHTML = '<div style="position:absolute;inset:0;padding:14px 16px;display:flex;align-items:center;gap:14px;">'
+      + '<div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">' + t.ic + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:15px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:3px;">' + (p.titulo||'Promoción') + '</div>'
+      + '<div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.3;">' + (p.subtitulo||'') + '</div>'
+      + '</div></div>'
+      + '<div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:rgba(255,255,255,.4);font-weight:500;letter-spacing:.3px;">Patrocinado</div>';
+    track.insertBefore(slide, track.firstChild);
+    // Añadir dot extra si hace falta
+    if (dots && dots.children.length < track.children.length) {
+      var newDot = document.createElement('span');
+      newDot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:#d0d0d0;display:inline-block;transition:background .3s;';
+      dots.appendChild(newDot);
+    }
+  };
+
+  // Navegar a crear promoción
+  window.irACrearPromo = function() {
+    go('v-promo-crear', 'right');
+  };
+  // ── FIN M2-E helpers ─────────────────────────────────────────
+
+  // ── M2-F: STATS LOADERS ──────────────────────────────────────
+  window._cargarBizStats = function() {
+    var s = {}; try { s = JSON.parse(localStorage.getItem('dcBizStats')||'{}'); } catch(e) {}
+    var set = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    set('vbn-visitas', s.visitas||0);
+    set('vbn-clics',   s.clics||0);
+    // Promos activas
+    var promos = 0; try { promos = JSON.parse(localStorage.getItem('dcPromoActivas')||'[]').filter(function(p){ return p.estado==='activa'; }).length; } catch(e){}
+    set('vbn-promos', promos);
+    // Nombre del negocio
+    var nom = localStorage.getItem('dcuser')||'Mi Negocio';
+    var sub = document.getElementById('vbn-subtitle');
+    if(sub) sub.textContent = s.categoria || 'Plaza Online';
+  };
+
+  // estilo tarjetas home NEGOCIO (LED morado on/off)
+  if (!document.getElementById('vnhome-card-style')) {
+    var _vnc = document.createElement('style'); _vnc.id = 'vnhome-card-style';
+    _vnc.textContent = '.vnhome-card{border:1px solid #ececec;transition:box-shadow .25s,border-color .25s;}.vnhome-card.led-on{border:1.5px solid #7B3FA0;box-shadow:0 0 10px rgba(123,63,160,.45),inset 0 0 6px rgba(123,63,160,.12);}';
+    document.head.appendChild(_vnc);
+  }
+  // estilo tarjetas home restaurante (LED on/off)
+  if (!document.getElementById('rhome-card-style')) {
+    var _rc = document.createElement('style'); _rc.id = 'rhome-card-style';
+    _rc.textContent = '.rhome-card{border:1px solid #ececec;transition:box-shadow .25s,border-color .25s;}.rhome-card.led-on{border:1.5px solid #D63A2A;box-shadow:0 0 10px rgba(214,58,42,.45),inset 0 0 6px rgba(214,58,42,.12);}.rhome-card.led-on #rhome-poraceptar,.rhome-card.led-on #rhome-enproceso{color:#D63A2A;}.rhome-card:not(.led-on) .rhome-num{color:#bbb;}';
+    document.head.appendChild(_rc);
+  }
+  // estilo de pestañas Top (inyectado una vez)
+  if (!document.getElementById('vrv-top-style')) {
+    var _st = document.createElement('style'); _st.id = 'vrv-top-style';
+    _st.textContent = '.vrv-top-tab{background:#fff;color:#999;box-shadow:0 1px 3px rgba(0,0,0,.05);}.vrv-top-tab.on{background:#D63A2A;color:#fff;}';
+    document.head.appendChild(_st);
+  }
+  // ── Ventas por mes del Centro Operativo (vr-ventas) ──
+  window._vrvMesOffset = 0;
+  window._vrvMesCambiar = function(dir){
+    var n = window._vrvMesOffset + dir; if (n > 0) n = 0;
+    window._vrvMesOffset = n; window._vrvCalc && window._vrvCalc();
+  };
+  window._vrvCalc = async function(){
+    var user = window._fbAuth && window._fbAuth.currentUser; var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var hoy = new Date();
+    var ref = new Date(hoy.getFullYear(), hoy.getMonth() + window._vrvMesOffset, 1);
+    var ini = ref.getTime(); var fin = new Date(ref.getFullYear(), ref.getMonth()+1, 1).getTime();
+    setTxt('vrv-mes-label', MESES[ref.getMonth()] + ' ' + ref.getFullYear());
+    var bn = document.getElementById('vrv-mes-next'); if (bn) bn.style.opacity = window._vrvMesOffset >= 0 ? '.35' : '1';
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var nPed=0, venta=0, acum=0; var prod={};
+      snap.forEach(function(d){
+        var p = d.data(); if (p.estado !== 'entregado') return;
+        acum += (p.total||0); var fch = p.fecha||0;
+        if (fch >= ini && fch < fin) {
+          nPed++; venta += (p.total||0);
+          (p.items||[]).forEach(function(it){
+            var key = it.nombre || 'Producto';
+            if (!prod[key]) prod[key] = { nombre:key, cant:0, dinero:0 };
+            var c = it.cantidad||1;
+            prod[key].cant += c;
+            prod[key].dinero += (it.precio||0) * c;
+          });
+        }
+      });
+      setTxt('vrv-pedidos', nPed); setTxt('vrv-ventas', '$'+venta); setTxt('vrv-acumulado', '$'+acum);
+      window._vrvProd = Object.keys(prod).map(function(k){ return prod[k]; });
+      window._vrvRenderTop && window._vrvRenderTop();
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      setTxt('vrv-rating', cr>0 ? (tr/cr).toFixed(1)+'\u2605' : '—');
+    } catch(e) { }
+  };
+
+  // Top 3 productos: pestañas dinero/cantidad + render
+  window._vrvTopModo = 'dinero';
+  window._vrvProd = [];
+  window._vrvTopTab = function(modo, btn){
+    window._vrvTopModo = modo;
+    document.querySelectorAll('.vrv-top-tab').forEach(function(b){ b.classList.remove('on'); });
+    if (btn) btn.classList.add('on');
+    window._vrvRenderTop && window._vrvRenderTop();
+  };
+  window._vrvRenderTop = function(){
+    var cont = document.getElementById('vrv-top-lista'); if (!cont) return;
+    var modo = window._vrvTopModo || 'dinero';
+    var arr = (window._vrvProd||[]).slice().sort(function(a,b){
+      return modo==='dinero' ? (b.dinero-a.dinero) : (b.cant-a.cant);
+    }).slice(0,3);
+    if (!arr.length) {
+      cont.innerHTML = '<div style="background:#fff;border-radius:12px;padding:20px;text-align:center;color:#aaa;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);">Sin ventas este mes todav\u00eda</div>';
+      return;
+    }
+    var medallas = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
+    cont.innerHTML = arr.map(function(p,i){
+      var dato = modo==='dinero' ? ('$'+p.dinero) : (p.cant+' u');
+      var sub  = modo==='dinero' ? (p.cant+' unidades') : ('$'+p.dinero);
+      return '<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.05);">'
+        + '<span style="font-size:20px;">'+medallas[i]+'</span>'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:#2a2a2a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.nombre+'</div><div style="font-size:10px;color:#aaa;">'+sub+'</div></div>'
+        + '<div style="font-size:15px;font-weight:800;color:#D63A2A;">'+dato+'</div></div>';
+    }).join('');
+  };
+

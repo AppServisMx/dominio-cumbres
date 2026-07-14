@@ -3218,3 +3218,101 @@ if (typeof window.go !== 'function') {
   window.dcRest_init();
 };
 
+
+// ══════════════════════════════════════════════════════════════
+// EXTRAÍDO DE firebase.js — métricas restaurante
+// ══════════════════════════════════════════════════════════════
+  // offset 0 = mes actual, -1 = mes anterior, etc.
+  window._vmrMesOffset = 0;
+  window._cargarRestStats = function() {
+    window._vmrMesOffset = 0;
+    window._calcMetricasMes && window._calcMetricasMes();
+  };
+  window._vmrMesCambiar = function(dir) {
+    var nuevo = window._vmrMesOffset + dir;
+    if (nuevo > 0) nuevo = 0;               // no hay futuro
+    window._vmrMesOffset = nuevo;
+    window._calcMetricasMes && window._calcMetricasMes();
+  };
+  // Métricas del MES seleccionado + acumulado total. Todo Firestore real.
+  window._calcMetricasMes = async function() {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    var MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var hoy = new Date();
+    var ref = new Date(hoy.getFullYear(), hoy.getMonth() + window._vmrMesOffset, 1);
+    var ini = ref.getTime();
+    var fin = new Date(ref.getFullYear(), ref.getMonth() + 1, 1).getTime();
+    setTxt('vmr-mes-label', MESES[ref.getMonth()] + ' ' + ref.getFullYear());
+    var btnNext = document.getElementById('vmr-mes-next');
+    if (btnNext) btnNext.style.opacity = window._vmrMesOffset >= 0 ? '.35' : '1';
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var nPed=0, venta=0, acum=0;
+      snap.forEach(function(d){
+        var p = d.data();
+        if (p.estado !== 'entregado') return;
+        acum += (p.total||0);                          // acumulado de siempre
+        var fch = p.fecha||0;
+        if (fch >= ini && fch < fin) { nPed++; venta += (p.total||0); } // del mes
+      });
+      setTxt('vmr-pedidos', nPed);
+      setTxt('vmr-ventas', '$'+venta);
+      setTxt('vmr-acumulado', '$'+acum);
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      setTxt('vmr-rating', cr>0 ? (tr/cr).toFixed(1)+'\u2605' : '—');
+    } catch(e) { }
+  };
+
+  // Métricas reales del restaurante desde Firestore. modo: 'hoy' | 'acumulado'
+  window._calcMetricasRest = async function(modo) {
+    var user = window._fbAuth && window._fbAuth.currentUser;
+    var _db = window._fbDb;
+    if (!user || !_db) return;
+    var uid = user.uid;
+    var setTxt = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    try {
+      var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+      var snap = await _fb.getDocs(_fb.query(_fb.collection(_db,'pedidos'), _fb.where('restauranteId','==',uid)));
+      var hoy0 = new Date(); hoy0.setHours(0,0,0,0); var hoyMs = hoy0.getTime();
+      var nPed = 0, venta = 0;
+      snap.forEach(function(d){
+        var p = d.data();
+        if (p.estado !== 'entregado') return;            // solo entregados cuentan
+        if (modo === 'hoy' && (p.fecha||0) < hoyMs) return; // solo de hoy
+        nPed++; venta += (p.total||0);
+      });
+      // Rating: promedio acumulado real (mismo en ambos modos)
+      var vs = await _fb.getDocs(_fb.query(_fb.collection(_db,'valoraciones'), _fb.where('restauranteId','==',uid)));
+      var tr=0, cr=0; vs.forEach(function(d){ var v=d.data(); if(v.ratingRestaurante){ tr+=v.ratingRestaurante; cr++; } });
+      var rating = cr>0 ? (tr/cr).toFixed(1) : '—';
+      if (modo === 'hoy') {
+        setTxt('rhome-pedidos', nPed);  // entregados hoy (lo ya vendido)
+        // Por aceptar y En proceso: mismos grupos que Mis Pedidos (coinciden exacto)
+        var GP_NUEVO = ['nuevo'];
+        var GP_PROC  = ['aceptado','preparando','listo','buscando_repartidor','repartidor_asignado','en_camino','recogido'];
+        var nAcep=0, nProc=0;
+        snap.forEach(function(d){
+          var e = (d.data().estado)||'';
+          if (GP_NUEVO.indexOf(e)!==-1) nAcep++;
+          else if (GP_PROC.indexOf(e)!==-1) nProc++;
+        });
+        setTxt('rhome-poraceptar', nAcep);
+        setTxt('rhome-enproceso', nProc);
+        var ledSet = function(cardId, on){ var c=document.getElementById(cardId); if(c){ c.classList.toggle('led-on', !!on); } };
+        ledSet('card-poraceptar', nAcep>0);
+        ledSet('card-pedidoshoy', nPed>0);
+        ledSet('card-enproceso', nProc>0);
+      } else {
+        setTxt('vmr-pedidos', nPed);
+        setTxt('vmr-ventas', '$'+venta);
+        setTxt('vmr-rating', rating==='—'?'—':rating+'\u2605');
+      }
+    } catch(e) { }
+  };
+  // ── FIN M2-F helpers ─────────────────────────────────────────
