@@ -1071,7 +1071,7 @@ function _postHooks(id){
                            'v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz',
                            'v-reg-proveedor','v-reg-restaurante','v-reg-negocio','v-reg-transporte'];
         var _tipoUser = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
-        if (_fabOcultar.indexOf(id) !== -1 || _tipoUser === 'vecino') {
+        if (_fabOcultar.indexOf(id) !== -1 || _tipoUser === 'vecino' || _tipoUser === 'admin') {
           fab.style.opacity = '0';
           fab.style.pointerEvents = 'none';
         } else if (fab.classList.contains('visible')) {
