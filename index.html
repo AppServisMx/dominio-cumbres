@@ -1335,7 +1335,8 @@
   <!-- ── BOTTOM NAV ── -->
   <div class="nav">
     <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
-    <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">📦</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
+    <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
+    <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
     <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
@@ -1848,21 +1849,47 @@
           <input style="background:none;border:none;outline:none;font-size:12px;color:#fff;font-family:'Inter',sans-serif;flex:1;" placeholder="Buscar plomero, jardinero...">
         </div>
       </div>
-      <div style="padding:8px 14px 4px;background:linear-gradient(135deg,#0A4220,#062a14);display:flex;flex-direction:column;gap:6px;">
-        <button onclick="window.irASolicitudes&&window.irASolicitudes()" id="btn-solicitud-rol" style="width:100%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;text-align:left;display:flex;align-items:center;gap:8px;">&#128203; <span id="btn-solicitud-label">Publicar solicitud de servicio</span><span style="margin-left:auto;opacity:.6;">&rarr;</span></button>
-        <button id="btn-mis-solicitudes-vecino" onclick="go('v-mis-reportes','right');setTimeout(function(){window.cargarMisReportes&&window.cargarMisReportes();},300)" style="width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;text-align:left;display:flex;align-items:center;gap:8px;">📋 <span>Mis solicitudes de servicio</span><span style="margin-left:auto;opacity:.6;">&rarr;</span></button>
+      <div style="padding:10px 14px 8px;background:linear-gradient(135deg,#0A4220,#062a14);display:flex;gap:8px;">
+        <button onclick="var b=this;b.style.background='#1fc26a';setTimeout(function(){b.style.background='rgba(255,255,255,.15)';},280);window.irASolicitudes&&window.irASolicitudes();" id="btn-solicitud-rol" style="flex:1;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:14px;padding:13px 10px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:5px;transition:background .2s;">
+          <span style="font-size:22px;">📝</span>
+          <span id="btn-solicitud-label" style="line-height:1.2;text-align:center;">Publicar solicitud</span>
+        </button>
+        <button id="btn-mis-solicitudes-vecino" onclick="var b=this;b.style.background='#1fc26a';setTimeout(function(){b.style.background='rgba(255,255,255,.15)';},280);go('v-mis-reportes','right');setTimeout(function(){window.cargarMisReportes&&window.cargarMisReportes();},300);" style="flex:1;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:14px;padding:13px 10px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:5px;transition:background .2s;">
+          <span style="font-size:22px;">📋</span>
+          <span style="line-height:1.2;text-align:center;">Mis solicitudes</span>
+        </button>
       </div>
-      <div class="cat-grid" id="cat-grid-servicios">
-        <div class="cat-item" data-oficio="todos" onclick="setCatS(this)"><div class="si25 cat-ic on">🔧</div><div class="cat-nm on">Todos</div></div>
+      <div style="padding:0 14px 10px;">
+        <div style="position:relative;">
+          <select id="cat-sel-servicios" onchange="cargarProveedores(this.value)" style="width:100%;background:#fff;border:1.5px solid #1fc26a;border-radius:14px;padding:13px 44px 13px 16px;font-size:14px;font-weight:700;color:#111;font-family:'Inter',sans-serif;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;box-shadow:0 2px 8px rgba(31,194,106,.12);">
+            <option value="todos">🔧 Todos los servicios</option>
+            <option value="plomero">💧 Plomero</option>
+            <option value="electricista">⚡ Eléctrico</option>
+            <option value="jardinero">🌿 Jardín</option>
+            <option value="limpieza">🧹 Limpieza</option>
+            <option value="pintura">🎨 Pintura</option>
+            <option value="ac">❄️ A/C</option>
+            <option value="cerrajero">🔒 Cerrajero</option>
+            <option value="mascotas">🐾 Mascotas</option>
+            <option value="tecnologia">🖥️ Tecnología</option>
+            <option value="belleza">💆 Belleza</option>
+            <option value="albanileria">🧱 Albañilería</option>
+            <option value="otro">🔧 Otro</option>
+          </select>
+          <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);pointer-events:none;width:28px;height:28px;background:#1fc26a;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1l5 5 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
       </div>
       <div class="scroll" style="padding:10px 0;" id="servicios-lista">
         <div class="si24">Cargando proveedores... ⏳</div>
       </div>
       <div class="nav">
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
-        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">📦</div><div class="ni-lb" style="color:var(--blue);">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="ni-ic">🔔</div><div class="ni-lb">Alertas</div></div>
-        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div>
+        <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
+        <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
+        <div class="ni" onclick="go('v-notificaciones','right');setTimeout(window.renderNotificaciones,300);"><div class="notif-w"><div class="ni-ic">🔔</div><span class="notif-dot" style="display:none;"></span></div><div class="ni-lb">Alertas</div></div>
+        <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
 <div class="view go-right" id="v-serv-det">
@@ -13924,8 +13951,9 @@ window.vprovCmvCargar=async function(){
     var ofs=[d.oficio1,d.oficio2,d.oficio3].filter(Boolean).join(' · ')||d.categoria||'—';
     var oEl=document.getElementById('vprov-cmv-oficios'); if(oEl)oEl.textContent=ofs;
     if(d.fotoUrl){
+      window._cmvFotoB64=d.fotoUrl;
       var pv=document.getElementById('vprov-cmv-foto-prev');
-      if(pv){pv.dataset.src=d.fotoUrl;pv.innerHTML='<img src="'+d.fotoUrl+'" style="width:100%;height:100%;object-fit:cover;">';}
+      if(pv){pv.innerHTML='<img src="'+d.fotoUrl+'" style="width:100%;height:100%;object-fit:cover;">';}
     }
     window.vprovCmvRenderPreview();
   }catch(e){console.error('cmv-cargar',e);}
@@ -13939,7 +13967,9 @@ window.vprovCmvGuardar=async function(){
   var btn=document.getElementById('vprov-cmv-btn-guardar');
   if(btn){btn.disabled=true;btn.textContent='&#x23F3; Guardando...';}
   try{
-    await _fbMerge2('usuarios',uid,{nombre:nm,descripcion:ds});
+    var datos={nombre:nm,descripcion:ds};
+    if(window._cmvFotoB64) datos.fotoUrl=window._cmvFotoB64;
+    await _fbMerge2('usuarios',uid,datos);
     if(btn){btn.disabled=false;btn.textContent='Guardar cambios';}
     window.vprovCmvRenderPreview();
     _feliz('&#xA1;Perfil actualizado!');

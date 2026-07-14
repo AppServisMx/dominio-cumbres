@@ -251,23 +251,12 @@
       const docs = [];
       snap.forEach(d => {
         const p = d.data();
-        if(p.estado === 'activo') docs.push({id: d.id, ...p});
+        if(['activo','aprobado','aprobado_pendiente_pago'].indexOf(p.estado) !== -1) docs.push({id: d.id, ...p});
       });
       const filtro = (categoria || 'todos').toLowerCase();
-      // Reconstruir cat-grid desde catálogo oficial
-      const grid = document.getElementById('cat-grid-servicios');
-      if(grid) {
-        let gh = '<div class="cat-item" data-oficio="todos" onclick="setCatS(this)">'
-          +'<div class="si25 cat-ic'+(filtro==='todos'?' on':'')+'">🔧</div>'
-          +'<div class="cat-nm'+(filtro==='todos'?' on':'')+'">Todos</div></div>';
-        _DC_OFICIOS_CATALOGO.forEach(function(o){
-          const on = filtro===o.key;
-          gh += '<div class="cat-item" data-oficio="'+o.key+'" onclick="setCatS(this)">'
-            +'<div class="cat-ic'+(on?' on':'')+'" style="background:'+(on?'var(--green-lt)':'#f5f5f5')+';">'+o.ic+'</div>'
-            +'<div class="cat-nm'+(on?' on':'')+'">'+o.label+'</div></div>';
-        });
-        grid.innerHTML = gh;
-      }
+      // Actualizar el select desplegable
+      const sel = document.getElementById('cat-sel-servicios');
+      if(sel) sel.value = filtro;
       const visibles = filtro === 'todos' ? docs : docs.filter(p => {
         return [p.oficio1, p.oficio2, p.oficio3, p.categoria]
           .some(o => (o||'').toLowerCase() === filtro);
