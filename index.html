@@ -14247,7 +14247,8 @@ window.cargarMembresia=async function(){
     var sh=document.getElementById('dc-rp-sheet'), ov=document.getElementById('dc-rp-overlay');
     if(!sh||!ov)return;
     sh.style.transform='translateY(100%)';
-    setTimeout(function(){ov.style.display='none';},320);
+    ov.style.pointerEvents='none';
+    setTimeout(function(){ov.style.display='none';ov.style.pointerEvents='';},320);
   };
 
   function _rpStarsHtml(sel,interactive){
@@ -14450,7 +14451,8 @@ window.cargarMembresia=async function(){
     var sh=document.getElementById('dc-com-sheet'), ov=document.getElementById('dc-com-overlay');
     if(!sh||!ov)return;
     sh.style.transform='translateY(100%)';
-    setTimeout(function(){ov.style.display='none';},320);
+    ov.style.pointerEvents='none';
+    setTimeout(function(){ov.style.display='none';ov.style.pointerEvents='';},320);
   };
 
 })();
