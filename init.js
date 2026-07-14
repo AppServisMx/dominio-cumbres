@@ -1,4 +1,4 @@
-  window.VERSION_APP = "V63-ETAPA3-RATING-CMV-MEMBRESIA-20260624";
+  window.VERSION_APP = "V68-CATALOGO-NAVCORR-20260624";
 
   // ============ CHAT CON FIREBASE ============
   window._chatUnsubscribe = null;

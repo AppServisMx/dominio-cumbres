@@ -222,6 +222,22 @@
   const _vsEl = document.getElementById('v-servicios');
   if(_vsEl) _obsServicios.observe(_vsEl, { attributeFilter: ['class'] });
 
+  // ===== CATÁLOGO OFICIAL DE OFICIOS =====
+  const _DC_OFICIOS_CATALOGO = [
+    {key:'plomero',     label:'Plomero',     ic:'💧'},
+    {key:'electricista',label:'Eléctrico',   ic:'⚡'},
+    {key:'jardinero',   label:'Jardín',      ic:'🌿'},
+    {key:'limpieza',    label:'Limpieza',    ic:'🧹'},
+    {key:'pintura',     label:'Pintura',     ic:'🎨'},
+    {key:'ac',          label:'A/C',         ic:'❄️'},
+    {key:'cerrajero',   label:'Cerrajero',   ic:'🔒'},
+    {key:'mascotas',    label:'Mascotas',    ic:'🐾'},
+    {key:'tecnologia',  label:'Tecnología',  ic:'🖥️'},
+    {key:'belleza',     label:'Belleza',     ic:'💆'},
+    {key:'albanileria', label:'Albañilería', ic:'🧱'},
+    {key:'otro',        label:'Otro',        ic:'🔧'},
+  ];
+
   // ===== REDEFINIR cargarProveedores con acceso directo a db =====
   // (sobreescribe la versión en el script no-module que no puede acceder a db)
   window.cargarProveedores = async function(categoria) {
@@ -237,18 +253,42 @@
         const p = d.data();
         if(p.estado === 'activo') docs.push({id: d.id, ...p});
       });
-      if(docs.length === 0) {
-        lista.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:32px;margin-bottom:10px;">🔧</div><div class="si33">Próximamente</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Los primeros proveedores se están registrando</div></div>';
+      const filtro = (categoria || 'todos').toLowerCase();
+      // Reconstruir cat-grid desde catálogo oficial
+      const grid = document.getElementById('cat-grid-servicios');
+      if(grid) {
+        let gh = '<div class="cat-item" data-oficio="todos" onclick="setCatS(this)">'
+          +'<div class="si25 cat-ic'+(filtro==='todos'?' on':'')+'">🔧</div>'
+          +'<div class="cat-nm'+(filtro==='todos'?' on':'')+'">Todos</div></div>';
+        _DC_OFICIOS_CATALOGO.forEach(function(o){
+          const on = filtro===o.key;
+          gh += '<div class="cat-item" data-oficio="'+o.key+'" onclick="setCatS(this)">'
+            +'<div class="cat-ic'+(on?' on':'')+'" style="background:'+(on?'var(--green-lt)':'#f5f5f5')+';">'+o.ic+'</div>'
+            +'<div class="cat-nm'+(on?' on':'')+'">'+o.label+'</div></div>';
+        });
+        grid.innerHTML = gh;
+      }
+      const visibles = filtro === 'todos' ? docs : docs.filter(p => {
+        return [p.oficio1, p.oficio2, p.oficio3, p.categoria]
+          .some(o => (o||'').toLowerCase() === filtro);
+      });
+      if(visibles.length === 0) {
+        lista.innerHTML = '<div style="text-align:center;padding:30px;"><div style="font-size:32px;margin-bottom:10px;">🔧</div><div class="si33">'+(filtro==='todos'?'Próximamente':'Sin resultados')+'</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">'+(filtro==='todos'?'Los primeros proveedores se están registrando':'No hay proveedores para esta especialidad')+'</div></div>';
         return;
       }
       lista.innerHTML = '';
       const ICONOS = {plomero:'💧',electricista:'⚡',jardinero:'🌿',limpieza:'🧹',pintura:'🎨',ac:'❄️',cerrajero:'🔒',mascotas:'🐾',tecnologia:'🖥️',belleza:'💆',otro:'🔧'};
       const BGS    = {plomero:'#E8F0F8',electricista:'#FFF8E1',jardinero:'#E8F5EE',limpieza:'#F0EBF8',pintura:'#FDECEA',ac:'#E8F0F8',cerrajero:'#FFF8E1',otro:'#E8F5EE'};
-      docs.forEach(p => {
-        const cat = (p.categoria||'otro').toLowerCase();
+      visibles.forEach(p => {
+        const cat = (p.oficio1 || p.categoria || 'otro').toLowerCase();
         const ic  = ICONOS[cat]||'🔧';
         const bg  = BGS[cat]||'#E8F5EE';
         const premium = p.membresia === 'premium';
+        const cnt  = p.ratingTotal || 0;
+        const prom = p.ratingPromedio || 0;
+        const ratingHtml = cnt > 0
+          ? `⭐ ${prom} (${cnt} opinión${cnt>1?'es':''})`
+          : 'Nuevo';
         const div = document.createElement('div');
         div.className = 'prov-card';
         div.innerHTML = `
@@ -256,8 +296,8 @@
             <div class="prov-av" style="background:${bg};">${ic}<div class="prov-badge" style="background:${premium?'var(--yellow)':'var(--green)'};">${premium?'💎':'✓'}</div></div>
             <div class="si03">
               <div class="si17">${p.nombre||'—'}</div>
-              <div class="si01">${p.descripcion||p.categoria||'Proveedor'}</div>
-              <div class="si59">★★★★★ Nuevo</div>
+              <div class="si01">${p.descripcion||p.oficio1||p.categoria||'Proveedor'}</div>
+              <div class="si59">★ ${ratingHtml}</div>
             </div>
           </div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
@@ -3001,10 +3041,10 @@ window.cargarMisComprasPlaza = async function() {
     if (tipo === 'vecino') {
       html += secLabel('¿Qué necesitas hoy?');
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:12px;">'
-        + modulo('🍽️','#FFF3E0','Pedir Comida','<span id="hm-mod-food">...</span>',"go('v-food','right')")
+        + modulo('🍽️','#FDECEA','Pedir Comida','<span id="hm-mod-food">...</span>',"go('v-food','right')")
         + modulo('🔧','#e8f5e1','Servicios','<span id="hm-mod-serv">...</span>',"go('v-servicios','right')")
-        + modulo('🚗','#E8F0F8','Ride','Proximamente',"window._dcProximamente('Ride estará disponible próximamente.')")
-        + modulo('🏪','#F0EBF8','Plaza Online','<span id="hm-mod-plaza">...</span>',"go('v-plaza','right')")
+        + modulo('🚗','#F5F5F5','Ride','Proximamente',"window._dcProximamente('Ride estará disponible próximamente.')")
+        + modulo('🏪','#E3F0FF','Plaza Online','<span id="hm-mod-plaza">...</span>',"go('v-plaza','right')")
         + '</div>';
 
       html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px;margin-bottom:18px;">'
