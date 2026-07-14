@@ -800,8 +800,8 @@
   };
 
   // ===== CARGAR COMERCIOS (Plaza Online) con acceso directo a db =====
-  var _plazaDocsCache = [];
-var _plazaFiltro = 'todos';
+  window._plazaDocsCache = window._plazaDocsCache || [];
+  window._plazaFiltro    = window._plazaFiltro    || 'todos';
 
 
 
@@ -853,120 +853,16 @@ window.dcPersistenciaMapa = window.dcPersistenciaMapa || function(){
   };
 };
 
-function _plazaCatNorm(v) {
-  return String(v || '').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/&/g,' y ')
-    .replace(/[^a-z0-9]+/g,'_')
-    .replace(/^_+|_+$/g,'');
-}
-function _plazaCatKey(v) {
-  var n = _plazaCatNorm(v);
-  if (!n) return 'otro';
-  if (n.indexOf('belleza') !== -1 || n.indexOf('estetica') !== -1 || n.indexOf('barber') !== -1 || n.indexOf('salon') !== -1 || n.indexOf('unas') !== -1) return 'belleza';
-  if (n.indexOf('tecnolog') !== -1 || n.indexOf('comput') !== -1 || n.indexOf('celular') !== -1 || n.indexOf('electron') !== -1) return 'tecnologia';
-  if (n.indexOf('mascota') !== -1 || n.indexOf('veterin') !== -1 || n.indexOf('pet') !== -1) return 'mascotas';
-  if (n.indexOf('hogar') !== -1 || n.indexOf('mueble') !== -1 || n.indexOf('decor') !== -1 || n.indexOf('casa') !== -1) return 'hogar';
-  if (n.indexOf('ferreter') !== -1 || n.indexOf('herramient') !== -1) return 'ferreteria';
-  if (n.indexOf('papeler') !== -1 || n.indexOf('escolar') !== -1) return 'papeleria';
-  if (n.indexOf('regalo') !== -1 || n.indexOf('detalle') !== -1) return 'regalos';
-  if (n.indexOf('moda') !== -1 || n.indexOf('ropa') !== -1 || n.indexOf('boutique') !== -1 || n.indexOf('zapato') !== -1) return 'moda';
-  if (n.indexOf('salud') !== -1 || n.indexOf('farmacia') !== -1 || n.indexOf('medic') !== -1) return 'salud';
-  if (n.indexOf('abarrote') !== -1 || n.indexOf('tienda') !== -1 || n.indexOf('miscelanea') !== -1) return 'tienda';
-  if (n.indexOf('servicio') !== -1) return 'servicios';
-  if (['moda','belleza','salud','mascotas','tecnologia','hogar','ferreteria','papeleria','regalos','servicios','tienda','comercio','plaza','otro'].indexOf(n) !== -1) return n;
-  return n;
-}
-function _plazaCatLabel(cat) {
-  var MAP = {
-    moda:'👗 Moda', belleza:'✂️ Belleza', salud:'💊 Salud', mascotas:'🐾 Mascotas',
-    tecnologia:'💻 Tecnología', hogar:'🏠 Hogar', ferreteria:'🛠 Ferretería',
-    papeleria:'📚 Papelería', regalos:'🎁 Regalos', servicios:'🔧 Servicios',
-    tienda:'🏪 Tienda', comercio:'🏪 Comercio', plaza:'🏪 Plaza Online', otro:'🏪 Comercio'
-  };
-  var k = _plazaCatKey(cat);
-  return MAP[k] || (cat ? '🏪 ' + cat : '🏪 Comercio');
-}
-function _plazaCatBase(r) {
-  // Plaza filtra por el concepto público que ve el cliente.
-  // Prioridad CMV Negocio: categoriaPublica/giroPublico antes que categoria legacy.
-  return r.categoriaPublica || r.giroPublico || r.conceptoPublico || r.categoriaNegocio || r.giro || r.categoria || r.tipoNegocio || 'otro';
-}
-function _plazaCoincideFiltro(r, filtro) {
-  var f = _plazaCatKey(filtro || 'todos');
-  if (!f || f === 'todos') return true;
-  var n = _plazaCatKey(_plazaCatBase(r));
-  if (n === f) return true;
-  // "Otros" agrupa comercios cuyo concepto no está en el catálogo principal.
-  var principales = ['moda','belleza','salud','mascotas','tecnologia','hogar','ferreteria','papeleria','regalos','servicios','tienda'];
-  return f === 'otro' && principales.indexOf(n) === -1;
-}
+// Helpers Plaza UI — definidos en app.js; guards aquí como fallback.
+window._plazaCatNorm        = window._plazaCatNorm        || function(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' y ').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');};
+window._plazaCatKey         = window._plazaCatKey         || function(v){var n=window._plazaCatNorm(v);if(!n)return 'otro';if(n.indexOf('belleza')!=-1||n.indexOf('estetica')!=-1||n.indexOf('barber')!=-1||n.indexOf('salon')!=-1)return 'belleza';if(n.indexOf('tecnolog')!=-1||n.indexOf('comput')!=-1||n.indexOf('celular')!=-1)return 'tecnologia';if(n.indexOf('mascota')!=-1||n.indexOf('veterin')!=-1)return 'mascotas';if(n.indexOf('hogar')!=-1||n.indexOf('mueble')!=-1||n.indexOf('decor')!=-1)return 'hogar';if(n.indexOf('ferreter')!=-1)return 'ferreteria';if(n.indexOf('papeler')!=-1)return 'papeleria';if(n.indexOf('regalo')!=-1)return 'regalos';if(n.indexOf('moda')!=-1||n.indexOf('ropa')!=-1||n.indexOf('boutique')!=-1)return 'moda';if(n.indexOf('salud')!=-1||n.indexOf('farmacia')!=-1)return 'salud';if(n.indexOf('abarrote')!=-1||n.indexOf('tienda')!=-1)return 'tienda';if(n.indexOf('servicio')!=-1)return 'servicios';return n;};
+window._plazaCatLabel       = window._plazaCatLabel       || function(cat){var MAP={moda:'\uD83D\uDC57 Moda',belleza:'\u2702\uFE0F Belleza',salud:'\uD83D\uDC8A Salud',mascotas:'\uD83D\uDC3E Mascotas',tecnologia:'\uD83D\uDCBB Tecnolog\u00EDa',hogar:'\uD83C\uDFE0 Hogar',ferreteria:'\uD83D\uDEE0 Ferretar\u00EDa',papeleria:'\uD83D\uDCDA Papelar\u00EDa',regalos:'\uD83C\uDF81 Regalos',servicios:'\uD83D\uDD27 Servicios',tienda:'\uD83C\uDFEA Tienda',comercio:'\uD83C\uDFEA Comercio',plaza:'\uD83C\uDFEA Plaza Online',otro:'\uD83C\uDFEA Comercio'};var k=window._plazaCatKey(cat);return MAP[k]||(cat?'\uD83C\uDFEA '+cat:'\uD83C\uDFEA Comercio');};
+window._plazaCatBase        = window._plazaCatBase        || function(r){return r.categoriaPublica||r.giroPublico||r.conceptoPublico||r.categoriaNegocio||r.giro||r.categoria||r.tipoNegocio||'otro';};
+window._plazaCoincideFiltro = window._plazaCoincideFiltro || function(r,filtro){var f=window._plazaCatKey(filtro||'todos');if(!f||f==='todos')return true;var n=window._plazaCatKey(window._plazaCatBase(r));if(n===f)return true;var p=['moda','belleza','salud','mascotas','tecnologia','hogar','ferreteria','papeleria','regalos','servicios','tienda'];return f==='otro'&&p.indexOf(n)===-1;};
+window.dcEsComercioPlaza    = window.dcEsComercioPlaza    || function(r){r=r||{};var c=window._plazaCatKey(window._plazaCatBase(r));var fc=['mexicana','hamburguesas','pizzas','pizza','sushi','cafeteria','cafe','postres','tacos','mariscos','pollo','desayunos','bebidas','otro_rest'];var t=window._plazaCatNorm((r.tipoNegocio||''));var isF=fc.indexOf(c)!==-1||t==='food'||t==='restaurante';return !isF;};
+window._plazaFiltrarSel     = window._plazaFiltrarSel     || function(cat){window._plazaFiltro=cat||'todos';window._plazaRenderLista&&window._plazaRenderLista(window._plazaDocsCache);var scr=document.getElementById('plaza-scroll');if(scr)scr.scrollTop=0;if(window._dcDirtyV==='v-plaza')window._dcDirtyV=null;};
+window._plazaRenderLista    = window._plazaRenderLista    || function(docs){var el=document.getElementById('plaza-lista');if(el)el.innerHTML='';};
 
-// Regla única Plaza Online: usada por listado y contadores Home.
-// Mantiene Plaza como todos los negocios que NO son Food, sin crear un sistema nuevo.
-function dcEsComercioPlaza(r) {
-  r = r || {};
-  var catNorm = _plazaCatKey(_plazaCatBase(r));
-  var foodCats = ['mexicana','hamburguesas','pizzas','pizza','sushi','cafeteria','cafe','postres','tacos','mariscos','pollo','desayunos','bebidas','otro_rest'];
-  var plazaCats = ['moda','belleza','salud','mascotas','tecnologia','hogar','ferreteria','papeleria','regalos','servicios','tienda','otro','plaza','comercio'];
-  var tipoNorm = _plazaCatNorm(r.tipoNegocio || '');
-  var esFood = foodCats.indexOf(catNorm) !== -1 || tipoNorm === 'food' || tipoNorm === 'restaurante';
-  var esPlaza = tipoNorm === 'plaza' || plazaCats.indexOf(catNorm) !== -1 || !esFood;
-  return esPlaza && !esFood;
-}
-window.dcEsComercioPlaza = dcEsComercioPlaza;
-function _plazaFiltrarSel(cat) {
-  _plazaFiltro = cat || 'todos';
-  window._plazaRenderLista && window._plazaRenderLista(_plazaDocsCache);
-  var scr = document.getElementById('plaza-scroll'); if (scr) scr.scrollTop = 0;
-  if (window._dcDirtyV === 'v-plaza') window._dcDirtyV = null;
-}
-// BLOQUE 1 PLAZA ONLINE: exponer handler usado por onchange en HTML.
-// Sin esto, el select cambia visualmente pero no ejecuta el filtro desde el DOM.
-window._plazaFiltrarSel = _plazaFiltrarSel;
-
-window._plazaRenderLista = function(docs) {
-  var lista = document.getElementById('plaza-lista');
-  var demo  = document.getElementById('plaza-demo');
-  var sub   = document.getElementById('plaza-sub');
-  if (!lista) return;
-  docs = docs || [];
-  var filtrados = docs.filter(function(r){ return _plazaCoincideFiltro(r, _plazaFiltro); });
-  if (sub) sub.textContent = docs.length > 0 ? docs.length + ' comercio' + (docs.length !== 1 ? 's' : '') + ' de tu zona' : 'Comercios de tu zona';
-  if (!filtrados.length) {
-    if (demo) demo.style.display = 'none';
-    lista.innerHTML = '<div style="padding:32px 20px;text-align:center;"><div style="font-size:40px;margin-bottom:12px;">🏪</div><div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">Sin comercios en esta categoría</div><div style="font-size:11px;color:var(--text-muted);line-height:1.6;">Prueba con otra categoría de Plaza Online.</div></div>';
-    return;
-  }
-  if (demo) demo.style.display = 'none';
-  lista.innerHTML = filtrados.map(function(r){
-    var estOp = (typeof window._estadoEfectivoDe === 'function')
-      ? window._estadoEfectivoDe(r.estadoOp, r.estadoOpTs || 0, r.horarios && r.horarios.length ? r.horarios : null)
-      : (r.estadoOp || 'activo');
-    var meta = {
-      activo:  { lbl:'🟢 Abierto',  col:'var(--green-dk)', bg:'var(--green-lt)' },
-      ocupado: { lbl:'🟡 Ocupado',  col:'#d97706',         bg:'#FFF8E1'         },
-      pausado: { lbl:'🟠 En pausa', col:'#E87722',          bg:'#FFF0E6'         },
-      cerrado: { lbl:'🔴 Cerrado',  col:'#D63A2A',         bg:'#FDECEA'         }
-    }[estOp] || { lbl:'🟢 Abierto', col:'var(--green-dk)', bg:'var(--green-lt)' };
-    var foto = r.fotoPerfil || r.fotoPublica || r.logo || '';
-    var cat = _plazaCatBase(r) || 'Comercio local';
-    return '<div class="plaza-card" onclick="window.plazaAbrirComercio(\''+r._id+'\')" style="overflow:hidden;cursor:pointer;'+(estOp==='cerrado'?'opacity:.65;filter:grayscale(.35);':'')+'">'
-      + '<div style="height:118px;background:#E8F0F8;display:flex;align-items:center;justify-content:center;font-size:42px;position:relative;">'
-      + (foto && String(foto).indexOf('data:image')===0 ? '<img src="'+foto+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">' : '🏪')
-      + (estOp==='cerrado' ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;"><span style="background:#D63A2A;color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;">🔴 CERRADO</span></div>' : '')
-      + '<span style="position:absolute;right:10px;top:10px;background:rgba(255,255,255,.92);color:var(--blue);font-size:10px;font-weight:800;padding:4px 8px;border-radius:10px;">✓ Verificado</span>'
-      + '</div>'
-      + '<div class="si45">'
-      + '<div class="si05"><div class="si17">'+(r.nombrePublico || r.nombreNegocio || r.nombre || '—')+'</div>'
-      + '<span class="si44" style="background:'+meta.bg+';color:'+meta.col+';font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;">'+meta.lbl+'</span></div>'
-      + '<div class="si10">'+(r.descripcionPublica || r.descripcion || cat || 'Comercio local')+'</div>'
-      + '<div class="si46">'+_plazaCatLabel(cat)+(r.ratingPromedio?' · ⭐ '+Number(r.ratingPromedio).toFixed(1)+' <span onclick="event.stopPropagation();window.dcRatingVerComentarios&&window.dcRatingVerComentarios(\''+r._id+'\',\'negocio\',event)" style="color:var(--blue,#1a6fbf);text-decoration:underline;cursor:pointer;font-weight:700;">('+( r.ratingTotal||0)+' op.)</span>':'')+'</div>'
-      + '<div class="si47"><button data-rate-id="'+r._id+'" onclick="event.stopPropagation();window.dcRatingAbrirPopup&&window.dcRatingAbrirPopup(\''+r._id+'\',\''+(r.nombrePublico||r.nombreNegocio||r.nombre||'').replace(/'/g,'&#39;')+'\',event)" style="background:#FFF8DC;border:1px solid #F5C518;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:700;color:#9a7020;cursor:pointer;font-family:inherit;white-space:nowrap;">⭐ Calificar</button><button class="si48">Ver productos →</button></div>'
-      + '</div></div>';
-  }).join('');
-  setTimeout(function(){window._rpIniciarBotonesVecino&&window._rpIniciarBotonesVecino();},50);
-};
 
 window.cargarPlaza = async function() {
   const lista = document.getElementById('plaza-lista');
@@ -974,7 +870,7 @@ window.cargarPlaza = async function() {
   const sel   = document.getElementById('plaza-cat-select');
   if(!lista) return;
   if (sel) sel.value = 'todos';
-  _plazaFiltro = 'todos';
+  window._plazaFiltro = 'todos';
   lista.innerHTML = '<div class="si24">Cargando comercios... ⏳</div>';
   try {
     const { getDocs, collection, query, where } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
@@ -985,7 +881,7 @@ window.cargarPlaza = async function() {
       const estadoOk = (r.estado === 'activo' || r.estado === 'aprobado_pendiente_pago');
       if(estadoOk && window.dcEsComercioPlaza(r)) docs.push(Object.assign({_id:d.id}, r));
     });
-    _plazaDocsCache = docs;
+    window._plazaDocsCache = docs;
     if(docs.length === 0) {
       lista.innerHTML = '';
       if(demo) demo.style.display='block';
@@ -998,7 +894,7 @@ window.cargarPlaza = async function() {
 };
 
 window.plazaAbrirComercio = async function(id) {
-  var r = _plazaDocsCache.find(function(x){ return x._id === id; });
+  var r = window._plazaDocsCache.find(function(x){ return x._id === id; });
   if (!r) return;
   var estOp = (typeof window._estadoEfectivoDe === 'function')
     ? window._estadoEfectivoDe(r.estadoOp, r.estadoOpTs || 0, r.horarios && r.horarios.length ? r.horarios : null)
@@ -1006,7 +902,7 @@ window.plazaAbrirComercio = async function(id) {
   var g = function(id){ return document.getElementById(id); };
   if (g('plaza-det-nombre')) g('plaza-det-nombre').textContent = '🏪 ' + (r.nombrePublico || r.nombreNegocio || r.nombre || 'Comercio');
   if (g('plaza-det-desc')) g('plaza-det-desc').textContent = window.dcCleanText(r.descripcionPublica || r.descripcion || 'Productos disponibles', 140);
-  if (g('plaza-det-cat')) g('plaza-det-cat').textContent = _plazaCatLabel(_plazaCatBase(r));
+  if (g('plaza-det-cat')) g('plaza-det-cat').textContent = window._plazaCatLabel(window._plazaCatBase(r));
   if (g('plaza-det-estado')) {
     var meta = estOp==='cerrado' ? {lbl:'🔴 Cerrado',col:'#D63A2A'} : estOp==='pausado' ? {lbl:'🟠 En pausa',col:'#E87722'} : estOp==='ocupado' ? {lbl:'🟡 Ocupado',col:'#d97706'} : {lbl:'🟢 Abierto',col:'var(--green-dk)'};
     g('plaza-det-estado').textContent = meta.lbl;
@@ -1020,7 +916,7 @@ window.plazaAbrirComercio = async function(id) {
 
 window._plazaProdDocsCache = [];
 window._plazaProdFiltro = 'todos';
-window._plazaSetProdFiltro = function(ev, cat) {
+window._plazaSetProdFiltro = window._plazaSetProdFiltro || function(ev, cat) {
   // BLOQUE 1 PLAZA ONLINE: pestañas de productos robustas.
   // Soporta llamada desde onclick(event,'cat') y llamada directa _plazaSetProdFiltro('cat').
   if (ev && typeof ev === 'object' && ev.preventDefault) {
@@ -1034,13 +930,13 @@ window._plazaSetProdFiltro = function(ev, cat) {
   if (window._dcDirtyV === 'v-plaza-det') window._dcDirtyV = null;
   return false;
 };
-window._plazaRenderProductos = function() {
+window._plazaRenderProductos = window._plazaRenderProductos || function() {
   var el = document.getElementById('plaza-prod-lista');
   if (!el) return;
   var prods = window._plazaProdDocsCache || [];
   var cats = [];
   prods.forEach(function(p){
-    var c = _plazaCatKey(p.categoria || p.categoriaPublica || 'general');
+    var c = window._plazaCatKey(p.categoria || p.categoriaPublica || 'general');
     if (cats.indexOf(c) === -1) cats.push(c);
   });
   var f = window._plazaProdFiltro || 'todos';
@@ -1050,9 +946,9 @@ window._plazaRenderProductos = function() {
   };
   var tabs = '<div style="display:flex;gap:8px;overflow-x:auto;padding:0 14px 10px;">'
     + tabBtn('todos', 'Todos')
-    + cats.map(function(c){ return tabBtn(c, _plazaCatLabel(c)); }).join('')
+    + cats.map(function(c){ return tabBtn(c, window._plazaCatLabel(c)); }).join('')
     + '</div>';
-  var visibles = prods.filter(function(p){ return f === 'todos' || _plazaCatKey(p.categoria || p.categoriaPublica || 'general') === f; });
+  var visibles = prods.filter(function(p){ return f === 'todos' || window._plazaCatKey(p.categoria || p.categoriaPublica || 'general') === f; });
   var html = tabs + visibles.map(function(p){
     var foto = p.foto || p.fotoProducto || p.fotoPublica || '';
     var agotado = p.disponible === false;
@@ -1082,7 +978,7 @@ window.plazaCerrarProductoDetalle = window.plazaCerrarProductoDetalle || functio
   try { document.body.style.overflow=''; document.body.style.touchAction=''; } catch(e) {}
 };
 
-window.plazaCambiarQtyDetalle = function(delta){
+window.plazaCambiarQtyDetalle = window.plazaCambiarQtyDetalle || function(delta){
   var q = Number(window._plazaDetalleQty || 1) + Number(delta || 0);
   if (q < 1) q = 1;
   if (q > 99) q = 99;
@@ -1157,10 +1053,8 @@ window.plazaAgregarAlCarritoDetalle = window.plazaAgregarAlCarritoDetalle || fun
   return false;
 };
 
-window.plazaAbrirProductoDetalle = function(pid){
-  // scroll lock inline (app.js no puede wrappear aquí porque firebase.js carga después)
+window.plazaAbrirProductoDetalle = window.plazaAbrirProductoDetalle || function(pid){
   if(document.body.dataset.dcModalLocked!=='1'){var _sy=window.scrollY||0;document.body.dataset.dcModalLocked='1';document.body.dataset.dcModalScrollY=String(_sy);document.body.style.overflow='hidden';document.body.style.touchAction='none';}
-  // ----
   var p = (window._plazaProdDocsCache || []).find(function(x){ return String(x._id) === String(pid); });
   if (!p) return;
   window._plazaDetalleQty = 1;
