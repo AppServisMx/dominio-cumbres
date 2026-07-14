@@ -889,9 +889,8 @@
     </div>
   </div>
 
-  <!-- ── CARRUSEL DE ANUNCIOS ── -->
-  <!-- data-ads: preparado para targeting futuro por interés (comida/ride/servicios/plaza) -->
-  <div id="home-ads-wrap" style="margin:0 14px 14px;position:relative;flex-shrink:0;">
+  <!-- ── CARRUSEL DE ANUNCIOS — movido al final del scroll por renderHomeM2 ── -->
+  <div id="home-ads-wrap" style="margin:0 14px 14px;position:relative;flex-shrink:0;display:none;">
 
     <!-- pista deslizable -->
     <div id="home-ads-track" style="display:flex;overflow:hidden;border-radius:16px;cursor:grab;user-select:none;-webkit-user-select:none;">
@@ -970,11 +969,11 @@
   </div><!-- /scroll -->
 
   <!-- ── BOTTOM NAV ── -->
-  <div class="nav">
+  <div class="nav" id="v-home-nav">
     <div class="ni"><div class="ni-ic">🏠</div><div class="si04 ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="notif-w"><div class="ni-ic">📅</div><span class="notif-dot nav-agenda-dot" style="display:none;"></span></div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 
@@ -1534,7 +1533,7 @@
         <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
         <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="notif-w"><div class="ni-ic">🍽️</div><span class="notif-dot nav-ped-dot" style="display:none;"></span></div><div class="ni-lb">Pedidos</div></div>
         <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
+        <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="notif-w"><div class="ni-ic">📅</div><span class="notif-dot nav-agenda-dot" style="display:none;"></span></div><div class="ni-lb">Reservaciones</div></div>
         <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
       </div>
     </div>
@@ -2471,9 +2470,9 @@
         style="width:100%;background:#1FC26A;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:10px;">
         Volver a Mi Panel
       </button>
-      <button onclick="go('v-mipanel','left')"
+      <button onclick="go('v-home','left')"
         style="width:100%;background:#f0f0f0;border:none;border-radius:14px;padding:12px;font-size:13px;font-weight:600;color:#555;cursor:pointer;font-family:'Inter',sans-serif;">
-        Volver a Mi Panel
+        Volver al Inicio
       </button>
     </div>
     <div style="height:10px;"></div>
@@ -2743,7 +2742,7 @@
           <div>
             <div class="sec-lbl" style="display:flex;align-items:center;justify-content:space-between;">
               <span>Mi jornada hoy</span>
-              <span onclick="navTo('vr-ventas')" style="font-size:10px;font-weight:700;color:#D63A2A;cursor:pointer;letter-spacing:.2px;">Ver ventas ›</span>
+              <span onclick="navTo('vr-ventas')" style="font-size:10px;font-weight:700;color:#c8940a;cursor:pointer;letter-spacing:.2px;">Ver ventas ›</span>
             </div>
             <div class="jornada-row">
               <div class="jornada-box">
@@ -2766,7 +2765,7 @@
             <div class="sec-lbl">Accesos rápidos</div>
             <div class="quick-grid">
               <div class="qi" onclick="navTo('vr-pedidos')">
-                <div class="qi-icon" style="background:#FDECEA;">📦</div>
+                <div class="qi-icon" style="background:#FFF8E1;">📦</div>
                 <div class="qi-lbl">Pedidos</div>
                 <div class="qi-badge" id="qi-badge-ped" style="display:none;"></div>
               </div>
@@ -2803,6 +2802,9 @@
             </div>
           </div>
 
+          <!-- ZONA 6 — Oportunidad contextual -->
+          <div id="home-oportunidad"></div>
+
           <!-- ZONA 5 — Banners DC -->
           <div>
             <div class="sec-lbl">Dominio Cumbres — Comunidad</div>
@@ -2815,9 +2817,6 @@
               <div class="banner-dots" id="banner-dots"></div>
             </div>
           </div>
-
-          <!-- ZONA 6 — Oportunidad contextual -->
-          <div id="home-oportunidad"></div>
 
           <!-- ZONA 7 — Acceso Cómo me ve el cliente (icono qi) -->
           <div>
@@ -2988,7 +2987,7 @@
             </div>
           </div>
           <div class="pill-row" style="padding:8px 0 0;">
-            <button class="chip on" id="tab-pedidos"     onclick="tabPedidos('pedidos',this)">🔴 Pedidos</button>
+            <button class="chip on" id="tab-pedidos"     onclick="tabPedidos('pedidos',this)">📦 Nuevos</button>
             <button class="chip"   id="tab-en_proceso"  onclick="tabPedidos('en_proceso',this)">👨‍🍳 En proceso</button>
             <button class="chip"   id="tab-entregados"  onclick="tabPedidos('entregados',this)">✅ Entregados</button>
           </div>
@@ -3652,7 +3651,7 @@
             </div>
           </div>
           <div class="pill-row" style="padding:8px 0 0;">
-            <button class="chip on" id="vntab-pedidos"     onclick="vnegTabPedidos('pedidos',this)">🔴 Pedidos</button>
+            <button class="chip on" id="vntab-pedidos"     onclick="vnegTabPedidos('pedidos',this)">📦 Nuevos</button>
             <button class="chip"   id="vntab-en_proceso"  onclick="vnegTabPedidos('en_proceso',this)">👨‍🍳 En proceso</button>
             <button class="chip"   id="vntab-entregados"  onclick="vnegTabPedidos('entregados',this)">✅ Entregados</button>
           </div>
@@ -3865,12 +3864,12 @@
       <div class="scr" style="padding:0 0 24px;background:#F7F5F2;">
         <!-- Selector de mes -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;">
-          <button id="vn-vrv-mes-prev" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8249;</button>
+          <button id="vn-vrv-mes-prev" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(-1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#F0EBF8;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(123,63,160,.18);">&#8249;</button>
           <div style="text-align:center;">
             <div id="vn-vrv-mes-label" style="font-size:16px;font-weight:800;color:#2a2a2a;">—</div>
             <div style="font-size:9px;color:#aaa;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-top:1px;">Resumen del mes</div>
           </div>
-          <button id="vn-vrv-mes-next" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#FDECEA;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(214,58,42,.18);">&#8250;</button>
+          <button id="vn-vrv-mes-next" onclick="window._vnvMesCambiar&&window._vnvMesCambiar(1)" style="width:46px;height:46px;border-radius:14px;border:1.5px solid #7B3FA0;background:#F0EBF8;color:#7B3FA0;font-size:26px;font-weight:800;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(123,63,160,.18);">&#8250;</button>
         </div>
 
         <!-- Tarjeta hero: Ventas del mes -->
@@ -4085,7 +4084,7 @@
     <div class="ni" onclick="go('v-home','left')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div>
     <div class="ni" onclick="var _t=(localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();go(_t==='vecino'?'v-mis-pedidos-food':'vr-pedidos','right')"><div class="ni-ic">🍽️</div><div class="ni-lb">Pedidos</div></div>
     <div class="ni" onclick="go('v-mis-compras-plaza','right')"><div class="ni-ic">🛍️</div><div class="ni-lb">Mis Compras</div></div>
-    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="ni-ic">📅</div><div class="ni-lb">Reservaciones</div></div>
+    <div class="ni" onclick="go('v-mi-agenda','right');setTimeout(function(){window._renderMiAgenda&&window._renderMiAgenda();},200);"><div class="notif-w"><div class="ni-ic">📅</div><span class="notif-dot nav-agenda-dot" style="display:none;"></span></div><div class="ni-lb">Reservaciones</div></div>
     <div class="ni" onclick="go('v-mipanel','right')"><div class="ni-ic">👤</div><div class="ni-lb">Mi Panel</div></div>
   </div>
 </div>
