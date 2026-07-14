@@ -13292,9 +13292,9 @@ if (typeof window.go !== 'function') {
     window._plazaDetalleQty=1;
     var ov=document.getElementById('plaza-prod-det-ov');
     if(!ov){
-      ov=document.createElement('div'); ov.id='dc-legacy-plaza-prod-det-ov-1' data-dc-legacy-id="plaza-prod-det-ov";
+      ov=document.createElement('div'); ov.id='plaza-prod-det-ov';
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow:hidden;touch-action:none;';
-      ov.innerHTML='<div id="dc-legacy-plaza-prod-det-card-2" data-dc-legacy-id="plaza-prod-det-card" style="width:100%;max-width:370px;background:#fff;border-radius:26px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.30);"></div>';
+      ov.innerHTML='<div id="plaza-prod-det-card" style="width:100%;max-width:370px;background:#fff;border-radius:26px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.30);"></div>';
       document.body.appendChild(ov);
       ov.addEventListener('click',function(e){ if(e.target===ov) window.plazaCerrarProductoDetalle(); });
     }
@@ -13499,9 +13499,9 @@ if (typeof window.go !== 'function') {
     window._plazaDetalleQty=1; window._plazaAgregandoDetalle=false;
     var ov=document.getElementById('plaza-prod-det-ov');
     if(!ov){
-      ov=document.createElement('div'); ov.id='dc-legacy-plaza-prod-det-ov-2' data-dc-legacy-id="plaza-prod-det-ov";
+      ov=document.createElement('div'); ov.id='plaza-prod-det-ov';
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;overflow:hidden;touch-action:none;';
-      ov.innerHTML='<div id="dc-legacy-plaza-prod-det-card-3" data-dc-legacy-id="plaza-prod-det-card" style="width:100%;max-width:368px;background:#fff;border-radius:26px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.30);"></div>';
+      ov.innerHTML='<div id="plaza-prod-det-card" style="width:100%;max-width:368px;background:#fff;border-radius:26px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.30);"></div>';
       document.body.appendChild(ov);
       ov.addEventListener('click',function(e){if(e.target===ov)window.plazaCerrarProductoDetalle();});
     }
@@ -14472,7 +14472,7 @@ if (typeof window.go !== 'function') {
   function ensureComprando(){
     ensureStyle();
     var v=document.getElementById('v-plaza-comprando');
-    if(!v){v=document.createElement('div');v.className='view go-right';v.id='dc-legacy-v-plaza-comprando-1' data-dc-legacy-id="v-plaza-comprando";v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">🛒 COMPRANDO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-comprando-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb" style="color:var(--blue);">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
+    if(!v){v=document.createElement('div');v.className='view go-right';v.id='v-plaza-comprando';v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">🛒 COMPRANDO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-comprando-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb" style="color:var(--blue);">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
     renderComprando();
   }
   function renderComprando(){
@@ -14486,7 +14486,7 @@ if (typeof window.go !== 'function') {
   function ensureSeguimiento(order){
     ensureStyle();
     var v=document.getElementById('v-plaza-seguimiento');
-    if(!v){v=document.createElement('div');v.className='view go-right';v.id='dc-legacy-v-plaza-seguimiento-1' data-dc-legacy-id="v-plaza-seguimiento";v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">📍 SEGUIMIENTO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-seguimiento-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-plaza-comprando')||document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
+    if(!v){v=document.createElement('div');v.className='view go-right';v.id='v-plaza-seguimiento';v.style.flexDirection='column';v.innerHTML='<div class="plaza-hdr"><div class="sbar dk"><span>9:41</span><span>▲</span></div><div class="si69"><button class="btn-back" onclick="go(\'v-mis-compras-plaza\',\'left\')">‹</button><div><div class="si13">📍 SEGUIMIENTO</div><div class="si21">Plaza Online</div></div></div></div><div class="scroll" id="plaza-seguimiento-lista" style="padding:14px 14px 92px;background:#F5F6F0;"></div><div class="nav"><div class="ni" onclick="go(\'v-home\',\'left\')"><div class="ni-ic">🏠</div><div class="ni-lb">Inicio</div></div><div class="ni" onclick="go(\'v-plaza\',\'left\')"><div class="ni-ic">🏪</div><div class="ni-lb">Plaza Online</div></div><div class="ni" onclick="go(\'v-mis-compras-plaza\',\'left\')"><div class="ni-ic">🛒</div><div class="ni-lb">Mis compras</div></div><div class="ni"><div class="ni-ic">👤</div><div class="ni-lb">Perfil</div></div></div>';var a=document.getElementById('v-plaza-comprando')||document.getElementById('v-mis-compras-plaza');if(a&&a.parentNode)a.parentNode.insertBefore(v,a.nextSibling);else document.body.appendChild(v);}
     var el=document.getElementById('plaza-seguimiento-lista'); if(!el)return;
     order=order||rj('dcPlazaOrdenActivaV62',null)||{};var steps=['Compra enviada','Recibido por negocio','Preparando','Listo','En camino / para recoger','Entregado'];
     el.innerHTML='<div style="background:#fff;border:.5px solid #dfe5eb;border-radius:18px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.07);"><div style="font-size:14px;font-weight:900;color:#111;">Compra '+esc(order.folio||'')+'</div><div style="font-size:11px;color:#777;font-weight:700;margin-top:3px;">'+fecha(order.fecha)+' · '+hora(order.fecha)+' · '+money(order.total)+'</div></div>'

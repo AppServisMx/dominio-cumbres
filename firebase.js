@@ -1131,7 +1131,7 @@ window.plazaAbrirProductoDetalle = function(pid){
     ov = document.createElement('div');
     ov.id = 'plaza-prod-det-ov';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.50);z-index:99999;display:none;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overflow:hidden;touch-action:none;';
-    ov.innerHTML = '<div id="dc-legacy-plaza-prod-det-card-1" data-dc-legacy-id="plaza-prod-det-card" style="width:100%;max-width:390px;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 14px 42px rgba(0,0,0,.30);"></div>';
+    ov.innerHTML = '<div id="plaza-prod-det-card" style="width:100%;max-width:390px;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 14px 42px rgba(0,0,0,.30);"></div>';
     document.body.appendChild(ov);
     ov.addEventListener('click', function(e){ if(e.target===ov) window.plazaCerrarProductoDetalle(); });
   }
