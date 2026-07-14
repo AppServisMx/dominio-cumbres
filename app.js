@@ -378,12 +378,20 @@ function _renderTransferencia(){
   }else{
     bancoHTML='<div style="font-size:12px;color:#666;line-height:1.6;">El negocio aún no configuró datos de transferencia.<br><span style="color:var(--blue,#1a6fbf);font-weight:700;">Confirma el pedido y coordina el pago por chat o WhatsApp.</span></div>';
   }
+  var cartRows=c.map(function(x){
+    var qty=num(x.cantidad)||1;
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:.5px solid #f0f0f0;">'+
+      '<div style="font-size:12px;color:#555;flex:1;padding-right:8px;">'+qty+'× '+esc(x.nombre||'Producto')+'</div>'+
+      '<div style="font-size:12px;font-weight:700;color:#111;white-space:nowrap;">'+money(num(x.precio)*qty)+'</div>'+
+    '</div>';
+  }).join('');
   el.innerHTML=
     '<div style="background:#fff;border-radius:16px;padding:16px;margin:8px;border:.5px solid #e8e8e8;box-shadow:0 2px 8px rgba(0,0,0,.04);">'+
-      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Resumen</div>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
-        '<div style="font-size:14px;font-weight:700;color:#111;">'+esc(storeName)+'</div>'+
-        '<div style="font-size:18px;font-weight:700;color:var(--blue,#1a6fbf);">'+money(subtotal)+'</div>'+
+      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Resumen</div>'+
+      '<div style="font-size:13px;font-weight:800;color:#111;margin-bottom:8px;">'+esc(storeName)+'</div>'+
+      cartRows+
+      '<div style="display:flex;justify-content:space-between;padding-top:10px;font-size:14px;font-weight:900;color:#111;">'+
+        '<span>Total</span><span>'+money(subtotal)+'</span>'+
       '</div>'+
     '</div>'+
     '<div style="background:#fff;border-radius:16px;padding:16px;margin:8px;border:.5px solid #e8e8e8;box-shadow:0 2px 8px rgba(0,0,0,.04);">'+
@@ -403,6 +411,7 @@ function _renderTransferencia(){
     '</div>'+
     '<button type="button" class="dc-plz-buy-btn" id="dc-plaza-ya-transferi">✅ Ya transferí — Confirmar pedido →</button>'+
     '<button type="button" style="width:calc(100% - 16px);margin:0 8px 24px;border:none;border-radius:14px;background:#f5f5f5;color:#555;padding:12px;font-size:12px;font-weight:900;font-family:inherit;cursor:pointer;" id="dc-plaza-volver-comprando">← Regresar</button>';
+  el.scrollTop=0;
 }
 
 // Botón "Regresar" desde pantalla de transferencia (restaura header también)
@@ -489,12 +498,33 @@ document.addEventListener('click',function(e){
     // Ahora sí confirmar compra
     var o={id:'plaza_'+Date.now(),folio:'#PZ'+String(Date.now()).slice(-6),tipo:'plaza_orden',estado:'en_proceso',titulo:'Plaza Online',fecha:Date.now(),items:selectedItems(),total:total(selectedItems()),entrega:(localStorage.getItem('dcPlazaTipoEntrega')||'domicilio'),pago:'transferencia',referenciaTransferencia:ref};
     saveOrder(o); clearCart();
-    try{if(typeof window._showPedidoOverlay==='function') return window._showPedidoOverlay(goSeguimiento),false;}catch(_){}
-    try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goSeguimiento),false;}catch(_){}
-    return goSeguimiento();
+    return _plazaShowCompraOverlay(goSeguimiento),false;
   }
 },true);
 
+
+// ══════════════════════════════════════════════
+// PLAZA — OVERLAY COMPRA REALIZADA
+// ══════════════════════════════════════════════
+function _plazaShowCompraOverlay(onDone){
+  var ov=document.getElementById('dc-plaza-compra-ov');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='dc-plaza-compra-ov';
+    ov.style.cssText='display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2147483647;align-items:center;justify-content:center;pointer-events:all;font-family:inherit;';
+    document.body.appendChild(ov);
+  }
+  clearTimeout(window._dcPlzOvT1); clearTimeout(window._dcPlzOvT2);
+  ov.innerHTML='<div style="background:#0C1A10;border-radius:24px;padding:32px 28px;text-align:center;max-width:280px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,.4);"><div style="font-size:36px;margin-bottom:16px;">⏳</div><div style="color:#F5C518;font-size:18px;font-weight:700;margin-bottom:8px;">Enviando tu compra...</div><div style="color:rgba(245,197,24,.7);font-size:12px;">Estamos procesando tu pedido.</div></div>';
+  ov.style.display='flex';
+  window._dcPlzOvT1=setTimeout(function(){
+    ov.innerHTML='<div style="background:#0C1A10;border-radius:24px;padding:32px 28px;text-align:center;max-width:280px;width:90%;box-shadow:0 24px 48px rgba(0,0,0,.4);"><div style="font-size:48px;margin-bottom:16px;">✅</div><div style="color:#1FC26A;font-size:22px;font-weight:900;margin-bottom:8px;">¡COMPRA REALIZADA!</div><div style="color:rgba(31,194,106,.8);font-size:12px;line-height:1.6;">Tu pedido fue recibido.<br>Continúa al seguimiento.</div></div>';
+    window._dcPlzOvT2=setTimeout(function(){
+      ov.style.display='none';
+      if(typeof onDone==='function') onDone();
+    },1800);
+  },2000);
+}
 
 // ══════════════════════════════════════════════
 // CONFIRMAR COMPRA
@@ -533,8 +563,7 @@ function finalizarCompra(e){
   if(!items.length){_confirmLock=false;return false;}
   var o={id:'plaza_'+Date.now(),folio:'#PZ'+String(Date.now()).slice(-6),tipo:'plaza_orden',estado:'en_proceso',titulo:'Plaza Online',fecha:Date.now(),items:items,total:total(items),entrega:(localStorage.getItem('dcPlazaTipoEntrega')||'domicilio'),pago:(localStorage.getItem('dcPlazaTipoPago')||'efectivo')};
   saveOrder(o); clearCart();
-  try{if(typeof window.dcPlazaFinalFelizOficial==='function') return window.dcPlazaFinalFelizOficial(goSeguimiento),false;}catch(_){}
-  return goSeguimiento();
+  return _plazaShowCompraOverlay(goSeguimiento),false;
 }
 
 window.addEventListener('pointerdown',finalizarCompra,true);
@@ -651,6 +680,12 @@ window.dcBack=function(fallback){
   var cur=_activeViewId(), target='';
   while(_navStack.length){var c=_navStack.pop();if(c&&c!==cur&&_viewExists(c)){target=c;break;}}
   if(!target) target=fallback||'v-home';
+  // Safety: from seguimiento never go back to comprando (purchase already done)
+  if(target==='v-plaza-comprando'&&(cur==='v-plaza-seguimiento'||cur==='v-mis-compras-plaza')){
+    target='';
+    while(_navStack.length){var nx=_navStack.pop();if(nx&&nx!=='v-plaza-comprando'&&_viewExists(nx)){target=nx;break;}}
+    if(!target) target='v-mis-compras-plaza';
+  }
   _navSuppress=true;
   try{dcGoOficial(target,'left');}finally{setTimeout(function(){_navSuppress=false;},0);}
   return false;
@@ -866,6 +901,17 @@ if(!window.DC_ESTADOS_GLOBALES_UI){
         sel.addEventListener('change',function(){if(typeof window._plazaFiltrarSel==='function') window._plazaFiltrarSel(sel.value||'todos');});
       }
     }catch(e){}
+    // Envolver plazaCargarProductos (módulo carga después) para capturar la tienda activa
+    setTimeout(function(){
+      var orig=window.plazaCargarProductos;
+      if(typeof orig==='function'&&!orig._dcStoreWrap){
+        window.plazaCargarProductos=function(uidNegocio,negocio,estOp){
+          if(negocio) window._dcPlazaStoreActual=negocio;
+          return orig.apply(this,arguments);
+        };
+        window.plazaCargarProductos._dcStoreWrap=true;
+      }
+    },300);
   });
 })();
 
