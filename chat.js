@@ -2319,7 +2319,7 @@ function showAdminTab(i,btn){
       + '<div style="font-size:12px;color:#888;margin-bottom:12px;">Correo actual: ' + (u.correo||u.email||'—') + '</div>'
       + '<input id="_ccCorreo1" type="email" placeholder="Nuevo correo electrónico" autocomplete="off" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e0e0e0;font-size:14px;font-family:\'Inter\',sans-serif;outline:none;margin-bottom:10px;box-sizing:border-box;">'
       + '<input id="_ccCorreo2" type="email" placeholder="Confirmar nuevo correo" autocomplete="off" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #e0e0e0;font-size:14px;font-family:\'Inter\',sans-serif;outline:none;margin-bottom:10px;box-sizing:border-box;">'
-      + '<div id="_ccErr" style="display:none;color:#D63A2A;font-size:12px;margin-bottom:10px;font-weight:600;"></div>'
+      + '<div id="_ccErr" style="display:none;background:#FFF0EE;border:1px solid #F4C5C0;border-radius:10px;padding:10px 12px;color:#C0392B;font-size:13px;margin-bottom:10px;font-weight:500;"></div>'
       + '<div style="display:flex;gap:10px;margin-top:4px;">'
       + '<button id="_ccCan" style="flex:1;background:#f0f0f0;color:#555;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;">Cancelar</button>'
       + '<button id="_ccOk" style="flex:1;background:#1FC26A;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:\'Inter\',sans-serif;">Guardar</button>'
@@ -2368,7 +2368,7 @@ function showAdminTab(i,btn){
           msg = (e.details && e.details.message) || e.message || code || 'Error desconocido';
         }
         errEl.style.display = 'block';
-        errEl.textContent = 'Error: ' + msg;
+        errEl.textContent = msg;
       }
     };
   };
