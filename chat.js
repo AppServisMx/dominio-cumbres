@@ -1539,34 +1539,64 @@ function showAdminTab(i,btn){
     window.monetTab('costos');
   };
 
+  window._monetCostoReal   = null;       // null=no cargado, número=dato real de Firestore
+  window._monetEstadoCarga = 'pendiente'; // 'pendiente' | 'ok' | 'error'
+
   window.monetCostosCargar = async function() {
-    try {
-      var { getDoc: _gd, doc: _d } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
-      var _snap = await _gd(_d(window._fbDb, 'configuracion', 'costos'));
-      if(_snap.exists()) {
-        var _cfg = _snap.data();
-        if(_cfg.presupuesto) window._monetPresupuesto = parseFloat(_cfg.presupuesto);
+    var sim = window._monetSimulando;
+
+    // Leer datos reales de Firestore solo cuando no hay simulación activa
+    if(!sim) {
+      try {
+        var { getDoc: _gd, doc: _d } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js");
+        var _snap = await _gd(_d(window._fbDb, 'configuracion', 'costos'));
+        if(_snap.exists()) {
+          var _cfg = _snap.data();
+          if(typeof _cfg.presupuesto === 'number') window._monetPresupuesto = _cfg.presupuesto;
+          else if(_cfg.presupuesto)                window._monetPresupuesto = parseFloat(_cfg.presupuesto);
+          // costoMes lo escribe una Cloud Function; si no existe aún el costo real es $0.00
+          window._monetCostoReal = (typeof _cfg.costoMes === 'number') ? _cfg.costoMes : 0;
+        } else {
+          window._monetCostoReal = 0; // documento no existe: sin costos registrados
+        }
+        window._monetEstadoCarga = 'ok';
+      } catch(e) {
+        window._monetEstadoCarga = 'error';
       }
-    } catch(_) {}
+    }
 
-    var pres   = window._monetPresupuesto;
-    var sim    = window._monetSimulando;
-    var tot    = sim ? window._monetSimMonto : null;
-    var dia    = new Date().getDate() || 1;
-    var proy   = sim ? Math.round(tot / dia * 30 * 100) / 100 : null;
-    var pct    = sim ? Math.round(tot / pres * 100) : null;
-    var disp   = sim ? Math.round((pres - tot) * 100) / 100 : null;
+    var pres = window._monetPresupuesto;
+    var tot, pct, disp;
 
-    var _sem = function(p) {
-      if(p === null || p === undefined) return { emoji:'—',  txt:'Sin datos',  sub:'Activa el modo simulación', col:'rgba(255,255,255,.15)', border:'rgba(255,255,255,.1)', tcol:'var(--white-50)' };
-      if(p < 50)  return { emoji:'🟢', txt:'EXCELENTE',  sub:'El gasto está bajo control', col:'rgba(31,194,106,.12)',  border:'rgba(31,194,106,.3)',  tcol:'#1FC26A' };
-      if(p < 80)  return { emoji:'🟡', txt:'ATENCIÓN',   sub:'Revisa si hay picos inusuales', col:'rgba(245,197,24,.10)', border:'rgba(245,197,24,.35)', tcol:'#F5C518' };
-      return             { emoji:'🔴', txt:'RIESGO',     sub:'Podrías exceder el presupuesto', col:'rgba(214,58,42,.12)',  border:'rgba(214,58,42,.35)',  tcol:'#D63A2A' };
-    };
-    var sal = _sem(pct);
+    if(sim) {
+      tot  = window._monetSimMonto;
+      pct  = Math.round(tot / pres * 100);
+      disp = Math.round((pres - tot) * 100) / 100;
+    } else if(window._monetEstadoCarga === 'error') {
+      tot = null; pct = null; disp = null;
+    } else {
+      tot  = (window._monetCostoReal !== null) ? window._monetCostoReal : 0;
+      pct  = Math.round(tot / pres * 100);
+      disp = Math.round((pres - tot) * 100) / 100;
+    }
 
-    var _fmt    = function(v) { return v !== null ? '$'+v.toFixed(2) : '—'; };
-    var _fmtPct = function(v) { return v !== null ? v+'%' : '—'; };
+    // Semáforo — nunca muestra "Sin datos"
+    var sal;
+    if(!sim && window._monetEstadoCarga === 'error') {
+      sal = { emoji:'⚠️', txt:'SIN INFORMACIÓN',  sub:'No fue posible obtener datos de Firebase',  col:'rgba(255,255,255,.06)', border:'rgba(255,255,255,.12)', tcol:'rgba(255,255,255,.4)' };
+    } else if(!sim && window._monetEstadoCarga === 'pendiente') {
+      sal = { emoji:'⏳', txt:'CARGANDO',          sub:'Obteniendo datos de Firebase...',            col:'rgba(255,255,255,.06)', border:'rgba(255,255,255,.12)', tcol:'rgba(255,255,255,.4)' };
+    } else if(pct !== null && pct < 50) {
+      var sub0 = (tot === 0) ? 'Sin consumo registrado este mes' : 'El gasto está bajo control';
+      sal = { emoji:'🟢', txt:'EXCELENTE', sub:sub0, col:'rgba(31,194,106,.12)', border:'rgba(31,194,106,.3)',  tcol:'#1FC26A' };
+    } else if(pct !== null && pct < 80) {
+      sal = { emoji:'🟡', txt:'ATENCIÓN',  sub:'Revisa si hay picos inusuales',   col:'rgba(245,197,24,.10)', border:'rgba(245,197,24,.35)', tcol:'#F5C518' };
+    } else {
+      sal = { emoji:'🔴', txt:'RIESGO',    sub:'Podrías exceder el presupuesto',  col:'rgba(214,58,42,.12)',  border:'rgba(214,58,42,.35)',  tcol:'#D63A2A' };
+    }
+
+    var _fmt    = function(v) { return (v !== null && v !== undefined) ? '$'+v.toFixed(2) : 'No disponible'; };
+    var _fmtPct = function(v) { return (v !== null && v !== undefined) ? v+'%' : '—'; };
     var _set    = function(id, val) { var e=document.getElementById(id); if(e) e.textContent=val; };
     var _css    = function(id, prop, val) { var e=document.getElementById(id); if(e) e.style[prop]=val; };
 
@@ -1580,37 +1610,52 @@ function showAdminTab(i,btn){
 
     // Nota simulación
     var nota = document.getElementById('costos-sim-nota');
-    if(nota) nota.style.display = sim ? 'flex' : 'none';
+    if(nota) {
+      nota.style.display = sim ? 'block' : 'none';
+      var notaMonto = document.getElementById('costos-sim-nota-monto');
+      if(notaMonto) notaMonto.textContent = sim ? '$'+window._monetSimMonto.toFixed(2) : '';
+    }
 
-    // Stat boxes
-    _set('costos-gastado',      _fmt(tot));
-    _set('costos-presupuesto',  '$'+pres.toFixed(2));
-    _set('costos-disponible',   _fmt(disp));
-    _set('costos-usado-pct',    _fmtPct(pct));
+    // Stat boxes — muestra $0.00 cuando costo real es cero, nunca "—" en modo real
+    _set('costos-presupuesto', '$'+pres.toFixed(2));
+    if(!sim && window._monetEstadoCarga === 'error') {
+      _set('costos-gastado',    'No disponible');
+      _set('costos-disponible', 'No disponible');
+      _set('costos-usado-pct',  '—');
+    } else {
+      _set('costos-gastado',    _fmt(tot));
+      _set('costos-disponible', _fmt(disp));
+      _set('costos-usado-pct',  _fmtPct(pct));
+    }
+
+    // Color del arco: solo hex directo, nunca rgba
+    var arcColor = sal.tcol.charAt(0) === '#' ? sal.tcol : '#1FC26A';
 
     // Dona SVG
-    var circ = 326.7;
-    var arc  = pct !== null ? Math.round(Math.min(pct,100) / 100 * circ * 10) / 10 : 0;
+    var circ  = 326.7;
+    var pctV  = (pct !== null) ? Math.min(pct, 100) : 0;
+    var arc   = Math.round(pctV / 100 * circ * 10) / 10;
     var arcEl = document.getElementById('costos-dona-arc');
     if(arcEl) {
       arcEl.setAttribute('stroke-dasharray', arc+' '+circ);
-      arcEl.setAttribute('stroke', sal.tcol === 'var(--white-50)' ? '#1FC26A' : sal.tcol);
+      arcEl.setAttribute('stroke', arcColor);
     }
     _set('costos-dona-pct', pct !== null ? pct+'%' : '—');
-    _css('costos-dona-pct', 'color', sal.tcol === 'var(--white-50)' ? '#fff' : sal.tcol);
+    _css('costos-dona-pct', 'color', arcColor);
     var legendCol = document.getElementById('costos-dona-legend-color');
-    if(legendCol) legendCol.style.background = sal.tcol === 'var(--white-50)' ? '#1FC26A' : sal.tcol;
+    if(legendCol) legendCol.style.background = arcColor;
 
-    // Ranking
+    // Ranking — muestra siempre que haya datos reales o simulados (incluso $0.00)
     var rankEl = document.getElementById('costos-ranking');
     if(rankEl) {
-      if(!sim) {
-        rankEl.innerHTML = '<p style="color:var(--white-50);font-size:13px;text-align:center;padding:12px 0;">Activa el modo simulación para ver el ranking</p>';
+      var tieneData = sim || window._monetEstadoCarga === 'ok';
+      if(!tieneData) {
+        rankEl.innerHTML = '<p style="color:var(--white-40);font-size:12px;text-align:center;padding:10px 0;">Activa el modo simulación para ver el ranking</p>';
       } else {
-        var sorted = _MONET_CATS.slice().sort(function(a,b){ return b.pct-a.pct; });
+        var totRank = (tot !== null) ? tot : 0;
+        var sorted  = _MONET_CATS.slice().sort(function(a,b){ return b.pct-a.pct; });
         rankEl.innerHTML = sorted.map(function(c, i) {
-          var costo = Math.round(c.pct / 100 * tot * 100) / 100;
-          var barW  = c.pct+'%';
+          var costo = Math.round(c.pct / 100 * totRank * 100) / 100;
           var medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
           return '<div style="margin-bottom:14px;">'
             +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
@@ -1618,37 +1663,50 @@ function showAdminTab(i,btn){
             +'<span style="font-size:13px;font-weight:700;color:#fff;">$'+costo.toFixed(2)+'</span>'
             +'</div>'
             +'<div style="height:5px;border-radius:3px;background:rgba(255,255,255,.08);">'
-            +'<div style="height:100%;border-radius:3px;background:'+sal.tcol+(sal.tcol==='var(--white-50)'?';background:#1FC26A':'')+';width:'+barW+';transition:width .5s ease;"></div>'
+            +'<div style="height:100%;border-radius:3px;background:'+arcColor+';width:'+c.pct+'%;transition:width .5s ease;"></div>'
             +'</div>'
             +'</div>';
         }).join('');
       }
     }
 
-    // Tips
+    // Recomendaciones dinámicas
     var tipsEl = document.getElementById('costos-tips');
     if(tipsEl) {
-      var tips;
-      if(pct === null) {
-        tips = ['<li>Activa el modo simulación para ver recomendaciones personalizadas.</li>'];
-      } else if(pct < 50) {
+      var tips = [];
+      if(!sim && window._monetEstadoCarga === 'error') {
         tips = [
-          '<li>La base de datos es tu mayor consumo. Revisa que no haya lecturas innecesarias.</li>',
-          '<li>Comprime las fotos antes de subirlas para reducir el almacenamiento.</li>',
-          '<li>Estás en zona verde — buen momento para revisar sin presión.</li>'
+          '<li>No fue posible conectar con Firebase para obtener información de costos.</li>',
+          '<li>Verifica tu conexión a internet e intenta nuevamente.</li>'
         ];
-      } else if(pct < 80) {
+      } else if(!sim && window._monetEstadoCarga === 'pendiente') {
+        tips = ['<li>Cargando recomendaciones...</li>'];
+      } else if(tot === 0) {
+        tips = [
+          '<li>'+_MONET_CATS[0].emoji+' La base de datos es tu mayor categoría potencial ('+_MONET_CATS[0].pct+'%). Mantén las consultas optimizadas.</li>',
+          '<li>'+_MONET_CATS[1].emoji+' Las fotografías y archivos representan el '+_MONET_CATS[1].pct+'% del costo potencial. Comprime imágenes antes de subirlas.</li>',
+          '<li>No hay consumo registrado este mes — buen momento para revisar y optimizar.</li>'
+        ];
+      } else if(pct !== null && pct < 50) {
+        tips = [
+          '<li>'+_MONET_CATS[0].emoji+' '+_MONET_CATS[0].lbl+' representa el mayor consumo este mes ($'+((_MONET_CATS[0].pct/100)*tot).toFixed(2)+').</li>',
+          '<li>'+_MONET_CATS[1].emoji+' '+_MONET_CATS[1].lbl+' se mantiene dentro de parámetros normales.</li>',
+          '<li>'+_MONET_CATS[2].emoji+' '+_MONET_CATS[2].lbl+' casi no genera gasto — buena señal.</li>'
+        ];
+      } else if(pct !== null && pct < 80) {
         tips = [
           '<li>Revisa si hay picos de tráfico inusuales en los procesos del servidor.</li>',
-          '<li>Considera aumentar el presupuesto o reducir envíos de notificaciones.</li>',
-          '<li>Las fotografías sin comprimir pueden estar generando costos extra de transferencia.</li>'
+          '<li>'+_MONET_CATS[1].emoji+' Las fotografías sin comprimir pueden estar generando costos extra de transferencia.</li>',
+          '<li>Considera aumentar el presupuesto mensual o reducir el envío de notificaciones.</li>'
+        ];
+      } else if(pct !== null) {
+        tips = [
+          '<li>Estás cerca o superando el límite mensual. Revisa los procesos activos.</li>',
+          '<li>Verifica si hay un proceso que se ejecuta en bucle o genera muchas escrituras.</li>',
+          '<li>Considera aumentar el presupuesto para el próximo ciclo.</li>'
         ];
       } else {
-        tips = [
-          '<li>⚠️ Estás cerca del límite. Pausa funciones no críticas si es posible.</li>',
-          '<li>Revisa si hay un proceso que se ejecuta en bucle (loop infinito).</li>',
-          '<li>Considera aumentar el presupuesto mensual para el próximo ciclo.</li>'
-        ];
+        tips = ['<li>Activa el modo simulación para ver recomendaciones personalizadas.</li>'];
       }
       tipsEl.innerHTML = '<ul style="margin:0;padding-left:18px;color:var(--white-80);font-size:13px;line-height:1.8;">'+tips.join('')+'</ul>';
     }
@@ -1660,7 +1718,7 @@ function showAdminTab(i,btn){
     document.querySelectorAll('.monet-sim-btn').forEach(function(b){
       b.style.background  = 'var(--card-dark)';
       b.style.borderColor = 'var(--card-border)';
-      b.style.color       = 'var(--white-80)';
+      b.style.color       = 'rgba(255,255,255,.8)';
     });
     var btn = document.getElementById('monet-sim-'+monto);
     if(btn) { btn.style.background='rgba(31,194,106,.15)'; btn.style.borderColor='#1FC26A'; btn.style.color='#1FC26A'; }
@@ -1668,12 +1726,15 @@ function showAdminTab(i,btn){
   };
 
   window.monetSimularReset = function() {
-    window._monetSimulando = false;
-    window._monetSimMonto  = 0;
+    window._monetSimulando   = false;
+    window._monetSimMonto    = 0;
+    // Forzar re-lectura de Firestore para mostrar datos reales actualizados
+    window._monetEstadoCarga = 'pendiente';
+    window._monetCostoReal   = null;
     document.querySelectorAll('.monet-sim-btn').forEach(function(b){
       b.style.background  = 'var(--card-dark)';
       b.style.borderColor = 'var(--card-border)';
-      b.style.color       = 'var(--white-80)';
+      b.style.color       = 'rgba(255,255,255,.8)';
     });
     window.monetCostosCargar();
   };
