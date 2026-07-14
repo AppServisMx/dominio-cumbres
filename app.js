@@ -3315,12 +3315,9 @@ window.renderHomeM2 = function() {
       elEst.style.display = 'none';
     }
 
-    // ── M2-G: Mostrar barra de búsqueda solo para vecino/negocio (no restaurante)
+    // Barra de búsqueda removida del Home — cada módulo tiene la suya
     var searchWrap = document.getElementById('home-search-wrap');
-    if (searchWrap) {
-      var showSearch = ['vecino','negocio'].indexOf(tipo) !== -1;
-      searchWrap.style.display = showSearch ? 'block' : 'none';
-    }
+    if (searchWrap) searchWrap.style.display = 'none';
 
     // ── 2. Banners de publicidad: rotar según rol ───────────────
     var track = document.getElementById('home-ads-track');
@@ -3413,16 +3410,17 @@ window.renderHomeM2 = function() {
     function modulo(ic, bg, lbl, sub, ruta, badgeKey) {
       var txt = badgeKey ? window.renderBadge(badgeKey) : '';
       var dot = txt ? '<div style="position:absolute;top:8px;right:8px;background:#D63A2A;color:#fff;font-size:8px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1;white-space:nowrap;">' + txt + '</div>' : '';
-      return '<div onclick="' + ruta + '" style="position:relative;background:#fff;border-radius:16px;padding:14px 14px 13px;display:flex;flex-direction:column;gap:9px;border:.5px solid #e8e8e8;box-shadow:0 1px 4px rgba(0,0,0,.05);cursor:pointer;">'
+      return '<div onclick="' + ruta + '" ontouchstart="this.style.transform=\'scale(.96)\';this.style.boxShadow=\'none\'" ontouchend="this.style.transform=\'\';this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.08)\'" style="position:relative;background:#fff;border-radius:20px;padding:16px 14px 15px;display:flex;flex-direction:column;gap:10px;border:none;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;transition:transform .15s,box-shadow .15s;overflow:hidden;">'
+        + '<div style="position:absolute;top:-10px;right:-10px;width:60px;height:60px;border-radius:50%;background:' + bg + ';opacity:.35;"></div>'
         + dot
-        + '<div style="width:40px;height:40px;border-radius:11px;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;">' + ic + '</div>'
-        + '<div><div style="font-size:13px;font-weight:700;color:#1a1a1a;line-height:1.2;">' + lbl + '</div>'
-        + (sub ? '<div style="font-size:10px;color:#888;margin-top:2px;">' + sub + '</div>' : '')
+        + '<div style="width:44px;height:44px;border-radius:14px;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">' + ic + '</div>'
+        + '<div><div style="font-size:14px;font-weight:800;color:#1a1a1a;line-height:1.2;">' + lbl + '</div>'
+        + (sub ? '<div style="font-size:10px;color:#888;margin-top:3px;font-weight:500;">' + sub + '</div>' : '')
         + '</div></div>';
     }
 
     function secLabel(txt) {
-      return '<div style="font-size:10px;font-weight:700;color:#999;letter-spacing:.8px;text-transform:uppercase;padding:0 18px;margin-bottom:10px;">'+txt+'</div>';
+      return '<div style="font-size:13px;font-weight:800;color:#111;padding:0 16px;margin-bottom:12px;letter-spacing:-.1px;">'+txt+'</div>';
     }
 
     function panelBtn(ruta) {
@@ -3449,10 +3447,10 @@ window.renderHomeM2 = function() {
     // ── VECINO ────────────────────────────────────────────────
     if (tipo === 'vecino') {
       html += secLabel('¿Qué necesitas hoy?');
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:0 14px;margin-bottom:12px;">'
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px;margin-bottom:16px;">'
         + modulo('🍽️','#FDECEA','Pedir Comida','<span id="hm-mod-food">...</span>',"go('v-food','right')")
         + modulo('🔧','#e8f5e1','Servicios','<span id="hm-mod-serv">...</span>',"go('v-servicios','right')")
-        + modulo('🚗','#F5F5F5','Ride','Proximamente',"window._dcProximamente('Ride estará disponible próximamente.')")
+        + modulo('🚗','#F0F0F0','Ride','Próximamente',"window._dcProximamente('Ride estará disponible próximamente.')")
         + modulo('🏪','#E3F0FF','Plaza Online','<span id="hm-mod-plaza">...</span>',"go('v-plaza','right')")
         + '</div>';
 
