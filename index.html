@@ -13772,26 +13772,8 @@ if (typeof window.go !== 'function') {
       return false;
     };
 
-    window.cambiarTabMisComprasPlaza=function(tab){ window._misComprasPlazaTab=tab||'proceso'; window.cargarMisComprasPlaza(); return false; };
-    window.cargarMisComprasPlaza=function(){
-      if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
-      var el=document.getElementById('miscompras-plaza-lista'); if(!el) return;
-      var sub=document.getElementById('miscompras-plaza-sub');
-      var bp=document.getElementById('miscompras-tab-proceso'), ba=document.getElementById('miscompras-tab-anteriores');
-      var tab=window._misComprasPlazaTab||'proceso';
-      if(sub) sub.textContent=tab==='anteriores'?'Compras anteriores':'Compras en proceso';
-      if(bp&&ba){bp.style.background=tab==='proceso'?'var(--blue)':'rgba(255,255,255,.18)';ba.style.background=tab==='anteriores'?'var(--blue)':'rgba(255,255,255,.18)';bp.style.color=ba.style.color='#fff';}
-      var arr=[]; try{arr=JSON.parse(localStorage.getItem(COMPRAS_KEY)||'[]')||[];}catch(e){}
-      var docs=arr.filter(function(c){return tab==='anteriores'?c.estado==='finalizado'||c.estado==='anterior':!(c.estado==='finalizado'||c.estado==='anterior');});
-      if(!docs.length){ el.innerHTML='<div style="padding:36px 20px;text-align:center;"><div style="font-size:42px;margin-bottom:12px;">'+(tab==='anteriores'?'📦':'🛒')+'</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:6px;">'+(tab==='anteriores'?'Sin compras anteriores':'Sin compras en proceso')+'</div><div style="font-size:12px;color:#777;line-height:1.5;">'+(tab==='anteriores'?'Cuando finalices compras aparecerán aquí.':'Cuando agregues productos al carrito aparecerán aquí.')+'</div></div>'; return; }
-      el.scrollTop=0;
-      el.innerHTML=docs.map(function(c){var items=c.items||[];return '<div style="background:#fff;border:.5px solid #e8e8e8;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.03);"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;"><div><div style="font-size:14px;font-weight:900;color:#111;">🛒 Carrito Plaza Online</div><div style="font-size:11px;color:#777;margin-top:2px;">En proceso · '+items.length+' producto(s)</div></div><div style="font-size:16px;font-weight:900;color:var(--blue);">'+money(c.total||0)+'</div></div>'+items.map(function(it){return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:.5px solid #f1f3f5;"><div style="min-width:0;"><div style="font-size:12px;font-weight:800;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(it.nombre||'Producto')+'</div><div style="font-size:10px;color:#777;margin-top:2px;">Cantidad: '+Number(it.cantidad||0)+'</div></div><div style="font-size:12px;font-weight:900;color:var(--blue);">'+money(Number(it.precio||0)*Number(it.cantidad||0))+'</div></div>';}).join('')+'</div>';}).join('');
-    };
   }
   installV35();
-  window.addEventListener('DOMContentLoaded', installV35);
-  setTimeout(installV35,300);
-  setTimeout(installV35,1200);
 })();
 </script>
 
@@ -13923,24 +13905,7 @@ if (typeof window.go !== 'function') {
     return false;
   };
 
-  window.cambiarTabMisComprasPlaza=function(tab){ window._misComprasPlazaTab=tab||'proceso'; window.cargarMisComprasPlaza(); return false; };
-  window.cargarMisComprasPlaza=function(){
-    if(window.__dcPlazaL14GoWrap){if(typeof window.dcPlazaLimpieza15Render==='function')window.dcPlazaLimpieza15Render();return;}
-    var el=document.getElementById('miscompras-plaza-lista'); if(!el) return;
-    var sub=document.getElementById('miscompras-plaza-sub');
-    var bp=document.getElementById('miscompras-tab-proceso'), ba=document.getElementById('miscompras-tab-anteriores');
-    var tab=window._misComprasPlazaTab||'proceso'; if(sub) sub.textContent=tab==='anteriores'?'Compras anteriores':'Compras en proceso';
-    if(bp&&ba){bp.style.background=tab==='proceso'?'var(--blue)':'rgba(255,255,255,.18)';ba.style.background=tab==='anteriores'?'var(--blue)':'rgba(255,255,255,.18)';bp.style.color=ba.style.color='#fff';}
-    var arr=[]; try{arr=JSON.parse(localStorage.getItem('dcPlazaCompras')||'[]')||[];}catch(e){}
-    var proceso=null; try{proceso=JSON.parse(localStorage.getItem('dcPlazaCompraProceso')||'null');}catch(e){}
-    if(proceso && !arr.some(function(x){return x.id===proceso.id;})) arr.unshift(proceso);
-    var docs=arr.filter(function(c){return tab==='anteriores'?c.estado==='finalizado'||c.estado==='anterior':!(c.estado==='finalizado'||c.estado==='anterior');});
-    if(!docs.length){ el.innerHTML='<div style="padding:36px 20px;text-align:center;"><div style="font-size:42px;margin-bottom:12px;">'+(tab==='anteriores'?'📦':'🛒')+'</div><div style="font-size:15px;font-weight:800;color:#111;margin-bottom:6px;">'+(tab==='anteriores'?'Sin compras anteriores':'Sin compras en proceso')+'</div><div style="font-size:12px;color:#777;line-height:1.5;">'+(tab==='anteriores'?'Cuando finalices compras aparecerán aquí.':'Cuando agregues productos al carrito aparecerán aquí.')+'</div></div>'; return; }
-    el.scrollTop=0;
-    el.innerHTML=docs.map(function(c){var items=c.items||[];return '<div style="background:#fff;border:.5px solid #e8e8e8;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.03);"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;"><div><div style="font-size:14px;font-weight:900;color:#111;">🛒 Carrito Plaza Online</div><div style="font-size:11px;color:#777;margin-top:2px;">En proceso · '+items.length+' producto(s)</div></div><div style="font-size:16px;font-weight:900;color:var(--blue);">'+money(c.total||0)+'</div></div>'+items.map(function(it){return '<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:.5px solid #f1f3f5;"><div style="min-width:0;"><div style="font-size:12px;font-weight:800;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(it.nombre||'Producto')+'</div><div style="font-size:10px;color:#777;margin-top:2px;">Cantidad: '+Number(it.cantidad||0)+'</div></div><div style="font-size:12px;font-weight:900;color:var(--blue);">'+money(Number(it.precio||0)*Number(it.cantidad||0))+'</div></div>';}).join('')+'</div>';}).join('');
-  };
-
-  // Última instalación visible, después de todos los scripts anteriores.
+  // cargarMisComprasPlaza lo maneja exclusivamente app.js
 })();
 </script>
 
