@@ -1087,7 +1087,7 @@ function _postHooks(id){
 window._dcFabInit = function() {
   var fab = document.getElementById('dc-fab-global');
   if (!fab) return;
-  var ROLES_NEGOCIO = ['proveedor','restaurante','negocio','transporte','repartidor','ambos'];
+  var ROLES_NEGOCIO = ['proveedor'];
   var tipo = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
   // Si no hay tipo en localStorage, intentar leerlo del usuario actual
   if (!tipo) {
@@ -3462,12 +3462,6 @@ window.renderHomeM2 = function() {
         + modulo('🔧','#FFF8DC','Mi Servicio','Editar perfil',"go('v-mipanel','right')")
         + '</div>';
 
-      // Banner IMPULSA
-      html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 12px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
-        + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
-        + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu negocio</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más clientes · Desde $199</div></div>'
-        + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
-        + '</div>';
 
       // Banner CMV — igual estilo que otros banners del home
       html += '<div onclick="go(\'v-prov-cmv\',\'right\');setTimeout(window.vprovCmvCargar,200)" style="margin:0 14px 14px;background:linear-gradient(120deg,#0d3d24,#1a6640);border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;box-shadow:0 4px 18px rgba(31,194,106,.25);">'
@@ -3558,12 +3552,6 @@ window.renderHomeM2 = function() {
         + chip('📊','Ventas', "go('vr-home','right');setTimeout(function(){navTo&&navTo('vr-ventas');},80)")
         + '</div>';
 
-      // Banner IMPULSA restaurante
-      html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 14px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
-        + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
-        + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu restaurante</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más pedidos · Desde $199</div></div>'
-        + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
-        + '</div>';
 
       html += descubrimiento(tieneActividad);
       html += secLabel('Actividad reciente');
@@ -3613,12 +3601,6 @@ window.renderHomeM2 = function() {
       + chip('\ud83d\udcca','Ventas', "go('vn-home','right');setTimeout(function(){negTo&&negTo('vn-ventas');},80)")
       + '</div>';
 
-    // Banner IMPULSA negocio
-    html += '<div onclick="window._irAImpulsa&&window._irAImpulsa()" style="margin:0 14px 14px;background:linear-gradient(120deg,#3d2c00,#c8940a);border-radius:16px;padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;">'
-      + '<div style="font-size:26px;flex-shrink:0;">⭐</div>'
-      + '<div style="flex:1;"><div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:2px;">IMPULSA tu negocio</div><div style="font-size:10px;color:rgba(255,255,255,.75);">Aparece primero · Banners · Más clientes · Desde $199</div></div>'
-      + '<div style="color:rgba(255,255,255,.65);font-size:20px;">›</div>'
-      + '</div>';
 
     html += descubrimiento(tieneActividad);
     html += secLabel('Actividad reciente');

@@ -5809,6 +5809,38 @@
   </div>
 </div>
 
+  <!-- FAB estrella IMPULSA -->
+  <style>
+  @keyframes dc-fab-float {
+    0%,100% { transform: translateY(0px) rotate(-2deg); }
+    50%      { transform: translateY(-8px) rotate(2deg); }
+  }
+  #dc-fab-global {
+    position: absolute; bottom: 80px; right: 14px; z-index: 9500;
+    display: none; pointer-events: none; transition: opacity .25s;
+  }
+  #dc-fab-global.visible { display: block; pointer-events: auto; }
+  #dc-fab-inner {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    cursor: pointer;
+    animation: dc-fab-float 3s ease-in-out infinite;
+  }
+  #dc-fab-star {
+    font-size: 40px; line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(31,194,106,.9)) drop-shadow(0 4px 12px rgba(31,194,106,.5));
+  }
+  #dc-fab-label {
+    font-size: 11px; font-weight: 900; color: #fff; letter-spacing: .5px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 10px rgba(31,194,106,.6);
+  }
+  </style>
+  <div id="dc-fab-global">
+    <div id="dc-fab-inner" onclick="window._dcFabAccion&&window._dcFabAccion()">
+      <span id="dc-fab-star">⭐</span>
+      <span id="dc-fab-label">IMPULSA</span>
+    </div>
+  </div>
 </div>
   </div>
 </div>
@@ -5828,38 +5860,6 @@
 
 
 <script src="negocio.js"></script>
-
-<style>
-@keyframes dc-fab-float {
-  0%,100% { transform: translateY(0px) rotate(-2deg); }
-  50%      { transform: translateY(-8px) rotate(2deg); }
-}
-#dc-fab-global {
-  position: absolute; bottom: 80px; right: 14px; z-index: 9500;
-  display: none; pointer-events: none; transition: opacity .25s;
-}
-#dc-fab-global.visible { display: block; pointer-events: auto; }
-#dc-fab-inner {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  cursor: pointer;
-  animation: dc-fab-float 3s ease-in-out infinite;
-}
-#dc-fab-star {
-  font-size: 40px; line-height: 1;
-  filter: drop-shadow(0 0 8px rgba(31,194,106,.9)) drop-shadow(0 4px 12px rgba(31,194,106,.5));
-}
-#dc-fab-label {
-  font-size: 11px; font-weight: 900; color: #fff; letter-spacing: .5px;
-  text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 10px rgba(31,194,106,.6);
-}
-</style>
-<div id="dc-fab-global">
-  <div id="dc-fab-inner" onclick="window._dcFabAccion&&window._dcFabAccion()">
-    <span id="dc-fab-star">⭐</span>
-    <span id="dc-fab-label">IMPULSA</span>
-  </div>
-</div>
 
 <script src="campanas.js?v=20260713a"></script>
 <script src="app.js?v=20260706j"></script>
