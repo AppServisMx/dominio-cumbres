@@ -14190,6 +14190,10 @@ window.cargarMembresia=async function(){
 <script>
 (function(){
   var _rpUid='', _rpSel=0, _rpVotadoCom='', _rpComOpen=false;
+  var _rpCache={}, _RP_TTL=300000; // cache votos 5 min por bizId
+  function _rpCacheGet(id){ var c=_rpCache[id]; return c&&(Date.now()-c.ts<_RP_TTL)?c.votos:null; }
+  function _rpCacheSet(id,votos){ _rpCache[id]={ts:Date.now(),votos:votos}; }
+  function _rpCacheDel(id){ delete _rpCache[id]; }
 
   function _rpSetBody(html){ var b=document.getElementById('dc-rp-body'); if(b)b.innerHTML=html; }
   function _rpSetSub(t){ var s=document.getElementById('dc-rp-subtitulo'); if(s)s.textContent=t; }
@@ -14324,27 +14328,35 @@ window.cargarMembresia=async function(){
     }catch(e){ _rpMostrarFormulario(0,'',false); }
   }
 
+  function _rpRenderComentariosInterno(allVotos, myUid){
+    var items=allVotos.filter(function(v){return v._id!==myUid&&(v.comentario||'').trim();});
+    var wrap=document.getElementById('dc-rp-com-wrap'), ob=document.getElementById('dc-rp-comentarios'), tog=document.getElementById('dc-rp-com-toggle');
+    if(!wrap||!ob)return;
+    if(!items.length){wrap.style.display='none';return;}
+    wrap.style.display='block';
+    if(tog)tog.textContent='💬 Ver comentarios ('+items.length+') ▾';
+    var html='';
+    items.forEach(function(v){
+      var nr=v.rating||0, fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
+      html+='<div style="background:#f9f9f9;border-radius:12px;padding:11px 12px;margin-bottom:8px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+        +'<span style="font-size:14px;">'+'⭐'.repeat(nr)+'☆'.repeat(5-nr)+'</span>'
+        +'<span style="font-size:10px;color:#bbb;">'+fecha+'</span></div>'
+        +'<div style="font-size:12px;color:#444;line-height:1.5;font-style:italic;">&ldquo;'+v.comentario.replace(/</g,'&lt;')+'&rdquo;</div>'
+        +'</div>';
+    });
+    ob.innerHTML=html;
+  }
+
   async function _rpCargarComentariosInterno(pUid, myUid){
     try{
+      var cached=_rpCacheGet(pUid);
+      if(cached){ _rpRenderComentariosInterno(cached,myUid); }
       var snap=await _fbColSub3('calificaciones',pUid,'votos');
-      var items=[];
-      snap.forEach(function(d){var v=d.data();if(d.id!==myUid&&(v.comentario||'').trim())items.push(v);});
-      var wrap=document.getElementById('dc-rp-com-wrap'), ob=document.getElementById('dc-rp-comentarios'), tog=document.getElementById('dc-rp-com-toggle');
-      if(!wrap||!ob)return;
-      if(!items.length){wrap.style.display='none';return;}
-      wrap.style.display='block';
-      if(tog)tog.textContent='💬 Ver comentarios ('+items.length+') ▾';
-      var html='';
-      items.forEach(function(v){
-        var nr=v.rating||0, fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
-        html+='<div style="background:#f9f9f9;border-radius:12px;padding:11px 12px;margin-bottom:8px;">'
-          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-          +'<span style="font-size:14px;">'+'⭐'.repeat(nr)+'☆'.repeat(5-nr)+'</span>'
-          +'<span style="font-size:10px;color:#bbb;">'+fecha+'</span></div>'
-          +'<div style="font-size:12px;color:#444;line-height:1.5;font-style:italic;">&ldquo;'+v.comentario.replace(/</g,'&lt;')+'&rdquo;</div>'
-          +'</div>';
-      });
-      ob.innerHTML=html;
+      var votos=[];
+      snap.forEach(function(d){var v=d.data(); v._id=d.id; votos.push(v);});
+      _rpCacheSet(pUid,votos);
+      _rpRenderComentariosInterno(votos,myUid);
     }catch(e){}
   }
 
@@ -14370,6 +14382,7 @@ window.cargarMembresia=async function(){
       var prom=cnt?Math.round((tot/cnt)*10)/10:0;
       await _fbSet4('calificaciones',_rpUid,'resumen','datos',{promedio:prom,total:cnt});
       try{await _fbUpd2('usuarios',_rpUid,{ratingPromedio:prom,ratingTotal:cnt});}catch(e){}
+      _rpCacheDel(_rpUid);
       _rpMarcarBotonesCalificado(_rpUid);
       var avg=document.getElementById('dc-rp-avg');
       if(avg){avg.textContent='⭐ '+prom+' promedio · '+cnt+' opiniones';avg.style.display='block';}
@@ -14387,31 +14400,38 @@ window.cargarMembresia=async function(){
     }
   };
 
+  function _rpRenderComBody(votos, bd){
+    if(!votos.length){bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">Aún no hay opiniones</div>';return;}
+    var sorted=votos.slice().sort(function(a,b){return (b.fecha||'')>(a.fecha||'')?1:-1;});
+    var html='';
+    sorted.forEach(function(v){
+      var nr=v.rating||0, com=(v.comentario||'').trim(), fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
+      html+='<div style="background:#f9f9f9;border-radius:14px;padding:13px 14px;margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+        +'<span style="font-size:16px;">'+'⭐'.repeat(nr)+'<span style="opacity:.2;">☆</span>'.repeat(5-nr)+'</span>'
+        +'<span style="font-size:10px;color:#bbb;">'+fecha+'</span></div>'
+        +(com?'<div style="font-size:13px;color:#444;line-height:1.5;font-style:italic;">&ldquo;'+com.replace(/</g,'&lt;')+'&rdquo;</div>':'<div style="font-size:11px;color:#ccc;">Sin comentario</div>')
+        +'</div>';
+    });
+    bd.innerHTML=html;
+  }
+
   window.dcRatingVerComentarios=async function(bizId,e){
     if(e)e.stopPropagation();
     var ov=document.getElementById('dc-com-overlay'), sh=document.getElementById('dc-com-sheet'), bd=document.getElementById('dc-com-body');
     if(!ov||!sh||!bd)return;
-    bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#ccc;">⏳ Cargando...</div>';
+    var cached=_rpCacheGet(bizId);
+    if(cached){ _rpRenderComBody(cached,bd); }
+    else { bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#ccc;">⏳ Cargando...</div>'; }
     ov.style.display='flex';
     requestAnimationFrame(function(){sh.style.transform='translateY(0)';sh.scrollTop=0;});
     try{
       var snap=await _fbColSub3('calificaciones',bizId,'votos');
-      var items=[];
-      snap.forEach(function(d){items.push(d.data());});
-      if(!items.length){bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">Aún no hay opiniones</div>';return;}
-      items.sort(function(a,b){return (b.fecha||'')>(a.fecha||'')?1:-1;});
-      var html='';
-      items.forEach(function(v){
-        var nr=v.rating||0, com=(v.comentario||'').trim(), fecha=v.fecha?new Date(v.fecha).toLocaleDateString('es-MX'):'';
-        html+='<div style="background:#f9f9f9;border-radius:14px;padding:13px 14px;margin-bottom:10px;">'
-          +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
-          +'<span style="font-size:16px;">'+'⭐'.repeat(nr)+'<span style="opacity:.2;">☆</span>'.repeat(5-nr)+'</span>'
-          +'<span style="font-size:10px;color:#bbb;">'+fecha+'</span></div>'
-          +(com?'<div style="font-size:13px;color:#444;line-height:1.5;font-style:italic;">&ldquo;'+com.replace(/</g,'&lt;')+'&rdquo;</div>':'<div style="font-size:11px;color:#ccc;">Sin comentario</div>')
-          +'</div>';
-      });
-      bd.innerHTML=html;
-    }catch(err){bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">No se pudieron cargar</div>';}
+      var votos=[];
+      snap.forEach(function(d){var v=d.data(); v._id=d.id; votos.push(v);});
+      _rpCacheSet(bizId,votos);
+      _rpRenderComBody(votos,bd);
+    }catch(err){ if(!cached)bd.innerHTML='<div style="text-align:center;padding:24px 0;color:#aaa;font-size:13px;">No se pudieron cargar</div>'; }
   };
 
   window.dcComCerrar=function(){
