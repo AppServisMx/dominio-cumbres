@@ -756,7 +756,7 @@
       <div><div class="hdr-title" style="display:flex;align-items:center;gap:7px;">👁 Cómo me ve el cliente</div></div>
     </div>
   </div>
-  <div class="scr" style="padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+  <div class="scroll" style="padding:0;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     <!-- Preview card -->
     <div style="margin:16px 14px 0;">
       <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Vista previa del cliente</div>
@@ -13823,6 +13823,7 @@ window.dcProvRatingCargar = async function(provUid) {
   var avg = document.getElementById('det-rating-avg');
   if (!blk) return;
   var tipo = (localStorage.getItem('dcuserTipo')||'vecino').toLowerCase();
+  // Solo vecinos pueden calificar
   if (tipo !== 'vecino') { blk.style.display='none'; return; }
   blk.style.display = 'block';
   _ratingSeleccionado = 0;
