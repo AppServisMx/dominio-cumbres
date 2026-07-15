@@ -5268,77 +5268,130 @@
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="back-row"><button class="btn-back" onclick="go('v-admin-panel','left')">‹</button><div><div class="hdr-title">Configuración</div><div class="hdr-sub">Parámetros del sistema</div></div></div>
   </div>
-  <div class="si42 scroll">
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">💰 Comisiones</div>
-      <div class="si78">
-        <div><div class="si43">Comisión general</div><div class="si22">Food, Ride y servicios</div></div>
-        <div class="si41"><input type="number" value="10" min="1" max="30" style="background:var(--white-08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 8px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;width:56px;text-align:center;"><span class="si75">%</span></div>
+  <div class="si42 scroll" style="padding:12px 14px 24px;">
+
+    <!-- sección colapsable helper style -->
+    <style>
+      .cfg-sec { background:var(--card-dark);border:1px solid var(--card-border);border-radius:18px;margin-bottom:10px;overflow:hidden;transition:box-shadow .2s; }
+      .cfg-sec-hdr { display:flex;align-items:center;justify-content:space-between;padding:16px;cursor:pointer;user-select:none; }
+      .cfg-sec-hdr:active { opacity:.75; }
+      .cfg-sec-ic { width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0; }
+      .cfg-sec-title { font-size:14px;font-weight:800;color:#fff;margin-bottom:1px; }
+      .cfg-sec-sub { font-size:11px;color:rgba(255,255,255,.4); }
+      .cfg-sec-chev { font-size:18px;color:rgba(255,255,255,.3);transition:transform .25s;flex-shrink:0; }
+      .cfg-sec.open .cfg-sec-chev { transform:rotate(90deg); }
+      .cfg-sec-body { display:none;padding:0 16px 16px; }
+      .cfg-sec.open .cfg-sec-body { display:block; }
+      .cfg-row { display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:.5px solid rgba(255,255,255,.06); }
+      .cfg-row:last-child { border-bottom:none; }
+      .cfg-inp { background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 8px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;text-align:center; }
+    </style>
+
+    <!-- 💰 COMISIONES -->
+    <div class="cfg-sec" id="cfg-comisiones">
+      <div class="cfg-sec-hdr" onclick="window._cfgToggle('cfg-comisiones')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cfg-sec-ic" style="background:rgba(245,197,24,.15);">💰</div>
+          <div><div class="cfg-sec-title">Comisiones</div><div class="cfg-sec-sub">Porcentajes y membresías</div></div>
+        </div>
+        <span class="cfg-sec-chev">›</span>
       </div>
-      <div class="si78">
-        <div><div class="si43">Membresía negocios</div><div class="si22">Mensual por restaurante/comercio</div></div>
-        <div class="si41"><span class="si70">$</span><input type="number" value="399" style="background:var(--white-08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 8px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;width:70px;text-align:center;"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-        <div><div class="si43">Activación negocios</div><div class="si22">Pago único al registrarse</div></div>
-        <div class="si41"><span class="si70">$</span><input type="number" value="800" style="background:var(--white-08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 8px;font-size:13px;color:#fff;outline:none;font-family:'Inter',sans-serif;width:70px;text-align:center;"></div>
-      </div>
-    </div>
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">⚙️ Automatizaciones</div>
-      <div class="si78">
-        <div><div class="si43">Auto-suspender proveedores</div><div class="si22">Calificación menor 3.0★ por 30 días</div></div>
-        <button class="toggle" onclick="this.classList.toggle('off')"></button>
-      </div>
-      <div class="si78">
-        <div><div class="si43">Mensajes reactivación</div><div class="si22">Vecinos inactivos 30, 60, 90 días</div></div>
-        <button class="toggle" onclick="this.classList.toggle('off')"></button>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-        <div><div class="si43">Notificaciones al admin</div><div class="si22">Solicitudes y alertas importantes</div></div>
-        <button class="toggle" onclick="this.classList.toggle('off')"></button>
-      </div>
-    </div>
-    <div style="background:var(--card-dark);border-radius:14px;padding:14px;border:1px solid var(--card-border);margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--white-40);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">🏦 SPEI / Transferencias</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);line-height:1.6;margin-bottom:12px;">
-        Datos bancarios que verá el usuario al pagar por transferencia. Se aplican de inmediato.
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">Banco</div>
-        <input id="ic-banco" type="text" placeholder="Ej: BBVA" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
-      </div>
-      <div style="margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">CLABE (18 dígitos)</div>
-        <input id="ic-clabe" type="text" maxlength="18" placeholder="000000000000000000" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#F5C518;font-family:'Inter',sans-serif;outline:none;letter-spacing:2px;">
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;">Beneficiario</div>
-        <input id="ic-beneficiario" type="text" placeholder="Ej: Dominio Cumbres" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
-      </div>
-      <div id="ic-status" style="display:none;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:700;margin-bottom:10px;text-align:center;"></div>
-      <button onclick="window.adminImpulsaConfigGuardar()" id="ic-guardar-btn"
-        style="width:100%;background:linear-gradient(135deg,#0d3d24,#1FC26A);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
-        💾 Guardar datos bancarios
-      </button>
-      <button onclick="window.adminImpulsaConfigEditar()" id="ic-editar-btn"
-        style="display:none;width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
-        ✏️ Editar datos bancarios
-      </button>
-      <div style="margin-top:16px;padding-top:12px;border-top:.5px solid rgba(255,255,255,.07);">
-        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.35);margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase;">Transferencias pendientes de validar</div>
-        <div id="ic-pendientes" style="font-size:12px;color:rgba(255,255,255,.4);">—</div>
+      <div class="cfg-sec-body">
+        <div class="cfg-row">
+          <div><div class="si43">Comisión general</div><div class="si22">Food, Ride y servicios</div></div>
+          <div style="display:flex;align-items:center;gap:6px;"><input type="number" value="10" min="1" max="30" class="cfg-inp" style="width:56px;"><span style="font-size:12px;color:rgba(255,255,255,.5);">%</span></div>
+        </div>
+        <div class="cfg-row">
+          <div><div class="si43">Membresía negocios</div><div class="si22">Mensual por restaurante/comercio</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:rgba(255,255,255,.4);">$</span><input type="number" value="399" class="cfg-inp" style="width:70px;"></div>
+        </div>
+        <div class="cfg-row">
+          <div><div class="si43">Activación negocios</div><div class="si22">Pago único al registrarse</div></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:rgba(255,255,255,.4);">$</span><input type="number" value="800" class="cfg-inp" style="width:70px;"></div>
+        </div>
       </div>
     </div>
-    <div onclick="irAdministradores()" style="background:var(--card-dark);border-radius:14px;padding:14px 16px;border:1px solid var(--card-border);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-      <div>
-        <div class="si43">👥 Administradores</div>
-        <div class="si22">Gestionar cuentas y permisos</div>
+
+    <!-- ⚙️ AUTOMATIZACIONES -->
+    <div class="cfg-sec" id="cfg-automatizaciones">
+      <div class="cfg-sec-hdr" onclick="window._cfgToggle('cfg-automatizaciones')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cfg-sec-ic" style="background:rgba(26,122,181,.2);">⚙️</div>
+          <div><div class="cfg-sec-title">Automatizaciones</div><div class="cfg-sec-sub">Suspensiones y notificaciones</div></div>
+        </div>
+        <span class="cfg-sec-chev">›</span>
       </div>
-      <span style="color:#1FC26A;font-size:18px;">›</span>
+      <div class="cfg-sec-body">
+        <div class="cfg-row">
+          <div><div class="si43">Auto-suspender proveedores</div><div class="si22">Calificación menor 3.0★ por 30 días</div></div>
+          <button class="toggle" onclick="this.classList.toggle('off')"></button>
+        </div>
+        <div class="cfg-row">
+          <div><div class="si43">Mensajes reactivación</div><div class="si22">Vecinos inactivos 30, 60, 90 días</div></div>
+          <button class="toggle" onclick="this.classList.toggle('off')"></button>
+        </div>
+        <div class="cfg-row">
+          <div><div class="si43">Notificaciones al admin</div><div class="si22">Solicitudes y alertas importantes</div></div>
+          <button class="toggle" onclick="this.classList.toggle('off')"></button>
+        </div>
+      </div>
     </div>
+
+    <!-- 🏦 SPEI -->
+    <div class="cfg-sec" id="cfg-spei">
+      <div class="cfg-sec-hdr" onclick="window._cfgToggle('cfg-spei')">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cfg-sec-ic" style="background:rgba(31,194,106,.15);">🏦</div>
+          <div><div class="cfg-sec-title">SPEI / Transferencias</div><div class="cfg-sec-sub">Datos bancarios para pagos</div></div>
+        </div>
+        <span class="cfg-sec-chev">›</span>
+      </div>
+      <div class="cfg-sec-body">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:14px;line-height:1.5;">Datos que verá el usuario al pagar por transferencia. Se aplican de inmediato.</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;">Banco</div>
+          <input id="ic-banco" type="text" placeholder="Ej: BBVA" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;">CLABE (18 dígitos)</div>
+          <input id="ic-clabe" type="text" maxlength="18" placeholder="000000000000000000" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;color:#F5C518;font-family:'Inter',sans-serif;outline:none;letter-spacing:2px;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;">Beneficiario</div>
+          <input id="ic-beneficiario" type="text" placeholder="Ej: Dominio Cumbres" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
+        </div>
+        <div id="ic-status" style="display:none;padding:9px 12px;border-radius:10px;font-size:12px;font-weight:700;margin-bottom:10px;text-align:center;"></div>
+        <button onclick="window.adminImpulsaConfigGuardar()" id="ic-guardar-btn"
+          style="width:100%;background:linear-gradient(135deg,#0d3d24,#1FC26A);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
+          💾 Guardar datos bancarios
+        </button>
+        <button onclick="window.adminImpulsaConfigEditar()" id="ic-editar-btn"
+          style="display:none;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">
+          ✏️ Editar datos bancarios
+        </button>
+      </div>
+    </div>
+
+    <!-- 👥 ADMINISTRADORES -->
+    <div class="cfg-sec" onclick="irAdministradores()" style="cursor:pointer;">
+      <div class="cfg-sec-hdr">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="cfg-sec-ic" style="background:rgba(139,92,246,.15);">👥</div>
+          <div><div class="cfg-sec-title">Administradores</div><div class="cfg-sec-sub">Gestionar cuentas y permisos</div></div>
+        </div>
+        <span style="font-size:18px;color:#1FC26A;">›</span>
+      </div>
+    </div>
+
     <div class="si14"></div>
   </div>
+
+  <script>
+  window._cfgToggle = function(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('open');
+  };
+  </script>
 </div>
 
 <!-- ╔══════════════════════════════════════════════╗
