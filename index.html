@@ -5268,7 +5268,7 @@
     <div class="sbar dk"><span>9:41</span><span>▲</span></div>
     <div class="back-row"><button class="btn-back" onclick="go('v-admin-panel','left')">‹</button><div><div class="hdr-title">Configuración</div><div class="hdr-sub">Parámetros del sistema</div></div></div>
   </div>
-  <div class="si42 scroll" style="padding:12px 14px 24px;">
+  <div class="si42 scroll" style="padding:12px 14px 24px;" id="cfg-scroll-wrap">
 
     <!-- sección colapsable helper style -->
     <style>
@@ -5391,6 +5391,39 @@
     var el = document.getElementById(id);
     if (el) el.classList.toggle('open');
   };
+
+  (function() {
+    var CFG_ORDER_KEY = 'dc_cfg_sections_order';
+    function cfgApplyOrder(wrap, order) {
+      order.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) wrap.appendChild(el);
+      });
+    }
+    function cfgSaveOrder(wrap) {
+      var ids = Array.from(wrap.children).map(function(el) { return el.id; }).filter(Boolean);
+      localStorage.setItem(CFG_ORDER_KEY, JSON.stringify(ids));
+    }
+    function initCfgDrag() {
+      var wrap = document.getElementById('cfg-scroll-wrap');
+      if (!wrap || typeof Sortable === 'undefined') return;
+      var saved = localStorage.getItem(CFG_ORDER_KEY);
+      if (saved) { try { cfgApplyOrder(wrap, JSON.parse(saved)); } catch(e) {} }
+      Sortable.create(wrap, {
+        animation: 150,
+        touchStartThreshold: 8,
+        ghostClass: 'admin-card-drag-ghost',
+        chosenClass: 'admin-card-drag-chosen',
+        onEnd: function() { cfgSaveOrder(wrap); try { window._dcDirtyV = null; } catch(e) {} },
+        onStart: function() { try { window._dcDirtyV = null; } catch(e) {} }
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCfgDrag);
+    } else {
+      initCfgDrag();
+    }
+  })();
   </script>
 </div>
 
