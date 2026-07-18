@@ -6004,6 +6004,64 @@ window.adminCampanasRender = function() {
   }).join('');
 };
 
+window._cfUrlManual = function(val) {
+  var prev = document.getElementById('cf-img-preview');
+  var img  = document.getElementById('cf-img-preview-img');
+  if (val && prev && img) { img.src = val; prev.style.display = 'block'; }
+  else if (prev) { prev.style.display = 'none'; }
+};
+
+window.adminCampanasSubirImagen = async function(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var storage = window._fbStorage;
+  if (!storage) { window.toast && window.toast('Firebase Storage no disponible'); return; }
+
+  var btn = document.getElementById('cf-upload-btn');
+  var prog = document.getElementById('cf-upload-progress');
+  var bar  = document.getElementById('cf-upload-bar');
+  var pct  = document.getElementById('cf-upload-pct');
+  var prev = document.getElementById('cf-img-preview');
+  var prevImg = document.getElementById('cf-img-preview-img');
+
+  if (btn)  { btn.disabled = true; btn.textContent = '⏳ Subiendo...'; }
+  if (prog) prog.style.display = 'block';
+  if (bar)  bar.style.width = '0%';
+
+  try {
+    var { ref, uploadBytesResumable, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-storage.js');
+    var nombre = 'campanas/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    var storRef = ref(storage, nombre);
+    var task = uploadBytesResumable(storRef, file);
+
+    task.on('state_changed',
+      function(snap) {
+        var p = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+        if (bar) bar.style.width = p + '%';
+        if (pct) pct.textContent = p + '%';
+      },
+      function(err) {
+        if (btn)  { btn.disabled = false; btn.textContent = '📷 Seleccionar imagen'; }
+        if (prog) prog.style.display = 'none';
+        window.toast && window.toast('Error al subir: ' + err.message);
+      },
+      async function() {
+        var url = await getDownloadURL(task.snapshot.ref);
+        var inpUrl = document.getElementById('cf-imagen');
+        if (inpUrl) inpUrl.value = url;
+        if (prev && prevImg) { prevImg.src = url; prev.style.display = 'block'; }
+        if (btn)  { btn.disabled = false; btn.innerHTML = '✅ Imagen lista'; }
+        if (prog) prog.style.display = 'none';
+        window.toast && window.toast('✅ Imagen subida');
+      }
+    );
+  } catch(e) {
+    if (btn)  { btn.disabled = false; btn.textContent = '📷 Seleccionar imagen'; }
+    if (prog) prog.style.display = 'none';
+    window.toast && window.toast('Error: ' + e.message);
+  }
+};
+
 window.adminCampanasNueva = function() {
   // Limpiar form
   ['cf-nombre','cf-texto','cf-imagen','cf-negocio-id'].forEach(function(id){
@@ -6015,6 +6073,10 @@ window.adminCampanasNueva = function() {
   var ini=document.getElementById('cf-inicio'); if(ini) ini.value=hoy.getFullYear()+'-'+mm+'-'+dd;
   var fin=document.getElementById('cf-fin'); if(fin) fin.value=finDate.getFullYear()+'-'+mm2+'-'+dd2;
   var err=document.getElementById('cf-error'); if(err) err.style.display='none';
+  var prev=document.getElementById('cf-img-preview'); if(prev) prev.style.display='none';
+  var btn=document.getElementById('cf-upload-btn'); if(btn){btn.disabled=false;btn.innerHTML='📷 Seleccionar imagen';}
+  var prog=document.getElementById('cf-upload-progress'); if(prog) prog.style.display='none';
+  var fi=document.getElementById('cf-imagen-file'); if(fi) fi.value='';
   go('v-admin-campanas-form','right');
 };
 

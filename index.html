@@ -5371,10 +5371,26 @@
     </div>
 
     <div style="margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">URL de imagen del banner</div>
-      <input type="url" id="cf-imagen" placeholder="https://..."
-        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:13px;color:#fff;font-family:'Inter',sans-serif;outline:none;">
-      <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;">Sube la imagen a Firebase Storage primero y pega la URL aquí</div>
+      <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Imagen del banner</div>
+      <!-- Preview -->
+      <div id="cf-img-preview" style="display:none;margin-bottom:8px;border-radius:12px;overflow:hidden;height:120px;background:#111;">
+        <img id="cf-img-preview-img" src="" style="width:100%;height:100%;object-fit:cover;" alt="">
+      </div>
+      <!-- Botón subir -->
+      <input type="file" id="cf-imagen-file" accept="image/*" style="display:none" onchange="window.adminCampanasSubirImagen(this)">
+      <button type="button" onclick="document.getElementById('cf-imagen-file').click()"
+        style="width:100%;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.25);border-radius:12px;padding:12px;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;" id="cf-upload-btn">
+        📷 Seleccionar imagen
+      </button>
+      <div id="cf-upload-progress" style="display:none;margin-top:6px;">
+        <div style="background:rgba(255,255,255,.1);border-radius:6px;height:4px;overflow:hidden;">
+          <div id="cf-upload-bar" style="height:100%;background:#1FC26A;width:0%;transition:width .2s;"></div>
+        </div>
+        <div id="cf-upload-pct" style="font-size:10px;color:rgba(255,255,255,.4);margin-top:3px;text-align:center;">Subiendo...</div>
+      </div>
+      <!-- URL manual como fallback -->
+      <input type="url" id="cf-imagen" placeholder="O pega una URL de imagen aquí"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.6);font-family:'Inter',sans-serif;outline:none;margin-top:8px;" oninput="window._cfUrlManual(this.value)">
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:12px;">
