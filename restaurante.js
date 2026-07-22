@@ -1959,7 +1959,9 @@ function _renderMenuRest() {
   if (!lista.length) {
     cont.innerHTML = '<div class="empty"><div class="empty-ic">📋</div>'
       + '<div class="empty-tit">Sin productos en esta categoría</div>'
-      + '<div class="empty-sub">Agrega el primero con el botón "+ Agregar"</div></div>';
+      + '<div class="empty-sub">Agrega el primero con el botón de abajo</div>'
+      + '<button onclick="abrirFormProd(null)" style="margin-top:14px;background:var(--green);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar producto</button>'
+      + '</div>';
     return;
   }
 
@@ -2014,7 +2016,7 @@ function _renderMenuRest() {
         + '</div>'
         + '</div>'
         + '</div>';
-    }).join('') + '</div>';
+    }).join('') + addCard + '</div>';
 
     return '<div class="sec-lbl" style="padding-top:12px;">' + emoji + ' ' + cat + '</div>' + items;
   }).join('');
@@ -2075,6 +2077,7 @@ function _renderMenuRestFiltrado() {
     var emoji = _catEmoji(cat);
     var colorIdx = Math.abs(cat.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0)) % colores.length;
     var bg = colores[colorIdx];
+    var addCard = '<div class="menu-pcard" onclick="abrirFormProd(null)" style="border:2px dashed #ddd;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:160px;cursor:pointer;"><div style="width:44px;height:44px;border-radius:50%;background:var(--green-lt);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--green);">+</div><div style="font-size:11px;font-weight:700;color:#999;text-align:center;line-height:1.4;">Agregar<br>producto</div></div>';
     var items = '<div class="menu-grid">' + grupos[cat].map(function(p){
       var agotadoOverlay = p.disponible ? '' : '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(214,58,42,.85);color:#fff;font-size:11px;font-weight:800;padding:4px 0;text-align:center;letter-spacing:.5px;">AGOTADO</div>';
       var imgContent;
@@ -2100,7 +2103,7 @@ function _renderMenuRestFiltrado() {
         + '<button class="btn-sm" style="font-size:10px;padding:3px 8px;background:' + (p.disponible?'#f0f0f0':'var(--green-lt)') + ';color:' + (p.disponible?'#666':'var(--green-dk)') + ';" onclick="event.stopPropagation();toggleDisp(\'' + p._id + '\')">'
         + (p.disponible?'Agotado':'Activar') + '</button>'
         + '</div></div></div>';
-    }).join('') + '</div>';
+    }).join('') + addCard + '</div>';
     return '<div class="sec-lbl" style="padding-top:12px;">' + emoji + ' ' + cat + '</div>' + items;
   }).join('');
 }

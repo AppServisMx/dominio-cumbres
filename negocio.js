@@ -144,7 +144,8 @@
     if(sub) sub.textContent=productos.length+' producto'+(productos.length===1?'':'s');
     var searchEl=document.getElementById('vn-menu-search-inp'); var q=norm(searchEl&&searchEl.value);
     var visibles=productos.filter(function(p){ var catOk=actual==='todos'||String(p.categoria||'')===actual; var txt=norm((p.nombre||'')+' '+(p.categoria||'')+' '+(p.descripcion||'')); return catOk&&(!q||txt.indexOf(q)!==-1); });
-    if(!productos.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Aún no tienes productos.<br>Agrega el primero arriba.</div>'; return; }
+    var addCard='<div onclick="vnegAbrirFormProd(null)" style="background:#fafafa;border-radius:14px;overflow:hidden;border:2px dashed #ddd;box-shadow:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:160px;"><div style="width:44px;height:44px;border-radius:50%;background:#F0EBF8;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--purple);">+</div><div style="font-size:11px;font-weight:700;color:#999;text-align:center;line-height:1.4;">Agregar<br>producto</div></div>';
+    if(!productos.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;"><div style="font-size:40px;margin-bottom:12px;">📋</div>Aún no tienes productos.<br><br><button onclick="vnegAbrirFormProd(null)" style="margin-top:6px;background:var(--purple,#7B3FA0);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar producto</button></div>'; return; }
     if(!visibles.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin productos en esta categoría.</div>'; return; }
     var grupos=[]; visibles.forEach(function(p){ var c=p.categoria||'General'; if(grupos.indexOf(c)===-1) grupos.push(c); });
     cont.innerHTML=grupos.map(function(c){
@@ -160,7 +161,7 @@
             +(desc?'<div style="font-size:10px;color:#888;line-height:1.25;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+esc(desc)+'</div>':'')
             +'<div style="font-size:13px;font-weight:900;color:'+(agotado?'#999':'var(--purple)')+';margin-top:4px;">$'+(Number(p.precio||0)).toFixed(0)+'</div>'
             +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;">'+(agotado?'<span style="background:#eee;color:#777;border-radius:7px;padding:3px 6px;font-size:9px;font-weight:800;">⛔ No disponible</span>':'<span style="background:#F0EBF8;color:var(--purple);border-radius:7px;padding:3px 6px;font-size:9px;font-weight:800;">✅ Disponible</span>')+'</div></div></div>';
-        }).join('') + '</div>';
+        }).join('') + addCard + '</div>';
     }).join('') + '<div style="height:70px;"></div>';
   };
   window.vnegSetMenuCat=function(cat){ window._vnegMenuCat=cat||'todos'; window.vnegRenderMenuDesdeCache&&window.vnegRenderMenuDesdeCache(); };
