@@ -139,14 +139,14 @@
     var cats=[]; arr.forEach(function(p){ var c=String((p&&p.categoria)||'').trim(); if(c&&cats.indexOf(c)===-1) cats.push(c); });
     cats.sort(function(a,b){return a.localeCompare(b,'es');});
     var actual=window._vnegMenuCat||'todos'; if(actual!=='todos'&&cats.indexOf(actual)===-1) actual='todos'; window._vnegMenuCat=actual;
-    function btn(cat,label){ var on=actual===cat; return '<button type="button" class="chip '+(on?'on':'')+'" onclick="window.vnegSetMenuCat('+JSON.stringify(cat).replace(/"/g,'&quot;')+')" style="white-space:nowrap;">'+esc(label)+'</button>'; }
+    function btn(cat,label){ var on=actual===cat; if(cat==='todos') return '<button type="button" class="chip '+(on?'on':'')+'" onclick="window.vnegSetMenuCat(\'todos\')" style="white-space:nowrap;">'+esc(label)+'</button>'; return '<span style="display:inline-flex;align-items:center;gap:0;"><button type="button" class="chip '+(on?'on':'')+'" style="border-radius:10px 0 0 10px;padding-right:6px;white-space:nowrap;" onclick="window.vnegSetMenuCat('+JSON.stringify(cat).replace(/"/g,'&quot;')+')">'+esc(label)+'</button><button onclick="window.vnegEliminarCategoria&&window.vnegEliminarCategoria('+JSON.stringify(cat).replace(/"/g,'&quot;')+')" style="height:30px;padding:0 7px;font-size:12px;border:none;border-left:.5px solid rgba(0,0,0,.1);border-radius:0 10px 10px 0;background:'+(on?'var(--purple-lt,#F0EBF8)':'#f0f0f0')+';color:#888;cursor:pointer;font-family:inherit;line-height:1;" title="Eliminar categoría">×</button></span>'; }
     if(catsBar) catsBar.innerHTML=btn('todos','Todos') + cats.map(function(c){return btn(c,c);}).join('') + '<button type="button" class="chip" onclick="window.vnegCrearCategoria&&window.vnegCrearCategoria()" style="white-space:nowrap;border-style:dashed;">＋ Nueva</button>';
     if(sub) sub.textContent=productos.length+' producto'+(productos.length===1?'':'s');
     var searchEl=document.getElementById('vn-menu-search-inp'); var q=norm(searchEl&&searchEl.value);
     var visibles=productos.filter(function(p){ var catOk=actual==='todos'||String(p.categoria||'')===actual; var txt=norm((p.nombre||'')+' '+(p.categoria||'')+' '+(p.descripcion||'')); return catOk&&(!q||txt.indexOf(q)!==-1); });
     var addCard='<div onclick="vnegAbrirFormProd(null)" style="background:#fafafa;border-radius:14px;overflow:hidden;border:2px dashed #ddd;box-shadow:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:160px;"><div style="width:44px;height:44px;border-radius:50%;background:#F0EBF8;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--purple);">+</div><div style="font-size:11px;font-weight:700;color:#999;text-align:center;line-height:1.4;">Agregar<br>producto</div></div>';
     if(!productos.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;"><div style="font-size:40px;margin-bottom:12px;">📋</div>Aún no tienes productos.<br><br><button onclick="vnegAbrirFormProd(null)" style="margin-top:6px;background:var(--purple,#7B3FA0);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar producto</button></div>'; return; }
-    if(!visibles.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;">Sin productos en esta categoría.</div>'; return; }
+    if(!visibles.length){ cont.innerHTML='<div style="text-align:center;color:#aaa;padding:40px 20px;font-size:13px;"><div style="font-size:40px;margin-bottom:12px;">📋</div>Sin productos en esta categoría.<br><br><button onclick="vnegAbrirFormProd(null)" style="margin-top:6px;background:var(--purple,#7B3FA0);color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Agregar producto</button></div>'; return; }
     var grupos=[]; visibles.forEach(function(p){ var c=p.categoria||'General'; if(grupos.indexOf(c)===-1) grupos.push(c); });
     cont.innerHTML=grupos.map(function(c){
       var items=visibles.filter(function(p){return (p.categoria||'General')===c;});
@@ -165,6 +165,31 @@
     }).join('') + '<div style="height:70px;"></div>';
   };
   window.vnegSetMenuCat=function(cat){ window._vnegMenuCat=cat||'todos'; window.vnegRenderMenuDesdeCache&&window.vnegRenderMenuDesdeCache(); };
+  window.vnegEliminarCategoria=function(nombre){
+    var prods=getCache().filter(function(p){ return p.categoria===nombre && !p._esPlaceholder; });
+    if(prods.length>0){ if(window.toast) window.toast('⚠️ Primero elimina o mueve los productos de esta categoría.'); return; }
+    if(!window._dcConfirmar){ if(!confirm('¿Eliminar la categoría "'+nombre+'"?')) return; _doEliminarCat(nombre); return; }
+    window._dcConfirmar('¿Eliminar la categoría "'+nombre+'"?', function(){ _doEliminarCat(nombre); });
+    function _doEliminarCat(cat){
+      var user=window._fbAuth&&window._fbAuth.currentUser, db=window._fbDb;
+      if(!user||!db){ if(window.toast) window.toast('⚠️ Sin sesión'); return; }
+      (async function(){
+        try{
+          var fb=await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+          var uid=(window.vnegResolverMenuUid?await window.vnegResolverMenuUid(true):user.uid)||user.uid;
+          var snap=await fb.getDocs(fb.collection(db,'menu',uid,'productos'));
+          var batch=fb.writeBatch(db);
+          snap.forEach(function(d){ if(d.data().categoria===cat&&d.data()._esPlaceholder) batch.delete(d.ref); });
+          await batch.commit();
+          if(window._vnegMenuCat===cat) window._vnegMenuCat='todos';
+          var arr=getCache().filter(function(p){ return !(p.categoria===cat&&p._esPlaceholder); });
+          window._vnegMenuCache=arr;
+          window.vnegRenderMenuDesdeCache&&window.vnegRenderMenuDesdeCache();
+          if(window.toast) window.toast('🗑 Categoría "'+cat+'" eliminada');
+        }catch(e){ if(window.toast) window.toast('⚠️ Error: '+e.message); }
+      })();
+    }
+  };
   window.vnegFiltrarMenu=function(){ window.vnegRenderMenuDesdeCache&&window.vnegRenderMenuDesdeCache(); };
   window.vnegCargarMenu=async function(opts){
     opts=opts||{};

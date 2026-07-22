@@ -1979,6 +1979,7 @@ function _renderMenuRest() {
     var colorIdx = Math.abs(cat.split('').reduce(function(a,c){return a+c.charCodeAt(0);},0)) % colores.length;
     var bg = colores[colorIdx];
 
+    var addCard = '<div class="menu-pcard" onclick="abrirFormProd(null)" style="border:2px dashed #ddd;background:#fafafa;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:160px;cursor:pointer;"><div style="width:44px;height:44px;border-radius:50%;background:var(--green-lt);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--green);">+</div><div style="font-size:11px;font-weight:700;color:#999;text-align:center;line-height:1.4;">Agregar<br>producto</div></div>';
     var items = '<div class="menu-grid">' + grupos[cat].map(function(p){
       // Zona de imagen: foto real (base64), o emoji/placeholder como fallback
       var imgContent;
