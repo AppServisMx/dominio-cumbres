@@ -6596,26 +6596,3 @@ window.adminImpulsaConfigGuardar = async function() {
     if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar datos bancarios'; }
   }
 };
-
-// ── AUTO-RESTAURAR SESIÓN AL REFRESCAR ──────────────────────────────────
-// Lee localStorage del login anterior — si hay uid guardado, redirige sin esperar Firebase
-(function() {
-  var uid = localStorage.getItem('dcuserUid');
-  if (!uid) return;
-  var estado = (localStorage.getItem('dcuserEstado') || '').trim().toLowerCase();
-  var noRestore = ['pendiente_revision','aprobado_pendiente_pago','suspendido','rechazado'];
-  if (noRestore.indexOf(estado) !== -1) return;
-  var lastV = localStorage.getItem('dc_lastView') || 'v-home';
-  var noRestV = ['v-splash','v-login','v-register','v-role','v-loading'];
-  if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
-  setTimeout(function() {
-    var cur = document.querySelector('.view.active');
-    var curId = cur ? cur.id : 'v-splash';
-    if (curId !== 'v-splash') return; // solo restaurar desde la pantalla inicial
-    window.go(lastV, 'right');
-    setTimeout(function() {
-      window._dcFabInit && window._dcFabInit();
-      window.actualizarBadgesReales && window.actualizarBadgesReales();
-    }, 1000);
-  }, 700);
-})();
