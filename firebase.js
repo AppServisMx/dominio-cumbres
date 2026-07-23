@@ -79,6 +79,7 @@
      'dcPlazaComproProceso','dcPlazaCompraProceso','dcPlazaTipoEntrega','dcPlazaTipoPago'
     ].forEach(function(k){ try{localStorage.removeItem(k);}catch(_){} });
     localStorage.removeItem('dcuserEstado');
+    localStorage.removeItem('dc_lastView');
     // 3. Cancelar subscripciones activas
     if(window._chatUnsubscribe){window._chatUnsubscribe();window._chatUnsubscribe=null;}
     if(window._provNotifUnsub){window._provNotifUnsub();window._provNotifUnsub=null;}
@@ -212,9 +213,11 @@
     }
 
     try {
+      window._dcLoginInProgress = true; // Bloquear auto-restaurar mientras hacemos login manual
       const cred = await signInWithEmailAndPassword(auth, correoLogin, pass);
       // Leer tipo de usuario desde Firestore
       const snap = await getDoc(doc(db,'usuarios',cred.user.uid));
+      window._dcLoginInProgress = false;
       btn.textContent='Entrar →'; btn.disabled=false;
 
       if (snap.exists()) {
@@ -319,9 +322,73 @@
         go('v-home','right');
       }
     } catch(e) {
+      window._dcLoginInProgress = false;
       btn.textContent='Entrar →'; btn.disabled=false;
       err.style.display='block';
       err.textContent = firebaseError(e.code);
     }
   };
+
+  // ── AUTO-RESTAURAR SESIÓN AL REFRESCAR ──────────────────────────────────
+  // Firebase Auth persiste el token. Si el usuario ya tenía sesión, este
+  // listener dispara inmediatamente con el usuario. Solo aplica cuando NO
+  // es un login nuevo (loginFirebase pone window._dcLoginInProgress=true).
+  (async function() {
+    const { onAuthStateChanged: _oASC } = await import("https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js");
+    _oASC(auth, async function(user) {
+      if (!user) return; // Sin sesión → pantalla de splash, está bien
+      if (window._dcLoginInProgress) return; // Login activo, loginFirebase ya maneja la nav
+      // Verificar que la página aún está en v-splash (página recién cargada)
+      var _splashEl = document.getElementById('v-splash');
+      if (!_splashEl || !_splashEl.classList.contains('active')) return;
+      // Restaurar sesión desde Firebase
+      try {
+        var _fb2 = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+        var _snap2 = await _fb2.getDoc(_fb2.doc(db, 'usuarios', user.uid));
+        if (!_snap2.exists()) return;
+        var datos2 = _snap2.data();
+        var estado2 = String(datos2.estado || '').trim().toLowerCase();
+        var tipo2 = datos2.tipo || 'vecino';
+        // Guardar en localStorage igual que loginFirebase
+        localStorage.setItem('dcuserTipo', tipo2);
+        localStorage.setItem('dcuserEstado', estado2);
+        localStorage.setItem('dcuserUid', user.uid);
+        window.setNombre && window.setNombre(datos2.nombre || datos2.nombreNegocio || '');
+        // Estado operativo para restaurante/negocio
+        if (tipo2 === 'restaurante' || tipo2 === 'negocio') {
+          var _estOp2 = datos2.estadoOp || 'activo';
+          var _estTs2 = datos2.estadoOpTs || 0;
+          try { localStorage.setItem('dcRestOpV2', _estOp2); } catch(e) {}
+          try { localStorage.setItem('dcRestOpV2Ts', String(_estTs2)); } catch(e) {}
+          try { localStorage.setItem('dcuserEstadoOp_' + user.uid, _estOp2); } catch(e) {}
+          try { localStorage.setItem('dcuserEstadoOpTs_' + user.uid, String(_estTs2 || 0)); } catch(e) {}
+          if (tipo2 === 'negocio' && window.vnegCargarConfig) {
+            await window.vnegCargarConfig();
+          }
+        }
+        // Determinar vista a restaurar según estado
+        if (estado2 === 'pendiente_revision') { go('v-espera-revision', 'right'); return; }
+        if (estado2 === 'aprobado_pendiente_pago') { go('v-espera-pago', 'right'); return; }
+        if (estado2 === 'suspendido') { go(tipo2 === 'vecino' ? 'v-vecino-suspendido' : 'v-cuenta-suspendida', 'right'); return; }
+        if (estado2 === 'rechazado') { go('v-solicitud-rechazada', 'right'); return; }
+        if (estado2 !== 'activo' && estado2 !== '') { go('v-espera-revision', 'right'); return; }
+        // Restaurar última vista o ir a v-home
+        var _lastV = localStorage.getItem('dc_lastView') || 'v-home';
+        var _noRestV = ['v-splash','v-login','v-register','v-role','v-loading','v-espera-revision','v-espera-pago','v-cuenta-suspendida','v-solicitud-rechazada','v-vecino-suspendido'];
+        if (_noRestV.indexOf(_lastV) !== -1) _lastV = 'v-home';
+        go(_lastV, 'right');
+        // Activar notificaciones y badges igual que login normal
+        setTimeout(function() {
+          if ('Notification' in window) Notification.requestPermission();
+          window.verificarChatsProveedor && window.verificarChatsProveedor();
+          window.activarNotificacionesProveedor && window.activarNotificacionesProveedor();
+          window._dcFabInit && window._dcFabInit();
+          window.actualizarBadgesReales && window.actualizarBadgesReales();
+        }, 1500);
+      } catch(e2) {
+        // En caso de error, ir a home normal
+        go('v-home', 'right');
+      }
+    });
+  })();
 

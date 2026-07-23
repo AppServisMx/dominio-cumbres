@@ -1154,6 +1154,9 @@ function dcGoOficial(id,dir){
   if(typeof window._goCore==='function') window._goCore(id,dir);
   else if(typeof _goCore==='function') _goCore(id,dir);
   else{if(cur) cur.classList.remove('active');var tgt=document.getElementById(id);if(tgt) tgt.classList.add('active');}
+  // Guardar vista actual para restaurar al refrescar la página
+  var _noSaveV=['v-splash','v-login','v-register','v-role','v-loading','v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz','v-reg-proveedor','v-reg-restaurante','v-reg-negocio','v-reg-transporte','v-espera-revision','v-espera-pago','v-cuenta-suspendida','v-solicitud-rechazada','v-vecino-suspendido','v-admin-login','v-admin-panel'];
+  if(_noSaveV.indexOf(id)===-1){try{localStorage.setItem('dc_lastView',id);}catch(_){}}
   _postHooks(id);
   return false;
 }
