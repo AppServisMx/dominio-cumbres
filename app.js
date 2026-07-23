@@ -6601,11 +6601,11 @@ window.adminImpulsaConfigGuardar = async function() {
 (function() {
   function _doRestore() {
     var user = window._fbAuth && window._fbAuth.currentUser;
-    var cur = document.querySelector('.view.active');
-    console.log('[R] user=', user&&user.uid, 'vista=', cur&&cur.id, 'login=', window._dcLoginInProgress);
     if (window._dcLoginInProgress) return;
     if (!user) return;
-    if (!cur || cur.id !== 'v-splash') return;
+    var cur = document.querySelector('.view.active');
+    if (!cur) { setTimeout(_doRestore, 400); return; }
+    if (cur.id !== 'v-splash') return;
     var estado = (localStorage.getItem('dcuserEstado') || '').trim().toLowerCase();
     var tipo = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
     var noRestore = ['pendiente_revision','aprobado_pendiente_pago','suspendido','rechazado'];
@@ -6620,7 +6620,6 @@ window.adminImpulsaConfigGuardar = async function() {
     var lastV = localStorage.getItem('dc_lastView') || 'v-home';
     var noRestV = ['v-splash','v-login','v-register','v-role','v-loading'];
     if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
-    console.log('[R] navegando a', lastV);
     window.go(lastV, 'right');
     setTimeout(function() {
       window._dcFabInit && window._dcFabInit();
@@ -6629,7 +6628,6 @@ window.adminImpulsaConfigGuardar = async function() {
   }
 
   function _trySetup(n) {
-    console.log('[R] trySetup n=', n, '_fbAuth=', !!window._fbAuth);
     if (!window._fbAuth) {
       if (n < 30) setTimeout(function(){ _trySetup(n+1); }, 100);
       return;
