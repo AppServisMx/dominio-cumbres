@@ -6608,11 +6608,10 @@ window.adminImpulsaConfigGuardar = async function() {
   var lastV = localStorage.getItem('dc_lastView') || 'v-home';
   var noRestV = ['v-splash','v-login','v-register','v-role','v-loading'];
   if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
-  var _startupViews = ['v-splash','v-login','v-register','v-role','v-loading','v-reg-vecino','v-reg-prov','v-reg-ride','v-reg-biz','v-reg-proveedor','v-reg-restaurante','v-reg-negocio','v-reg-transporte'];
   setTimeout(function() {
     var cur = document.querySelector('.view.active');
     var curId = cur ? cur.id : 'v-splash';
-    if (_startupViews.indexOf(curId) === -1) return; // ya estamos en una vista de app
+    if (curId !== 'v-splash') return; // solo restaurar desde la pantalla inicial
     window.go(lastV, 'right');
     setTimeout(function() {
       window._dcFabInit && window._dcFabInit();
