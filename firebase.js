@@ -80,6 +80,8 @@
     ].forEach(function(k){ try{localStorage.removeItem(k);}catch(_){} });
     localStorage.removeItem('dcuserEstado');
     localStorage.removeItem('dc_lastView');
+    localStorage.removeItem('dc_lastSubVr');
+    localStorage.removeItem('dc_lastSubVn');
     // 3. Cancelar subscripciones activas
     if(window._chatUnsubscribe){window._chatUnsubscribe();window._chatUnsubscribe=null;}
     if(window._provNotifUnsub){window._provNotifUnsub();window._provNotifUnsub=null;}

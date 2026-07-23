@@ -341,7 +341,10 @@ function dcRest_navTo(id, isBack) {
     }, 320);
   }
 
-  if (!isBack) _rNavStack.push(id);
+  if (!isBack) {
+    _rNavStack.push(id);
+    try { localStorage.setItem('dc_lastSubVr', id === 'vr-home' ? '' : id); } catch(_) {}
+  }
   window.dcRest_onViewEnter(id);
 }
 // Alias público: HTML onclicks usan navTo() — se mantiene para compatibilidad
@@ -375,7 +378,10 @@ function dcNeg_navTo(id, isBack) {
   }
   // Reset scroll en destino
   try { nxt.scrollTop = 0; var sc = nxt.querySelector('.scr'); if (sc) sc.scrollTop = 0; } catch(e){}
-  if (!isBack) _nNavStack.push(id);
+  if (!isBack) {
+    _nNavStack.push(id);
+    try { localStorage.setItem('dc_lastSubVn', id === 'vn-home' ? '' : id); } catch(_) {}
+  }
   // Hooks de entrada dentro del shell N — equivale a lo que hace _goCore para estas vistas
   if (id === 'vn-config') setTimeout(function(){ window.vnegCargarConfig && window.vnegCargarConfig(); }, 80);
   if (id === 'vn-cmv')    setTimeout(function(){ window.vnegCmvCargar && window.vnegCmvCargar(); window._updateHora && window._updateHora(); }, 80);

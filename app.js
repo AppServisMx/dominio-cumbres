@@ -6622,6 +6622,13 @@ window.adminImpulsaConfigGuardar = async function() {
     if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
     window.go(lastV, 'right');
     setTimeout(function() {
+      if (lastV === 'v-impulsa') {
+        window.impulsaCargar && window.impulsaCargar();
+      }
+      var subVr = localStorage.getItem('dc_lastSubVr');
+      var subVn = localStorage.getItem('dc_lastSubVn');
+      if (subVr && lastV === 'vr-home') window.dcRest_navTo && window.dcRest_navTo(subVr);
+      if (subVn && lastV === 'vn-home') window.dcNeg_navTo && window.dcNeg_navTo(subVn);
       window._dcFabInit && window._dcFabInit();
       window.actualizarBadgesReales && window.actualizarBadgesReales();
     }, 500);
