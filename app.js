@@ -6596,3 +6596,54 @@ window.adminImpulsaConfigGuardar = async function() {
     if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar datos bancarios'; }
   }
 };
+
+// ── AUTO-RESTAURAR SESIÓN AL REFRESCAR ──────────────────────────────────
+(function() {
+  function _dcRestaurarSesion() {
+    var _auth = window._fbAuth;
+    if (!_auth || !_auth.onAuthStateChanged) return;
+    _auth.onAuthStateChanged(async function(user) {
+      if (!user) return;
+      if (window._dcLoginInProgress) return;
+      var _splash = document.getElementById('v-splash');
+      if (!_splash || !_splash.classList.contains('active')) return;
+      try {
+        var _fb = await import('https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js');
+        var _snap = await _fb.getDoc(_fb.doc(window._fbDb, 'usuarios', user.uid));
+        if (!_snap.exists()) return;
+        var d = _snap.data();
+        var estado = String(d.estado || '').trim().toLowerCase();
+        var tipo = d.tipo || 'vecino';
+        localStorage.setItem('dcuserTipo', tipo);
+        localStorage.setItem('dcuserEstado', estado);
+        localStorage.setItem('dcuserUid', user.uid);
+        window.setNombre && window.setNombre(d.nombre || d.nombreNegocio || '');
+        if (tipo === 'restaurante' || tipo === 'negocio') {
+          var op = d.estadoOp || 'activo';
+          try { localStorage.setItem('dcRestOpV2', op); } catch(e) {}
+          try { localStorage.setItem('dcuserEstadoOp_' + user.uid, op); } catch(e) {}
+          if (tipo === 'negocio' && window.vnegCargarConfig) await window.vnegCargarConfig();
+        }
+        if (estado === 'pendiente_revision') { go('v-espera-revision','right'); return; }
+        if (estado === 'aprobado_pendiente_pago') { go('v-espera-pago','right'); return; }
+        if (estado === 'suspendido') { go(tipo==='vecino'?'v-vecino-suspendido':'v-cuenta-suspendida','right'); return; }
+        if (estado === 'rechazado') { go('v-solicitud-rechazada','right'); return; }
+        var lastV = localStorage.getItem('dc_lastView') || 'v-home';
+        var noRest = ['v-splash','v-login','v-register','v-role','v-loading','v-espera-revision','v-espera-pago','v-cuenta-suspendida','v-solicitud-rechazada','v-vecino-suspendido'];
+        if (noRest.indexOf(lastV) !== -1) lastV = 'v-home';
+        go(lastV, 'right');
+        setTimeout(function() {
+          window.verificarChatsProveedor && window.verificarChatsProveedor();
+          window.activarNotificacionesProveedor && window.activarNotificacionesProveedor();
+          window._dcFabInit && window._dcFabInit();
+          window.actualizarBadgesReales && window.actualizarBadgesReales();
+        }, 1500);
+      } catch(e) { go('v-home','right'); }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _dcRestaurarSesion);
+  } else {
+    _dcRestaurarSesion();
+  }
+})();
