@@ -375,10 +375,7 @@ function dcNeg_navTo(id, isBack) {
   }
   // Reset scroll en destino
   try { nxt.scrollTop = 0; var sc = nxt.querySelector('.scr'); if (sc) sc.scrollTop = 0; } catch(e){}
-  if (!isBack) {
-    _nNavStack.push(id);
-    try { localStorage.setItem('dc_lastSubVn', id === 'vn-home' ? '' : id); } catch(_) {}
-  }
+  if (!isBack) _nNavStack.push(id);
   // Hooks de entrada dentro del shell N — equivale a lo que hace _goCore para estas vistas
   if (id === 'vn-config') setTimeout(function(){ window.vnegCargarConfig && window.vnegCargarConfig(); }, 80);
   if (id === 'vn-cmv')    setTimeout(function(){ window.vnegCmvCargar && window.vnegCmvCargar(); window._updateHora && window._updateHora(); }, 80);
