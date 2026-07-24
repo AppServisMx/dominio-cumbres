@@ -6635,11 +6635,13 @@ window.adminImpulsaConfigGuardar = async function() {
       document.body.classList.add('dc-restoring');
       var splashEl = document.getElementById('v-splash');
       if (!splashEl) { document.body.classList.remove('dc-restoring'); setTimeout(function(){ _done=false; _trySetup(0); }, 400); return; }
+      var _restored = false;
       var obs = new MutationObserver(function() {
-        if (splashEl.classList.contains('active')) { obs.disconnect(); _doRestore(); }
+        if (splashEl.classList.contains('active') && !_restored) { _restored = true; obs.disconnect(); _doRestore(); }
       });
       obs.observe(splashEl, { attributes: true, attributeFilter: ['class'] });
       setTimeout(function() {
+        if (_restored) return;
         var loadingEl = document.getElementById('v-loading');
         if (loadingEl) loadingEl.style.display = 'none';
         if (!splashEl.classList.contains('active')) splashEl.classList.add('active');
