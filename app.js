@@ -6627,7 +6627,7 @@ window.adminImpulsaConfigGuardar = async function() {
       var lastV = localStorage.getItem('dc_lastView') || 'v-home';
       var noRestV = ['v-splash','v-login','v-register','v-role','v-loading'];
       if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
-      if (lastV !== 'v-home' && window._navStack) window._navStack.push('v-home');
+      if (lastV !== 'v-home') _navStack.push('v-home');
       window.go(lastV, 'right');
       setTimeout(function() {
         window._dcFabInit && window._dcFabInit();
