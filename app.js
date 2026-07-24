@@ -6611,44 +6611,26 @@ window.adminImpulsaConfigGuardar = async function() {
       if (!user) return;
       if (window._dcLoginInProgress) return;
       var cur = document.querySelector('.view.active');
-      if (cur && cur.id !== 'v-splash') return;
-      function _doRestore() {
-        var estado = (localStorage.getItem('dcuserEstado') || '').trim().toLowerCase();
-        var tipo = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
-        var noRestore = ['pendiente_revision','aprobado_pendiente_pago','suspendido','rechazado'];
-        if (noRestore.indexOf(estado) !== -1) {
-          var statusNav = 'v-espera-revision';
-          if (estado === 'aprobado_pendiente_pago') statusNav = 'v-espera-pago';
-          else if (estado === 'suspendido') statusNav = (tipo === 'vecino') ? 'v-vecino-suspendido' : 'v-cuenta-suspendida';
-          else if (estado === 'rechazado') statusNav = 'v-solicitud-rechazada';
-          window.go(statusNav, 'right');
-          return;
-        }
-        window.go('v-home', 'right');
-        setTimeout(function() {
-          window._dcFabInit && window._dcFabInit();
-          window.actualizarBadgesReales && window.actualizarBadgesReales();
-        }, 500);
+      if (!cur || cur.id !== 'v-splash') return;
+      var estado = (localStorage.getItem('dcuserEstado') || '').trim().toLowerCase();
+      var tipo = (localStorage.getItem('dcuserTipo') || '').toLowerCase();
+      var noRestore = ['pendiente_revision','aprobado_pendiente_pago','suspendido','rechazado'];
+      if (noRestore.indexOf(estado) !== -1) {
+        var statusNav = 'v-espera-revision';
+        if (estado === 'aprobado_pendiente_pago') statusNav = 'v-espera-pago';
+        else if (estado === 'suspendido') statusNav = (tipo === 'vecino') ? 'v-vecino-suspendido' : 'v-cuenta-suspendida';
+        else if (estado === 'rechazado') statusNav = 'v-solicitud-rechazada';
+        window.go(statusNav, 'right');
+        return;
       }
-      if (cur) { _doRestore(); return; }
-      var splashEl = document.getElementById('v-splash');
-      if (!splashEl) { setTimeout(function(){ _done=false; _trySetup(0); }, 400); return; }
-      var st = document.createElement('style');
-      st.textContent = '#v-splash{opacity:0!important;transition:none!important;}';
-      document.head.appendChild(st);
-      var obs = new MutationObserver(function() {
-        if (splashEl.classList.contains('active')) {
-          obs.disconnect();
-          _doRestore();
-          setTimeout(function(){ st.parentNode && st.parentNode.removeChild(st); }, 800);
-        }
-      });
-      obs.observe(splashEl, { attributes: true, attributeFilter: ['class'] });
+      var lastV = localStorage.getItem('dc_lastView') || 'v-home';
+      var noRestV = ['v-splash','v-login','v-register','v-role','v-loading'];
+      if (noRestV.indexOf(lastV) !== -1) lastV = 'v-home';
+      window.go(lastV, 'right');
       setTimeout(function() {
-        var loadingEl = document.getElementById('v-loading');
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (!splashEl.classList.contains('active')) splashEl.classList.add('active');
-      }, 800);
+        window._dcFabInit && window._dcFabInit();
+        window.actualizarBadgesReales && window.actualizarBadgesReales();
+      }, 500);
     });
   }
   _trySetup(0);
