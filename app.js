@@ -6612,9 +6612,7 @@ window.adminImpulsaConfigGuardar = async function() {
       if (window._dcLoginInProgress) return;
       var cur = document.querySelector('.view.active');
       if (!cur) {
-        var loadingEl = document.getElementById('v-loading');
-        var delay = (loadingEl && loadingEl.style.display !== 'none' && loadingEl.style.cssText) ? 1700 : 400;
-        setTimeout(function(){ _done=false; _trySetup(0); }, delay);
+        setTimeout(function(){ _done=false; _trySetup(0); }, 1700);
         return;
       }
       if (cur.id !== 'v-splash') return;
