@@ -6634,7 +6634,12 @@ window.adminImpulsaConfigGuardar = async function() {
       var splashEl = document.getElementById('v-splash');
       if (!splashEl) { setTimeout(function(){ _done=false; _trySetup(0); }, 400); return; }
       var obs = new MutationObserver(function() {
-        if (splashEl.classList.contains('active')) { obs.disconnect(); _doRestore(); }
+        if (splashEl.classList.contains('active')) {
+          obs.disconnect();
+          splashEl.style.opacity = '0';
+          splashEl.style.transition = 'none';
+          _doRestore();
+        }
       });
       obs.observe(splashEl, { attributes: true, attributeFilter: ['class'] });
     });
