@@ -6631,6 +6631,7 @@ window.adminImpulsaConfigGuardar = async function() {
       setTimeout(function() {
         window._dcFabInit && window._dcFabInit();
         window.actualizarBadgesReales && window.actualizarBadgesReales();
+        if (lastV === 'v-impulsa') window.impulsaCargar && window.impulsaCargar();
       }, 500);
     });
   }
